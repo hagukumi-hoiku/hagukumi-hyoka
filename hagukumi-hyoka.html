@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>はぐくみ評価</title>
+<style>
+/* ============================================================
+   はぐくみ評価  Ver.1.00  CSS
+   テーマ: やわらかい保育現場らしさ × 実務的クリアネス
+============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap');
+
+:root {
+  --clr-primary:   #4a7c6f;
+  --clr-primary-l: #6aab9b;
+  --clr-primary-d: #2e5549;
+  --clr-accent:    #e8a85a;
+  --clr-accent-l:  #f5d4a0;
+  --clr-bg:        #f5f3ee;
+  --clr-bg2:       #eceae4;
+  --clr-surface:   #ffffff;
+  --clr-border:    #d8d4cc;
+  --clr-text:      #2c2c2c;
+  --clr-text-s:    #666;
+  --clr-danger:    #c0392b;
+  --clr-success:   #27ae60;
+  --clr-warning:   #f39c12;
+  --clr-info:      #2980b9;
+  --radius:        10px;
+  --radius-s:      6px;
+  --shadow:        0 2px 12px rgba(0,0,0,.08);
+  --shadow-m:      0 4px 24px rgba(0,0,0,.12);
+  --font-main:     'Noto Sans JP', sans-serif;
+  --font-disp:     'Zen Kaku Gothic New', sans-serif;
+  --transition:    all .2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font-main);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  min-height: 100vh;
+}
+
+/* ---------- ページ制御 ---------- */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ============================================================
+   ログイン
+============================================================ */
+#loginPage {
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2e5549 0%, #4a7c6f 50%, #6aab9b 100%);
+}
+#loginPage.active { display: flex; }
+
+.login-box {
+  background: var(--clr-surface);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo .logo-icon {
+  width: 64px; height: 64px;
+  background: var(--clr-primary);
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 12px;
+}
+.login-logo h1 {
+  font-family: var(--font-disp);
+  font-size: 1.4rem;
+  color: var(--clr-primary-d);
+  letter-spacing: .05em;
+}
+.login-logo p { font-size: .8rem; color: var(--clr-text-s); margin-top: 4px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block; font-size: .8rem; font-weight: 500;
+  color: var(--clr-text-s); margin-bottom: 6px;
+}
+.form-group input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-s);
+  font-family: var(--font-main); font-size: .95rem;
+  transition: var(--transition); background: var(--clr-bg);
+}
+.form-group input:focus {
+  outline: none;
+  border-color: var(--clr-primary-l);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(74,124,111,.15);
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 20px; border: none; border-radius: var(--radius-s);
+  font-family: var(--font-main); font-size: .9rem; font-weight: 500;
+  cursor: pointer; transition: var(--transition); text-decoration: none;
+}
+.btn-primary {
+  background: var(--clr-primary); color: #fff;
+}
+.btn-primary:hover { background: var(--clr-primary-d); transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-accent { background: var(--clr-accent); color: #fff; }
+.btn-accent:hover { background: #d4924a; }
+.btn-outline {
+  background: transparent; border: 1.5px solid var(--clr-primary);
+  color: var(--clr-primary);
+}
+.btn-outline:hover { background: var(--clr-primary); color: #fff; }
+.btn-danger { background: var(--clr-danger); color: #fff; }
+.btn-danger:hover { background: #a93226; }
+.btn-sm { padding: 6px 14px; font-size: .82rem; }
+.btn-lg { padding: 14px 28px; font-size: 1rem; }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ============================================================
+   メインレイアウト
+============================================================ */
+#appShell { display: none; min-height: 100vh; flex-direction: column; }
+#appShell.active { display: flex; }
+
+/* ヘッダー */
+.header {
+  background: var(--clr-primary-d);
+  color: #fff;
+  padding: 0 20px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  font-family: var(--font-disp);
+  font-size: 1.05rem;
+  letter-spacing: .05em;
+}
+.header-logo span { color: var(--clr-accent-l); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-user { font-size: .82rem; opacity: .85; }
+.btn-logout {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff; padding: 5px 14px; font-size: .8rem;
+  border-radius: 20px; cursor: pointer; transition: var(--transition);
+}
+.btn-logout:hover { background: rgba(255,255,255,.25); }
+
+/* サイドバー + メイン */
+.app-body { display: flex; flex: 1; overflow: hidden; }
+
+.sidebar {
+  width: 220px; min-height: calc(100vh - 56px);
+  background: var(--clr-surface);
+  border-right: 1px solid var(--clr-border);
+  padding: 20px 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+.sidebar-nav { list-style: none; }
+.sidebar-nav li a, .sidebar-nav li button {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 20px;
+  font-size: .88rem; color: var(--clr-text);
+  text-decoration: none; background: none; border: none;
+  width: 100%; text-align: left; cursor: pointer;
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+}
+.sidebar-nav li a:hover, .sidebar-nav li button:hover {
+  background: var(--clr-bg); color: var(--clr-primary);
+}
+.sidebar-nav li.active > a, .sidebar-nav li.active > button {
+  background: rgba(74,124,111,.1);
+  color: var(--clr-primary);
+  border-left-color: var(--clr-primary);
+  font-weight: 500;
+}
+.sidebar-section {
+  font-size: .72rem; font-weight: 700;
+  color: var(--clr-text-s); letter-spacing: .1em;
+  padding: 16px 20px 6px;
+}
+.sidebar-divider { border: none; border-top: 1px solid var(--clr-border); margin: 8px 0; }
+
+.main-content {
+  flex: 1; padding: 28px 32px;
+  overflow-y: auto; min-height: calc(100vh - 56px);
+}
+
+/* ============================================================
+   汎用コンポーネント
+============================================================ */
+/* アナウンスバー */
+.announce-bar {
+  background: linear-gradient(90deg, var(--clr-primary), var(--clr-primary-l));
+  color: #fff; border-radius: var(--radius);
+  padding: 14px 20px; margin-bottom: 24px;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.announce-bar .icon { font-size: 1.3rem; flex-shrink: 0; }
+.announce-bar .text { font-size: .88rem; line-height: 1.6; }
+.announce-bar .text strong { font-size: .95rem; display: block; margin-bottom: 2px; }
+
+/* ページタイトル */
+.page-title {
+  font-family: var(--font-disp);
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--clr-primary-d);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.page-sub { font-size: .83rem; color: var(--clr-text-s); margin-bottom: 24px; }
+
+/* カード */
+.card {
+  background: var(--clr-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--clr-border);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-family: var(--font-disp);
+  font-size: 1rem; font-weight: 700;
+  color: var(--clr-primary-d);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--clr-bg2);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* テーブル */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 14px; text-align: left; font-size: .85rem; }
+th {
+  background: var(--clr-bg2); font-weight: 600;
+  color: var(--clr-text-s); white-space: nowrap;
+}
+tr:not(:last-child) td { border-bottom: 1px solid var(--clr-bg2); }
+tr:hover td { background: rgba(74,124,111,.04); }
+
+/* バッジ */
+.badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 20px; font-size: .75rem; font-weight: 600;
+}
+.badge-success { background: #e8f8ed; color: var(--clr-success); }
+.badge-warning { background: #fef9e7; color: var(--clr-warning); }
+.badge-danger  { background: #fce8e6; color: var(--clr-danger); }
+.badge-info    { background: #e8f4fd; color: var(--clr-info); }
+.badge-muted   { background: var(--clr-bg2); color: var(--clr-text-s); }
+
+/* ランクバッジ */
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  font-weight: 700; font-size: .9rem;
+}
+.rank-SS { background: #ffd700; color: #7a5c00; }
+.rank-S  { background: #e0e0e0; color: #555; }
+.rank-A  { background: #cd7f32; color: #fff; }
+.rank-B  { background: #c8e6c9; color: #2e7d32; }
+.rank-C  { background: #fff9c4; color: #f57f17; }
+.rank-D  { background: #ffccbc; color: #bf360c; }
+.rank-E  { background: #fce4ec; color: #880e4f; }
+
+/* フォーム部品 */
+.frow { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.fcol { flex: 1; min-width: 160px; }
+.flabel {
+  display: block; font-size: .78rem; font-weight: 600;
+  color: var(--clr-text-s); margin-bottom: 5px;
+}
+.flabel .req { color: var(--clr-danger); margin-left: 2px; }
+.finput, .fselect, .ftextarea {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-s);
+  font-family: var(--font-main); font-size: .88rem;
+  background: var(--clr-bg); transition: var(--transition);
+}
+.finput:focus, .fselect:focus, .ftextarea:focus {
+  outline: none; border-color: var(--clr-primary-l);
+  background: #fff; box-shadow: 0 0 0 3px rgba(74,124,111,.12);
+}
+.ftextarea { resize: vertical; min-height: 80px; }
+.fselect { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.fhelp { font-size: .75rem; color: var(--clr-text-s); margin-top: 4px; }
+.ferr { font-size: .75rem; color: var(--clr-danger); margin-top: 4px; }
+
+/* モーダル */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 1000;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--clr-surface); border-radius: var(--radius);
+  width: 100%; max-width: 560px; max-height: 90vh;
+  overflow-y: auto; box-shadow: var(--shadow-m);
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { transform: scale(.95); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--clr-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-family: var(--font-disp); font-size: 1.05rem; font-weight: 700; color: var(--clr-primary-d); }
+.modal-close {
+  background: none; border: none; font-size: 1.3rem;
+  color: var(--clr-text-s); cursor: pointer; padding: 0 4px;
+}
+.modal-close:hover { color: var(--clr-danger); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--clr-border);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.modal.wide { max-width: 780px; }
+
+/* トースト */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast-item {
+  background: var(--clr-text); color: #fff;
+  padding: 12px 20px; border-radius: var(--radius-s);
+  font-size: .85rem; box-shadow: var(--shadow-m);
+  animation: toastIn .3s ease;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast-item.success { background: var(--clr-success); }
+.toast-item.error   { background: var(--clr-danger); }
+.toast-item.warning { background: var(--clr-warning); }
+@keyframes toastIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ローディング */
+#loadingOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(255,255,255,.7); z-index: 2000;
+  align-items: center; justify-content: center;
+}
+#loadingOverlay.show { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--clr-border);
+  border-top-color: var(--clr-primary);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ステップ表示 */
+.steps { display: flex; gap: 0; margin-bottom: 28px; }
+.step {
+  flex: 1; text-align: center; position: relative;
+  padding: 10px 4px;
+}
+.step::after {
+  content: ''; position: absolute;
+  top: 18px; left: 50%; right: -50%;
+  height: 2px; background: var(--clr-border); z-index: 0;
+}
+.step:last-child::after { display: none; }
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  font-size: .82rem; font-weight: 700;
+  background: var(--clr-border); color: var(--clr-text-s);
+  position: relative; z-index: 1; margin-bottom: 4px;
+}
+.step.done .step-num { background: var(--clr-primary); color: #fff; }
+.step.active .step-num { background: var(--clr-accent); color: #fff; }
+.step-label { font-size: .72rem; color: var(--clr-text-s); }
+.step.active .step-label { color: var(--clr-accent); font-weight: 600; }
+.step.done .step-label { color: var(--clr-primary); }
+
+/* 評価スコア入力テーブル */
+.score-table { width: 100%; border-collapse: collapse; }
+.score-table th { background: var(--clr-primary); color: #fff; padding: 10px 12px; font-size: .82rem; }
+.score-table td { padding: 8px 10px; border-bottom: 1px solid var(--clr-bg2); vertical-align: top; }
+.score-table tr:hover td { background: rgba(74,124,111,.04); }
+.score-cat-row td { background: var(--clr-bg2); font-weight: 600; font-size: .82rem; color: var(--clr-primary-d); }
+.score-item-name { font-size: .83rem; line-height: 1.4; }
+.score-item-hint { font-size: .74rem; color: var(--clr-text-s); margin-top: 2px; }
+.score-radio-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.score-radio-group label {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--clr-border);
+  font-size: .82rem; font-weight: 600;
+  cursor: pointer; transition: var(--transition);
+}
+.score-radio-group input[type=radio] { display: none; }
+.score-radio-group input[type=radio]:checked + label {
+  background: var(--clr-primary); border-color: var(--clr-primary); color: #fff;
+}
+.score-radio-group label:hover { border-color: var(--clr-primary-l); background: rgba(74,124,111,.1); }
+
+/* ホームダッシュボード */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--clr-surface); border-radius: var(--radius);
+  border: 1px solid var(--clr-border); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.stat-card .label { font-size: .78rem; color: var(--clr-text-s); margin-bottom: 8px; }
+.stat-card .value { font-family: var(--font-disp); font-size: 2rem; font-weight: 700; color: var(--clr-primary-d); }
+.stat-card .sub { font-size: .75rem; color: var(--clr-text-s); margin-top: 4px; }
+.task-list { list-style: none; }
+.task-list li {
+  padding: 12px 14px; border-radius: var(--radius-s);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; cursor: pointer; transition: var(--transition);
+  background: var(--clr-bg); border: 1px solid var(--clr-border);
+}
+.task-list li:hover { background: rgba(74,124,111,.08); border-color: var(--clr-primary-l); }
+.task-list .task-name { font-size: .88rem; font-weight: 500; }
+.task-list .task-deadline { font-size: .76rem; color: var(--clr-text-s); }
+.task-list .task-status { }
+
+/* ============================================================
+   レスポンシブ
+============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { padding: 16px; }
+  .frow { flex-direction: column; gap: 12px; }
+  .modal { max-width: 100%; }
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+  .modal.wide { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ローディング -->
+<div id="loadingOverlay"><div class="spinner"></div></div>
+
+<!-- トースト -->
+<div id="toast"></div>
+
+<!-- ============================================================
+  ログインページ
+============================================================ -->
+<div id="loginPage" class="page active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">🌱</div>
+      <h1>はぐくみ<span>評価</span></h1>
+      <p>育保の杜　職員評価システム</p>
+    </div>
+    <div class="form-group">
+      <label>ログインID</label>
+      <input type="text" id="loginId" placeholder="ログインIDを入力" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>パスワード</label>
+      <input type="password" id="loginPw" placeholder="パスワードを入力" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()">ログイン</button>
+    <p id="loginErr" style="color:var(--clr-danger);font-size:.82rem;margin-top:12px;text-align:center;"></p>
+  </div>
+</div>
+
+<!-- ============================================================
+  アプリシェル
+============================================================ -->
+<div id="appShell" class="page">
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
+      <span style="font-size:1.4rem">🌱</span>
+      <span class="header-logo">はぐくみ<span>評価</span></span>
+    </div>
+    <div class="header-right">
+      <span class="header-user" id="headerUser"></span>
+      <button class="btn-logout" onclick="doLogout()">ログアウト</button>
+    </div>
+  </header>
+  <div class="app-body">
+    <!-- サイドバー -->
+    <nav class="sidebar">
+      <ul class="sidebar-nav" id="sidebarNav">
+        <li class="active" id="nav-home"><button onclick="showSection('home')">🏠 ホーム</button></li>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">自己評価</div>
+        <li id="nav-eval-goal"><button onclick="showSection('evalGoal')">📝 目標記入</button></li>
+        <li id="nav-eval-self"><button onclick="showSection('evalSelf')">✏️ 振り返り・自己評価</button></li>
+        <!-- 管理者以上に表示 -->
+        <li id="nav-eval-mgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 管理者評価</button></li>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section admin-only" style="display:none">管理</div>
+        <li id="nav-staff" class="admin-only" style="display:none"><button onclick="showSection('staff')">👤 職員マスタ</button></li>
+        <li id="nav-settings" class="admin-only" style="display:none"><button onclick="showSection('settings')">⚙️ 設定</button></li>
+      </ul>
+    </nav>
+    <!-- メイン -->
+    <main class="main-content" id="mainContent">
+
+      <!-- ======== ホーム ======== -->
+      <section id="sec-home">
+        <div id="announceBar" class="announce-bar" style="display:none">
+          <div class="icon">📢</div>
+          <div class="text"><strong id="announceTitleEl"></strong><span id="announceBodyEl"></span></div>
+        </div>
+        <div class="page-title">🏠 ホーム</div>
+        <p class="page-sub">ようこそ。現在の評価状況と本日のタスクを確認できます。</p>
+
+        <div class="dashboard-grid" id="dashboardGrid">
+          <div class="stat-card">
+            <div class="label">所属</div>
+            <div class="value" id="dashGarden" style="font-size:1rem;padding-top:6px">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">在籍年数（累計経験）</div>
+            <div class="value" id="dashExp" style="font-size:1.1rem;padding-top:6px">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">評価シートタイプ</div>
+            <div class="value" id="dashType" style="font-size:.95rem;padding-top:6px">-</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 現在のタスク</div>
+          <ul class="task-list" id="taskList">
+            <li><span class="task-name">読み込み中...</span></li>
+          </ul>
+        </div>
+
+        <div class="card" id="myEvalSummary" style="display:none">
+          <div class="card-title">📊 今年度の評価サマリー</div>
+          <div id="myEvalSummaryContent"></div>
+        </div>
+      </section>
+
+      <!-- ======== 目標記入 ======== -->
+      <section id="sec-evalGoal" style="display:none">
+        <div class="page-title">📝 個人目標記入</div>
+        <p class="page-sub">年度の上半期個人目標を記入して提出します。</p>
+        <div class="card">
+          <div class="card-title">上半期 個人目標</div>
+          <div class="frow">
+            <div class="fcol" style="flex:2">
+              <label class="flabel">上半期 個人目標<span class="req">*</span></label>
+              <textarea class="ftextarea" id="goalH1Input" rows="5" placeholder="上半期の個人目標を記入してください"></textarea>
+            </div>
+          </div>
+          <div style="margin-top: 4px; padding: 12px; background: var(--clr-bg); border-radius: var(--radius-s);">
+            <p style="font-size:.8rem;color:var(--clr-text-s)">※ 提出後は管理者が確認します。10月の振り返り時に下半期目標と自己評価点を記入します。</p>
+          </div>
+          <div style="margin-top: 16px;">
+            <button class="btn btn-primary" onclick="submitGoal()">📨 提出する</button>
+          </div>
+          <div id="goalStatus" style="margin-top:12px; font-size:.85rem; color: var(--clr-success);"></div>
+        </div>
+      </section>
+
+      <!-- ======== 振り返り・自己評価 ======== -->
+      <section id="sec-evalSelf" style="display:none">
+        <div class="page-title">✏️ 振り返り・自己評価</div>
+        <p class="page-sub">上半期の振り返りと各評価項目への自己評価点を記入して提出します。</p>
+
+        <div class="steps" id="evalSteps">
+          <div class="step active" id="step1"><div class="step-num">1</div><div class="step-label">振り返り</div></div>
+          <div class="step" id="step2"><div class="step-num">2</div><div class="step-label">評価入力</div></div>
+          <div class="step" id="step3"><div class="step-num">3</div><div class="step-label">確認・提出</div></div>
+        </div>
+
+        <!-- ステップ1：振り返り -->
+        <div id="evalStep1">
+          <div class="card">
+            <div class="card-title">📝 上半期の振り返り・下半期目標</div>
+            <div class="frow">
+              <div class="fcol" style="flex:1">
+                <label class="flabel">上半期 個人目標（確認）</label>
+                <div id="goalH1Readonly" style="padding:10px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.88rem;min-height:60px;line-height:1.6;">未提出</div>
+              </div>
+            </div>
+            <div class="frow" style="margin-top:16px;">
+              <div class="fcol" style="flex:1">
+                <label class="flabel">上半期 振り返り<span class="req">*</span></label>
+                <textarea class="ftextarea" id="reflectH1Input" rows="4" placeholder="上半期の振り返りを記入してください"></textarea>
+              </div>
+            </div>
+            <div class="frow">
+              <div class="fcol" style="flex:1">
+                <label class="flabel">下半期 個人目標<span class="req">*</span></label>
+                <textarea class="ftextarea" id="goalH2Input" rows="4" placeholder="下半期の個人目標を記入してください"></textarea>
+              </div>
+            </div>
+            <div style="margin-top:16px;text-align:right;">
+              <button class="btn btn-primary" onclick="evalStep(2)">次へ →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ステップ2：評価入力 -->
+        <div id="evalStep2" style="display:none">
+          <div class="card">
+            <div class="card-title">🌟 評価項目・自己評価点の入力</div>
+            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:16px;">各項目について 1〜5点 で自己評価を入力してください（5点：とても良い、1点：課題あり）</p>
+            <div class="table-wrap">
+              <table class="score-table" id="selfScoreTable">
+                <thead><tr><th>カテゴリ</th><th>評価項目</th><th>着眼点</th><th style="min-width:220px">自己評価</th></tr></thead>
+                <tbody id="selfScoreBody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+              <button class="btn btn-outline" onclick="evalStep(1)">← 戻る</button>
+              <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfTotal" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
+              <button class="btn btn-primary" onclick="evalStep(3)">次へ →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ステップ3：確認・提出 -->
+        <div id="evalStep3" style="display:none">
+          <div class="card">
+            <div class="card-title">✅ 確認・提出</div>
+            <div id="evalConfirmContent"></div>
+            <div style="margin-top:20px;display:flex;justify-content:space-between;">
+              <button class="btn btn-outline" onclick="evalStep(2)">← 戻る</button>
+              <button class="btn btn-primary btn-lg" onclick="submitSelfEval()">📨 自己評価を提出する</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== 管理者評価 ======== -->
+      <section id="sec-evalMgr" style="display:none">
+        <div class="page-title">⭐ 管理者評価</div>
+        <p class="page-sub">職員から提出された自己評価に対して、評価コメント・園評価点を入力します。</p>
+
+        <div class="card">
+          <div class="card-title" style="justify-content: space-between;">
+            <span>📋 提出状況一覧</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select class="fselect" id="mgrYearSel" style="width:100px;" onchange="loadEvalList()"></select>
+              <select class="fselect" id="mgrGardenSel" style="width:140px;" onchange="loadEvalList()">
+                <option value="">全園</option>
+                <option value="はぐくみ保育園">はぐくみ</option>
+                <option value="第2はぐくみ保育園">第2はぐくみ</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>氏名</th><th>職種</th><th>所属園</th>
+                <th>提出日</th><th>自己合計</th><th>自己ランク</th>
+                <th>園評価合計</th><th>園ランク</th><th>賞与加算</th><th>状況</th><th>操作</th>
+              </tr></thead>
+              <tbody id="evalListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== 職員マスタ ======== -->
+      <section id="sec-staff" style="display:none">
+        <div class="page-title">👤 職員マスタ</div>
+        <p class="page-sub">職員情報の登録・編集・確認を行います。</p>
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between;">
+            <span>職員一覧</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select class="fselect" id="staffGardenFilter" style="width:140px;" onchange="loadStaffList()">
+                <option value="">全園</option>
+                <option value="はぐくみ保育園">はぐくみ保育園</option>
+                <option value="第2はぐくみ保育園">第2はぐくみ保育園</option>
+              </select>
+              <select class="fselect" id="staffStatusFilter" style="width:100px;" onchange="loadStaffList()">
+                <option value="在籍">在籍のみ</option>
+                <option value="">全員</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="openStaffModal()">＋ 新規登録</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>職員ID</th><th>氏名</th><th>職種</th><th>所属園</th>
+                <th>雇用区分</th><th>年齢</th><th>在籍年数</th><th>累計経験</th>
+                <th>権限</th><th>状況</th><th>操作</th>
+              </tr></thead>
+              <tbody id="staffListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== 設定 ======== -->
+      <section id="sec-settings" style="display:none">
+        <div class="page-title">⚙️ 設定</div>
+        <p class="page-sub">評価の時期・アナウンス・提出期限などを設定します。</p>
+        <div class="card">
+          <div class="card-title">🗓️ 評価スケジュール</div>
+          <div class="frow">
+            <div class="fcol">
+              <label class="flabel">対象年度</label>
+              <input type="number" class="finput" id="setYear" placeholder="例: 2025">
+            </div>
+            <div class="fcol">
+              <label class="flabel">評価モード</label>
+              <select class="fselect" id="setMode">
+                <option value="goal">目標記入フェーズ（4月）</option>
+                <option value="eval">振り返り・自己評価フェーズ（10月）</option>
+                <option value="mgr">管理者評価フェーズ</option>
+                <option value="closed">締切済（参照のみ）</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fcol">
+              <label class="flabel">上半期目標 提出期限</label>
+              <input type="date" class="finput" id="setH1Deadline">
+            </div>
+            <div class="fcol">
+              <label class="flabel">振り返り・自己評価 提出期限</label>
+              <input type="date" class="finput" id="setH2Deadline">
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fcol" style="flex:2">
+              <label class="flabel">📢 アナウンス</label>
+              <textarea class="ftextarea" id="setAnnounce" rows="3" placeholder="全職員ホームに表示するお知らせ（空白で非表示）"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primary" onclick="saveSettings()">💾 設定を保存</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================
+  モーダル: 職員登録・編集
+============================================================ -->
+<div class="modal-overlay" id="staffModal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title" id="staffModalTitle">職員 新規登録</div>
+      <button class="modal-close" onclick="closeStaffModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fcol">
+          <label class="flabel">職員ID<span class="req">*</span></label>
+          <input type="text" class="finput" id="fm_id" placeholder="例: H001">
+          <p class="fhelp">英数字・記号で任意設定してください</p>
+        </div>
+        <div class="fcol">
+          <label class="flabel">氏名<span class="req">*</span></label>
+          <input type="text" class="finput" id="fm_name" placeholder="例: 保育 花子">
+        </div>
+        <div class="fcol">
+          <label class="flabel">生年月日</label>
+          <input type="date" class="finput" id="fm_birth">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fcol">
+          <label class="flabel">職種<span class="req">*</span></label>
+          <select class="fselect" id="fm_job">
+            <option value="">選択してください</option>
+            <option value="保育補助">保育補助</option>
+            <option value="保育士">保育士</option>
+            <option value="調理員">調理員</option>
+            <option value="乳児リーダー">乳児リーダー</option>
+            <option value="幼児リーダー">幼児リーダー</option>
+            <option value="統括リーダー">統括リーダー</option>
+            <option value="主任">主任</option>
+            <option value="園長">園長</option>
+          </select>
+        </div>
+        <div class="fcol">
+          <label class="flabel">雇用区分<span class="req">*</span></label>
+          <select class="fselect" id="fm_emp">
+            <option value="正規">正規</option>
+            <option value="パート">パート</option>
+          </select>
+        </div>
+        <div class="fcol">
+          <label class="flabel">所属園<span class="req">*</span></label>
+          <select class="fselect" id="fm_garden">
+            <option value="はぐくみ保育園">はぐくみ保育園</option>
+            <option value="第2はぐくみ保育園">第2はぐくみ保育園</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fcol">
+          <label class="flabel">入職日（当園）</label>
+          <input type="date" class="finput" id="fm_hire">
+        </div>
+        <div class="fcol">
+          <label class="flabel">他園勤務歴（年）</label>
+          <input type="number" class="finput" id="fm_otherY" min="0" value="0">
+        </div>
+        <div class="fcol">
+          <label class="flabel">他園勤務歴（月）</label>
+          <input type="number" class="finput" id="fm_otherM" min="0" max="11" value="0">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fcol">
+          <label class="flabel">ログインID<span class="req">*</span></label>
+          <input type="text" class="finput" id="fm_loginId" placeholder="例: hanako_hoiku">
+        </div>
+        <div class="fcol">
+          <label class="flabel">パスワード<span class="req">*</span></label>
+          <input type="text" class="finput" id="fm_pw" placeholder="編集時は変更する場合のみ入力">
+        </div>
+        <div class="fcol">
+          <label class="flabel">権限<span class="req">*</span></label>
+          <select class="fselect" id="fm_role">
+            <option value="staff">staff（一般）</option>
+            <option value="syunin">syunin（主任）</option>
+            <option value="encho">encho（園長）</option>
+            <option value="admin">admin（管理者）</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fcol">
+          <label class="flabel">在籍状況</label>
+          <select class="fselect" id="fm_status">
+            <option value="在籍">在籍</option>
+            <option value="退職">退職</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeStaffModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveStaff()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  モーダル: 管理者評価入力
+============================================================ -->
+<div class="modal-overlay" id="mgrEvalModal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title" id="mgrEvalModalTitle">管理者評価</div>
+      <button class="modal-close" onclick="closeMgrModal()">✕</button>
+    </div>
+    <div class="modal-body" id="mgrEvalModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
+      <button class="btn btn-primary" onclick="saveMgrEval()">💾 評価を保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  確認モーダル
+============================================================ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmTitle">確認</div>
+      <button class="modal-close" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="modal-body"><p id="confirmMsg" style="line-height:1.7"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfirm()">キャンセル</button>
+      <button class="btn btn-primary" id="confirmOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  設定
+// ============================================================
+const GAS_URL = 'YOUR_GAS_WEBAPP_URL_HERE';
+
+// ============================================================
+//  評価項目定義
+// ============================================================
+const EVAL_ITEMS = {
+  general_hoiku: [
+    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
+    { cat:'活動実績', item:'ヒヤリハット改善含む園取組', hint:'ヒヤリハット・事故防止を意識した取組みを実施している' },
+    { cat:'知識', item:'キャリアアップ研修', hint:'研修を積極的に受講し業務に活かしている' },
+    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
+    { cat:'知識', item:'日々の自己研鑽', hint:'知識・技術の習得に日々努めている' },
+    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
+    { cat:'遂行能力', item:'クラス単位の取組・判断', hint:'クラス運営において適切な判断と取組みができている' },
+    { cat:'規律性', item:'協調性・チームワーク', hint:'同僚と協力し職場の雰囲気づくりに貢献している' },
+    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
+    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
+    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
+    { cat:'責任制', item:'担当業務の計画的遂行', hint:'担当業務を計画的に進めている' },
+    { cat:'責任制', item:'保護者・同僚への対応', hint:'保護者・同僚からの相談に誠実に対応している' },
+    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
+    { cat:'協調性', item:'担当以外の業務への協力', hint:'担当以外の業務にも積極的に協力している' }
+  ],
+  cooking: [
+    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
+    { cat:'活動実績', item:'園行事等（ヒヤリハット除く）', hint:'園行事等に積極的に参加・貢献している' },
+    { cat:'知識', item:'キャリアアップ研修・調理専門知識', hint:'研修を積極的に受講し調理専門知識の向上に努めている' },
+    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
+    { cat:'知識', item:'日々の自己研鑽', hint:'知識・技術の習得に日々努めている' },
+    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
+    { cat:'遂行能力', item:'調理室内の取組・判断', hint:'調理室内において適切な判断と取組みができている' },
+    { cat:'規律性', item:'衛生管理・チームワーク', hint:'衛生管理を徹底し職場の雰囲気づくりに貢献している' },
+    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
+    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
+    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
+    { cat:'責任制', item:'担当業務の計画的遂行', hint:'担当業務を計画的に進めている' },
+    { cat:'責任制', item:'上司・同僚・部下への対応', hint:'上司・同僚・部下からの相談に誠実に対応している' },
+    { cat:'協調性', item:'園方針に沿った衛生管理', hint:'園の方針に沿った衛生管理を実践している' },
+    { cat:'協調性', item:'担当以外の業務への協力', hint:'担当以外の業務にも積極的に協力している' }
+  ],
+  yakushoku: [
+    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
+    { cat:'活動実績', item:'実行かつ管理できている', hint:'取組みを実行し、かつ管理・記録まで行えている' },
+    { cat:'知識', item:'キャリアアップ研修', hint:'研修を積極的に受講し業務に活かしている' },
+    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
+    { cat:'知識', item:'他職員への指導立場での習得', hint:'他職員に指導する立場として知識・技術を習得している' },
+    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
+    { cat:'遂行能力', item:'クラス単位の取組・判断', hint:'クラス運営において適切な判断と取組みができている' },
+    { cat:'遂行能力', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下をまとめている' },
+    { cat:'規律性', item:'協調性・チームワーク', hint:'同僚と協力し職場の雰囲気づくりに貢献している' },
+    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
+    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
+    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
+    { cat:'責任制', item:'役職者としての役割自覚', hint:'役職者としての役割を自覚して行動している' },
+    { cat:'責任制', item:'行事等の計画的準備と責任', hint:'行事等を計画的に準備し最後まで責任をもって対応している' },
+    { cat:'責任制', item:'保護者・同僚への最後まで対応', hint:'保護者・同僚への相談に最後まで対応している' },
+    { cat:'責任制', item:'問題発生時に自ら率先解決', hint:'問題発生時に自ら率先して解決に取り組んでいる' },
+    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
+    { cat:'協調性', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下が動きやすい環境をつくっている' }
+  ],
+  kanrisha: [
+    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
+    { cat:'活動実績', item:'実行かつ管理できている', hint:'取組みを実行し、かつ管理・記録まで行えている' },
+    { cat:'知識', item:'施設運営・職員指導の知識', hint:'施設運営に必要な知識を習得し職員指導に活かしている' },
+    { cat:'知識', item:'職員の技術・知識向上の指導育成', hint:'職員の技術・知識向上のために指導・育成を行っている' },
+    { cat:'知識', item:'情報収集等日々自己研鑽', hint:'情報収集を含め日々自己研鑽している' },
+    { cat:'遂行能力', item:'園全体を把握し職員へ指導・助言', hint:'園全体の状況を把握し職員へ適切な指導・助言を行っている' },
+    { cat:'遂行能力', item:'経営意識・無駄なコスト削減', hint:'経営意識をもち無駄なコスト削減に取り組んでいる' },
+    { cat:'遂行能力', item:'危険性想定・職員体制整備', hint:'危険性を想定し職員体制を適切に整備している' },
+    { cat:'規律性', item:'職員間・保護者等との協調', hint:'職員間・保護者等との良好な関係を構築している' },
+    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
+    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
+    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'管理者として適切な身だしなみ・言葉遣いができている' },
+    { cat:'責任制', item:'管理者としての役割自覚', hint:'管理者としての役割を自覚して行動している' },
+    { cat:'責任制', item:'行事等の計画的準備と責任', hint:'行事等を計画的に準備し最後まで責任をもって対応している' },
+    { cat:'責任制', item:'保護者・部下の相談に迅速対応', hint:'保護者・部下の相談に迅速かつ誠実に対応している' },
+    { cat:'責任制', item:'問題発生時に自ら率先解決', hint:'問題発生時に自ら率先して解決に取り組んでいる' },
+    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
+    { cat:'協調性', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下が動きやすい環境をつくっている' }
+  ]
+};
+
+const MAX_SCORE = { general_hoiku: 75, cooking: 75, yakushoku: 90, kanrisha: 90 };
+
+function getEvalType(jobType) {
+  if (jobType === '調理員') return 'cooking';
+  if (['園長'].includes(jobType)) return 'kanrisha';
+  if (['乳児リーダー','幼児リーダー','統括リーダー','主任'].includes(jobType)) return 'yakushoku';
+  return 'general_hoiku';
+}
+
+// ============================================================
+//  状態
+// ============================================================
+let SESSION = null;
+let SETTINGS = {};
+let currentRecord = null;
+let selfScores = [];
+let editingStaffId = null;
+let mgrEditRecord = null;
+
+// ============================================================
+//  API通信
+// ============================================================
+async function api(payload) {
+  if (SESSION) { payload.token = SESSION.token; payload.staffId = SESSION.staffId; }
+  showLoading(true);
+  try {
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return await r.json();
+  } catch(e) {
+    toast('通信エラー: ' + e.message, 'error');
+    return { ok: false, msg: e.message };
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ============================================================
+//  認証
+// ============================================================
+async function doLogin() {
+  const loginId = document.getElementById('loginId').value.trim();
+  const password = document.getElementById('loginPw').value;
+  if (!loginId || !password) { document.getElementById('loginErr').textContent = 'IDとパスワードを入力してください'; return; }
+
+  const r = await api({ action: 'login', loginId, password });
+  if (!r.ok) { document.getElementById('loginErr').textContent = r.msg; return; }
+
+  SESSION = r;
+  document.getElementById('loginErr').textContent = '';
+  initApp();
+}
+
+function doLogout() {
+  SESSION = null; SETTINGS = {}; currentRecord = null;
+  showPage('loginPage');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+}
+
+document.getElementById('loginPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ============================================================
+//  アプリ初期化
+// ============================================================
+async function initApp() {
+  showPage('appShell');
+  document.getElementById('headerUser').textContent = SESSION.name + '（' + SESSION.jobType + '・' + SESSION.garden + '）';
+
+  // 管理者メニュー表示制御
+  const isAdmin = ['admin','encho','syunin'].includes(SESSION.role);
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  if (isAdmin) {
+    document.getElementById('nav-eval-mgr').style.display = '';
+  }
+
+  // 設定取得
+  const sr = await api({ action: 'getSettings' });
+  if (sr.ok) SETTINGS = sr.settings;
+
+  // ホーム表示
+  showSection('home');
+}
+
+// ============================================================
+//  ページ・セクション制御
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+const SECTIONS = ['home','evalGoal','evalSelf','evalMgr','staff','settings'];
+
+function showSection(name) {
+  SECTIONS.forEach(s => {
+    const el = document.getElementById('sec-' + s);
+    if (el) el.style.display = s === name ? '' : 'none';
+  });
+  document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+
+  if (name === 'home')     loadHome();
+  if (name === 'evalGoal') loadEvalGoal();
+  if (name === 'evalSelf') loadEvalSelf();
+  if (name === 'evalMgr')  { initMgrYearSel(); loadEvalList(); }
+  if (name === 'staff')    loadStaffList();
+  if (name === 'settings') loadSettings();
+}
+
+// ============================================================
+//  ホーム
+// ============================================================
+async function loadHome() {
+  document.getElementById('dashGarden').textContent = SESSION.garden;
+
+  // アナウンス
+  const ann = SETTINGS['announce'];
+  const annBar = document.getElementById('announceBar');
+  if (ann) {
+    annBar.style.display = 'flex';
+    document.getElementById('announceTitleEl').textContent = '📢 お知らせ';
+    document.getElementById('announceBodyEl').textContent = ann;
+  } else { annBar.style.display = 'none'; }
+
+  // 評価種別
+  const evalType = getEvalType(SESSION.jobType);
+  const typeNames = { general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者' };
+  document.getElementById('dashType').textContent = typeNames[evalType] + '｜満点' + MAX_SCORE[evalType] + '点';
+
+  // 今年度記録を取得
+  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
+  currentRecord = r.ok ? r.data : null;
+
+  // 在籍年数（職員マスタから取得は省略、SESSION に含まれていない場合のフォールバック）
+  document.getElementById('dashExp').textContent = '-';
+
+  // タスク
+  const mode = SETTINGS['eval_mode'] || 'goal';
+  const h1dl = SETTINGS['h1_deadline'] || '';
+  const h2dl = SETTINGS['h2_deadline'] || '';
+  const tasks = [];
+  const status = currentRecord ? currentRecord.status : '未提出';
+
+  if (mode === 'goal') {
+    if (!currentRecord || status === '未提出') {
+      tasks.push({ name: '📝 上半期個人目標の記入・提出', deadline: h1dl ? h1dl + ' まで' : '', status: '未完了', action: 'evalGoal', badge: 'danger' });
+    } else {
+      tasks.push({ name: '✅ 上半期個人目標', deadline: '提出済', status: '完了', action: null, badge: 'success' });
+    }
+  } else if (mode === 'eval') {
+    if (!currentRecord || !['自己評価提出済','管理者評価済'].includes(status)) {
+      tasks.push({ name: '✏️ 振り返り・自己評価の記入・提出', deadline: h2dl ? h2dl + ' まで' : '', status: '未完了', action: 'evalSelf', badge: 'danger' });
+    } else {
+      tasks.push({ name: '✅ 振り返り・自己評価', deadline: '提出済', status: '完了', action: null, badge: 'success' });
+    }
+  } else {
+    tasks.push({ name: '現在、提出期間外です', deadline: '', status: '', action: null, badge: 'muted' });
+  }
+
+  const tl = document.getElementById('taskList');
+  tl.innerHTML = tasks.map(t => `
+    <li onclick="${t.action ? "showSection('" + t.action + "')" : ''}">
+      <div>
+        <div class="task-name">${t.name}</div>
+        ${t.deadline ? '<div class="task-deadline">期限: ' + t.deadline + '</div>' : ''}
+      </div>
+      <span class="badge badge-${t.badge}">${t.status}</span>
+    </li>
+  `).join('');
+
+  // サマリー
+  if (currentRecord && currentRecord.selfTotal > 0) {
+    document.getElementById('myEvalSummary').style.display = '';
+    document.getElementById('myEvalSummaryContent').innerHTML = `
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+        <div><span class="flabel">自己評価合計</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-primary)">${currentRecord.selfTotal}<span style="font-size:.85rem;color:var(--clr-text-s)"> / ${MAX_SCORE[evalType]}点</span></div></div>
+        ${currentRecord.selfRank ? '<div><span class="flabel">自己ランク</span><div><span class="rank-badge rank-' + currentRecord.selfRank + '">' + currentRecord.selfRank + '</span></div></div>' : ''}
+        ${currentRecord.gardenTotal > 0 ? '<div><span class="flabel">園評価合計</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-accent)">' + currentRecord.gardenTotal + '<span style="font-size:.85rem;color:var(--clr-text-s)"> / ' + MAX_SCORE[evalType] + '点</span></div></div>' : ''}
+        ${currentRecord.gardenRank ? '<div><span class="flabel">園ランク</span><div><span class="rank-badge rank-' + currentRecord.gardenRank + '">' + currentRecord.gardenRank + '</span></div></div>' : ''}
+        ${currentRecord.bonus > 0 ? '<div><span class="flabel">賞与加算A</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-accent)">' + currentRecord.bonus + '<span style="font-size:.85rem;color:var(--clr-text-s)">点</span></div></div>' : ''}
+      </div>
+    `;
+  } else { document.getElementById('myEvalSummary').style.display = 'none'; }
+}
+
+// ============================================================
+//  目標記入
+// ============================================================
+async function loadEvalGoal() {
+  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
+  currentRecord = r.ok ? r.data : null;
+  const st = document.getElementById('goalStatus');
+  if (currentRecord && currentRecord.goalH1) {
+    document.getElementById('goalH1Input').value = currentRecord.goalH1;
+    st.textContent = '✅ 提出済（' + (currentRecord.goalSubmitDate || '') + '）';
+  } else { st.textContent = ''; }
+}
+
+async function submitGoal() {
+  const goal = document.getElementById('goalH1Input').value.trim();
+  if (!goal) { toast('目標を入力してください', 'error'); return; }
+  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const r = await api({ action: 'saveSelfEval', mode: 'goal', year, staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden, goalH1: goal });
+  if (r.ok) { toast(r.msg, 'success'); loadEvalGoal(); } else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  振り返り・自己評価
+// ============================================================
+async function loadEvalSelf() {
+  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
+  currentRecord = r.ok ? r.data : null;
+
+  if (currentRecord && currentRecord.goalH1) {
+    document.getElementById('goalH1Readonly').textContent = currentRecord.goalH1;
+    document.getElementById('reflectH1Input').value = currentRecord.reflectH1 || '';
+    document.getElementById('goalH2Input').value = currentRecord.goalH2 || '';
+  }
+
+  const evalType = getEvalType(SESSION.jobType);
+  const items = EVAL_ITEMS[evalType];
+  selfScores = items.map((_, i) => (currentRecord && currentRecord.selfScores[i]) || 0);
+  renderScoreTable(items, selfScores, 'self');
+  updateSelfTotal();
+  evalStep(1);
+}
+
+function renderScoreTable(items, scores, mode) {
+  const tbody = document.getElementById(mode + 'ScoreBody');
+  let html = ''; let lastCat = '';
+  items.forEach((item, idx) => {
+    if (item.cat !== lastCat) {
+      html += `<tr class="score-cat-row"><td colspan="4">◆ ${item.cat}</td></tr>`;
+      lastCat = item.cat;
+    }
+    const radios = [1,2,3,4,5].map(v => `
+      <input type="radio" name="${mode}_score_${idx}" id="${mode}_sc_${idx}_${v}" value="${v}" ${scores[idx] === v ? 'checked' : ''} onchange="onScoreChange('${mode}',${idx},${v})">
+      <label for="${mode}_sc_${idx}_${v}">${v}</label>
+    `).join('');
+    html += `<tr>
+      <td style="color:var(--clr-text-s);font-size:.78rem;white-space:nowrap">${item.cat}</td>
+      <td><div class="score-item-name">${item.item}</div><div class="score-item-hint">${item.hint}</div></td>
+      <td style="display:none"></td>
+      <td><div class="score-radio-group">${radios}</div></td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function onScoreChange(mode, idx, val) {
+  if (mode === 'self') { selfScores[idx] = val; updateSelfTotal(); }
+  else if (mode === 'mgr') { mgrScores[idx] = val; updateMgrTotal(); }
+}
+
+function updateSelfTotal() {
+  const total = selfScores.reduce((a, b) => a + b, 0);
+  document.getElementById('selfTotal').textContent = total;
+}
+
+function evalStep(step) {
+  [1,2,3].forEach(s => {
+    document.getElementById('evalStep' + s).style.display = s === step ? '' : 'none';
+    const stepEl = document.getElementById('step' + s);
+    stepEl.classList.remove('active','done');
+    if (s < step) stepEl.classList.add('done');
+    if (s === step) stepEl.classList.add('active');
+  });
+  if (step === 3) buildEvalConfirm();
+}
+
+function buildEvalConfirm() {
+  const evalType = getEvalType(SESSION.jobType);
+  const items = EVAL_ITEMS[evalType];
+  const total = selfScores.reduce((a, b) => a + b, 0);
+  const rank = calcRankJS(total, MAX_SCORE[evalType]);
+  let html = `
+    <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
+      <div class="flabel">上半期 振り返り</div>
+      <p style="font-size:.88rem;line-height:1.6">${escHtml(document.getElementById('reflectH1Input').value)}</p>
+    </div>
+    <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
+      <div class="flabel">下半期 個人目標</div>
+      <p style="font-size:.88rem;line-height:1.6">${escHtml(document.getElementById('goalH2Input').value)}</p>
+    </div>
+    <div style="display:flex;gap:20px;align-items:center;margin-bottom:16px;">
+      <div><span class="flabel">自己評価合計</span><div style="font-size:1.8rem;font-weight:700;color:var(--clr-primary)">${total}<span style="font-size:.85rem;color:var(--clr-text-s)"> / ${MAX_SCORE[evalType]}点</span></div></div>
+      <div><span class="flabel">達成率</span><div style="font-size:1.4rem;font-weight:600;color:var(--clr-primary-l)">${Math.round(total/MAX_SCORE[evalType]*100)}%</div></div>
+      <div><span class="flabel">自己ランク（参考）</span><div><span class="rank-badge rank-${rank}">${rank}</span></div></div>
+    </div>
+    <details><summary style="cursor:pointer;font-size:.85rem;color:var(--clr-text-s);margin-bottom:8px;">評価点詳細を確認</summary>
+    <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+    <thead><tr><th style="background:var(--clr-bg2);padding:6px 10px">項目</th><th style="background:var(--clr-bg2);padding:6px 10px;text-align:center">点数</th></tr></thead><tbody>`;
+  items.forEach((item, i) => {
+    html += `<tr><td style="padding:5px 10px;border-bottom:1px solid var(--clr-bg2)">${item.item}</td><td style="padding:5px 10px;text-align:center;border-bottom:1px solid var(--clr-bg2);font-weight:600">${selfScores[i] || 0}</td></tr>`;
+  });
+  html += '</tbody></table></details>';
+  document.getElementById('evalConfirmContent').innerHTML = html;
+}
+
+async function submitSelfEval() {
+  const evalType = getEvalType(SESSION.jobType);
+  const unset = selfScores.filter(s => !s).length;
+  if (unset > 0) { toast(unset + '項目が未入力です', 'error'); evalStep(2); return; }
+  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const r = await api({
+    action: 'saveSelfEval', mode: 'submitEval',
+    year, staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden, evalType,
+    goalH1: currentRecord ? currentRecord.goalH1 : '',
+    goalH2: document.getElementById('goalH2Input').value.trim(),
+    reflectH1: document.getElementById('reflectH1Input').value.trim(),
+    selfScores
+  });
+  if (r.ok) { toast(r.msg, 'success'); showSection('home'); } else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  管理者評価
+// ============================================================
+function initMgrYearSel() {
+  const sel = document.getElementById('mgrYearSel');
+  sel.innerHTML = '';
+  const y = parseInt(SETTINGS['current_year'] || new Date().getFullYear());
+  for (let i = y; i >= y - 3; i--) {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = i + '年度';
+    sel.appendChild(opt);
+  }
+}
+
+async function loadEvalList() {
+  const year = document.getElementById('mgrYearSel').value;
+  const garden = document.getElementById('mgrGardenSel').value;
+  const r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
+  if (!r.ok) return;
+  const tbody = document.getElementById('evalListBody');
+  const list = garden ? r.list.filter(x => x.garden === garden) : r.list;
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">データがありません</td></tr>'; return; }
+  tbody.innerHTML = list.map(e => `
+    <tr>
+      <td>${escHtml(e.name)}</td>
+      <td><span style="font-size:.8rem">${escHtml(e.jobType)}</span></td>
+      <td><span style="font-size:.8rem">${escHtml(e.garden)}</span></td>
+      <td style="font-size:.78rem">${e.evalSubmitDate || '-'}</td>
+      <td style="text-align:center;font-weight:600">${e.selfTotal || 0}</td>
+      <td style="text-align:center">${e.selfRank ? '<span class="rank-badge rank-' + e.selfRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.selfRank + '</span>' : '-'}</td>
+      <td style="text-align:center;font-weight:600">${e.gardenTotal || '-'}</td>
+      <td style="text-align:center">${e.gardenRank ? '<span class="rank-badge rank-' + e.gardenRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.gardenRank + '</span>' : '-'}</td>
+      <td style="text-align:center;font-weight:600">${e.bonus > 0 ? e.bonus + '点' : '-'}</td>
+      <td><span class="badge ${statusBadge(e.status)}">${e.status}</span></td>
+      <td><button class="btn btn-outline btn-sm" onclick="openMgrModal('${e.recordId}')">評価入力</button></td>
+    </tr>
+  `).join('');
+}
+
+function statusBadge(s) {
+  if (s === '管理者評価済') return 'badge-success';
+  if (s === '自己評価提出済') return 'badge-info';
+  if (s === '上半期目標入力済') return 'badge-warning';
+  return 'badge-muted';
+}
+
+let mgrScores = [];
+let mgrEvalType = '';
+
+async function openMgrModal(recordId) {
+  const year = document.getElementById('mgrYearSel').value;
+  // レコードを一覧から見つける
+  const r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
+  if (!r.ok) return;
+  mgrEditRecord = r.list.find(x => x.recordId === recordId);
+  if (!mgrEditRecord) return;
+
+  // 詳細取得
+  const dr = await api({ action: 'getSelfEval', year, staffId: mgrEditRecord.staffId });
+  const detail = dr.ok ? dr.data : null;
+
+  mgrEvalType = getEvalType(mgrEditRecord.jobType);
+  const items = EVAL_ITEMS[mgrEvalType];
+  mgrScores = items.map((_, i) => (detail && detail.gardenScores[i]) || 0);
+
+  document.getElementById('mgrEvalModalTitle').textContent = mgrEditRecord.name + '（' + mgrEditRecord.jobType + '）の評価';
+
+  const selfScoresDisplay = detail && detail.selfScores.length > 0 ? detail.selfScores : [];
+  let html = `
+    <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.85rem;">
+      <strong>上半期目標：</strong>${escHtml(mgrEditRecord.goalH1 || '未記入')}<br>
+      ${detail && detail.reflectH1 ? '<strong>振り返り：</strong>' + escHtml(detail.reflectH1) : ''}
+    </div>
+    <div class="table-wrap">
+    <table class="score-table">
+      <thead><tr><th>カテゴリ</th><th>評価項目</th><th style="min-width:80px;text-align:center">自己評価</th><th style="min-width:220px">園評価</th></tr></thead>
+      <tbody id="mgrScoreBody"></tbody>
+    </table></div>
+    <div style="margin-top:12px;text-align:right;font-size:.9rem;font-weight:600">
+      園評価合計: <span id="mgrTotal" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点
+    </div>
+    <div style="margin-top:16px;">
+      <label class="flabel">評価コメント</label>
+      <textarea class="ftextarea" id="mgrComment" rows="3" placeholder="評価コメントを入力してください">${escHtml(detail && detail.managerComment || '')}</textarea>
+    </div>
+  `;
+  document.getElementById('mgrEvalModalBody').innerHTML = html;
+  renderScoreTable(items, mgrScores, 'mgr');
+  // 自己評価点を列に反映
+  items.forEach((item, i) => {
+    const cells = document.querySelectorAll('#mgrScoreBody tr:not(.score-cat-row)');
+    // 自己評価列を表示
+  });
+  updateMgrTotal();
+  // 自己評価点を td に注入
+  const rows = document.querySelectorAll('#mgrScoreBody tr:not(.score-cat-row)');
+  let dataIdx = 0;
+  rows.forEach(row => {
+    const td = row.cells[2];
+    if (td) {
+      td.style.textAlign = 'center';
+      td.style.fontWeight = '600';
+      td.textContent = selfScoresDisplay[dataIdx] || '-';
+      dataIdx++;
+    }
+  });
+
+  document.getElementById('mgrEvalModal').classList.add('open');
+}
+
+function updateMgrTotal() {
+  const total = mgrScores.reduce((a, b) => a + b, 0);
+  const el = document.getElementById('mgrTotal');
+  if (el) el.textContent = total;
+}
+
+function closeMgrModal() { document.getElementById('mgrEvalModal').classList.remove('open'); }
+
+async function saveMgrEval() {
+  const unset = mgrScores.filter(s => !s).length;
+  if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
+  const comment = document.getElementById('mgrComment').value.trim();
+  const r = await api({
+    action: 'saveManagerEval',
+    recordId: mgrEditRecord.recordId,
+    gardenScores: mgrScores, managerComment: comment
+  });
+  if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
+  else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  職員マスタ
+// ============================================================
+async function loadStaffList() {
+  const garden = document.getElementById('staffGardenFilter').value;
+  const statusFilter = document.getElementById('staffStatusFilter').value;
+  const r = await api({ action: 'getStaffList', role: SESSION.role, garden: SESSION.garden });
+  if (!r.ok) return;
+  let list = r.list;
+  if (garden) list = list.filter(s => s.garden === garden);
+  if (statusFilter) list = list.filter(s => s.status === statusFilter);
+
+  const tbody = document.getElementById('staffListBody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">職員がいません</td></tr>'; return; }
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td style="font-size:.8rem;font-weight:600">${escHtml(s.staffId)}</td>
+      <td style="font-weight:500">${escHtml(s.name)}</td>
+      <td><span style="font-size:.8rem">${escHtml(s.jobType)}</span></td>
+      <td><span style="font-size:.8rem">${escHtml(s.garden)}</span></td>
+      <td><span class="badge ${s.employment === '正規' ? 'badge-info' : 'badge-muted'}">${escHtml(s.employment)}</span></td>
+      <td style="text-align:center">${s.age || '-'}</td>
+      <td style="font-size:.8rem">${escHtml(calcHireYears(s.hireDate))}</td>
+      <td style="font-size:.8rem">${escHtml(s.totalExp)}</td>
+      <td><span style="font-size:.78rem;background:var(--clr-bg2);padding:2px 8px;border-radius:10px">${escHtml(s.role)}</span></td>
+      <td><span class="badge ${s.status === '在籍' ? 'badge-success' : 'badge-danger'}">${escHtml(s.status)}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openStaffModal('${escHtml(s.staffId)}')">編集</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function calcHireYears(hireDate) {
+  if (!hireDate) return '-';
+  try {
+    const h = new Date(hireDate); const n = new Date();
+    let y = n.getFullYear() - h.getFullYear();
+    let m = n.getMonth() - h.getMonth();
+    if (m < 0) { y--; m += 12; }
+    return y + '年' + m + 'ヶ月';
+  } catch(e) { return '-'; }
+}
+
+async function openStaffModal(staffId = null) {
+  editingStaffId = staffId;
+  document.getElementById('staffModalTitle').textContent = staffId ? '職員情報 編集' : '職員 新規登録';
+  const fields = ['id','name','birth','job','emp','garden','hire','otherY','otherM','loginId','pw','role','status'];
+  fields.forEach(f => { const el = document.getElementById('fm_' + f); if (el) el.value = ''; });
+  document.getElementById('fm_otherY').value = 0;
+  document.getElementById('fm_otherM').value = 0;
+  document.getElementById('fm_emp').value = '正規';
+  document.getElementById('fm_garden').value = SESSION.garden;
+  document.getElementById('fm_role').value = 'staff';
+  document.getElementById('fm_status').value = '在籍';
+
+  if (staffId) {
+    const r = await api({ action: 'getStaffList', role: SESSION.role, garden: '' });
+    const staff = r.list && r.list.find(s => s.staffId === staffId);
+    if (staff) {
+      document.getElementById('fm_id').value = staff.staffId;
+      document.getElementById('fm_name').value = staff.name;
+      document.getElementById('fm_birth').value = staff.birthdate;
+      document.getElementById('fm_job').value = staff.jobType;
+      document.getElementById('fm_emp').value = staff.employment;
+      document.getElementById('fm_garden').value = staff.garden;
+      document.getElementById('fm_hire').value = staff.hireDate;
+      document.getElementById('fm_otherY').value = staff.otherYears || 0;
+      document.getElementById('fm_otherM').value = staff.otherMonths || 0;
+      document.getElementById('fm_loginId').value = staff.loginId;
+      document.getElementById('fm_role').value = staff.role;
+      document.getElementById('fm_status').value = staff.status;
+    }
+  }
+  document.getElementById('staffModal').classList.add('open');
+}
+
+function closeStaffModal() { document.getElementById('staffModal').classList.remove('open'); }
+
+async function saveStaff() {
+  const id = document.getElementById('fm_id').value.trim();
+  const name = document.getElementById('fm_name').value.trim();
+  const job = document.getElementById('fm_job').value;
+  const loginId = document.getElementById('fm_loginId').value.trim();
+  const pw = document.getElementById('fm_pw').value.trim();
+
+  if (!id || !name || !job || !loginId) { toast('必須項目を入力してください', 'error'); return; }
+  if (!editingStaffId && !pw) { toast('新規登録時はパスワードが必要です', 'error'); return; }
+
+  const r = await api({
+    action: 'saveStaff', staffId: id, name,
+    birthdate: document.getElementById('fm_birth').value,
+    jobType: job,
+    employment: document.getElementById('fm_emp').value,
+    garden: document.getElementById('fm_garden').value,
+    hireDate: document.getElementById('fm_hire').value,
+    otherYears: document.getElementById('fm_otherY').value,
+    otherMonths: document.getElementById('fm_otherM').value,
+    loginId, password: pw,
+    role: document.getElementById('fm_role').value,
+    staffStatus: document.getElementById('fm_status').value
+  });
+  if (r.ok) { toast(r.msg, 'success'); closeStaffModal(); loadStaffList(); }
+  else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  設定
+// ============================================================
+async function loadSettings() {
+  document.getElementById('setYear').value = SETTINGS['current_year'] || new Date().getFullYear();
+  document.getElementById('setMode').value = SETTINGS['eval_mode'] || 'goal';
+  document.getElementById('setAnnounce').value = SETTINGS['announce'] || '';
+  document.getElementById('setH1Deadline').value = SETTINGS['h1_deadline'] || '';
+  document.getElementById('setH2Deadline').value = SETTINGS['h2_deadline'] || '';
+}
+
+async function saveSettings() {
+  const settings = {
+    current_year: document.getElementById('setYear').value,
+    eval_mode:    document.getElementById('setMode').value,
+    announce:     document.getElementById('setAnnounce').value,
+    h1_deadline:  document.getElementById('setH1Deadline').value,
+    h2_deadline:  document.getElementById('setH2Deadline').value
+  };
+  const r = await api({ action: 'saveSettings', settings });
+  if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); } else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  ユーティリティ
+// ============================================================
+function calcRankJS(score, max) {
+  const p = (score / max) * 100;
+  if (p >= 95) return 'SS';
+  if (p >= 85) return 'S';
+  if (p >= 75) return 'A';
+  if (p >= 65) return 'B';
+  if (p >= 55) return 'C';
+  if (p >= 35) return 'D';
+  return 'E';
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showLoading(flag) {
+  document.getElementById('loadingOverlay').classList.toggle('show', flag);
+}
+
+function toast(msg, type = 'info') {
+  const box = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-item ' + type;
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// 確認モーダル
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.onclick = () => { closeConfirm(); onOk(); };
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('open'); }
+</script>
+</body>
+</html>
