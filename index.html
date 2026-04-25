@@ -6,7 +6,7 @@
 <title>はぐくみ評価</title>
 <style>
 /* ============================================================
-   はぐくみ評価  Ver.1.00  CSS
+   はぐくみ評価  Ver.1.01  CSS
    テーマ: やわらかい保育現場らしさ × 実務的クリアネス
 ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap');
@@ -556,8 +556,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </ul>
         </div>
 
-        <div class="card" id="myEvalSummary" style="display:none">
-          <div class="card-title">📊 今年度の評価サマリー</div>
+        <div class="card" id="myEvalSummary" style="display:none" class="admin-only">
+          <div class="card-title">📊 今年度の評価サマリー（管理者のみ）</div>
           <div id="myEvalSummaryContent"></div>
         </div>
       </section>
@@ -630,7 +630,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:16px;">各項目について 1〜5点 で自己評価を入力してください（5点：とても良い、1点：課題あり）</p>
             <div class="table-wrap">
               <table class="score-table" id="selfScoreTable">
-                <thead><tr><th>カテゴリ</th><th>評価項目</th><th>着眼点</th><th style="min-width:220px">自己評価</th></tr></thead>
+                <thead><tr><th style="width:200px">評価項目</th><th>着眼点</th><th style="width:260px;text-align:center">自己評価（1〜5点）</th></tr></thead>
                 <tbody id="selfScoreBody"></tbody>
               </table>
             </div>
@@ -649,7 +649,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div id="evalConfirmContent"></div>
             <div style="margin-top:20px;display:flex;justify-content:space-between;">
               <button class="btn btn-outline" onclick="evalStep(2)">← 戻る</button>
-              <button class="btn btn-primary btn-lg" onclick="submitSelfEval()">📨 自己評価を提出する</button>
+              <button class="btn btn-primary btn-lg" id="submitEvalBtn" onclick="submitSelfEval()">📨 自己評価を提出する</button>
             </div>
           </div>
         </div>
@@ -908,7 +908,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 // ============================================================
 //  設定
 // ============================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0LNNaJchcPzsEdVCCPztwGYlb1b3QKjoqOJbaatRNdY9wXAWfiO47_pIWH_HxsCpZ/exec';
+const GAS_URL = 'YOUR_GAS_WEBAPP_URL_HERE';
 
 // ============================================================
 //  評価項目定義
@@ -1124,7 +1124,7 @@ async function loadHome() {
   document.getElementById('dashType').textContent = typeNames[evalType] + '｜満点' + MAX_SCORE[evalType] + '点';
 
   // 今年度記録を取得
-  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
   currentRecord = r.ok ? r.data : null;
 
@@ -1184,7 +1184,7 @@ async function loadHome() {
 //  目標記入
 // ============================================================
 async function loadEvalGoal() {
-  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
   currentRecord = r.ok ? r.data : null;
   const st = document.getElementById('goalStatus');
@@ -1197,7 +1197,7 @@ async function loadEvalGoal() {
 async function submitGoal() {
   const goal = document.getElementById('goalH1Input').value.trim();
   if (!goal) { toast('目標を入力してください', 'error'); return; }
-  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'saveSelfEval', mode: 'goal', year, staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden, goalH1: goal });
   if (r.ok) { toast(r.msg, 'success'); loadEvalGoal(); } else toast(r.msg, 'error');
 }
@@ -1206,42 +1206,65 @@ async function submitGoal() {
 //  振り返り・自己評価
 // ============================================================
 async function loadEvalSelf() {
-  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
-  currentRecord = r.ok ? r.data : null;
+  currentRecord = (r.ok && r.data) ? r.data : null;
 
-  if (currentRecord && currentRecord.goalH1) {
-    document.getElementById('goalH1Readonly').textContent = currentRecord.goalH1;
-    document.getElementById('reflectH1Input').value = currentRecord.reflectH1 || '';
-    document.getElementById('goalH2Input').value = currentRecord.goalH2 || '';
-  }
+  // 提出済みフラグ
+  const submitted = !!(currentRecord && ['自己評価提出済','管理者評価済'].includes(currentRecord.status));
+
+  // 上半期目標（確認表示）
+  document.getElementById('goalH1Readonly').textContent =
+    (currentRecord && currentRecord.goalH1) ? currentRecord.goalH1 : '（未提出）';
+
+  // テキストエリアに既存データを反映・提出済みなら無効化
+  const reflectEl = document.getElementById('reflectH1Input');
+  const goalH2El  = document.getElementById('goalH2Input');
+  reflectEl.value    = (currentRecord && currentRecord.reflectH1) || '';
+  goalH2El.value     = (currentRecord && currentRecord.goalH2) || '';
+  reflectEl.disabled = submitted;
+  goalH2El.disabled  = submitted;
+  reflectEl.style.background = submitted ? 'var(--clr-bg2)' : '';
+  goalH2El.style.background  = submitted ? 'var(--clr-bg2)' : '';
 
   const evalType = getEvalType(SESSION.jobType);
   const items = EVAL_ITEMS[evalType];
-  selfScores = items.map((_, i) => (currentRecord && currentRecord.selfScores[i]) || 0);
-  renderScoreTable(items, selfScores, 'self');
+  selfScores = items.map((_, i) => (currentRecord && currentRecord.selfScores && currentRecord.selfScores[i]) || 0);
+
+  // 提出済みなら読み取り専用テーブル
+  renderScoreTable(items, selfScores, 'self', submitted);
   updateSelfTotal();
   evalStep(1);
+
+  // 提出済みなら提出ボタンを無効化
+  if (submitted) {
+    const submitBtn = document.getElementById('submitEvalBtn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '✅ 提出済み'; }
+    // ステップ1の「次へ」ボタンは進めるが確認画面で提出不可
+  }
 }
 
-function renderScoreTable(items, scores, mode) {
+function renderScoreTable(items, scores, mode, readOnly) {
   const tbody = document.getElementById(mode + 'ScoreBody');
   let html = ''; let lastCat = '';
   items.forEach((item, idx) => {
     if (item.cat !== lastCat) {
-      html += `<tr class="score-cat-row"><td colspan="4">◆ ${item.cat}</td></tr>`;
+      html += '<tr class="score-cat-row"><td colspan="3">◆ ' + item.cat + '</td></tr>';
       lastCat = item.cat;
     }
-    const radios = [1,2,3,4,5].map(v => `
-      <input type="radio" name="${mode}_score_${idx}" id="${mode}_sc_${idx}_${v}" value="${v}" ${scores[idx] === v ? 'checked' : ''} onchange="onScoreChange('${mode}',${idx},${v})">
-      <label for="${mode}_sc_${idx}_${v}">${v}</label>
-    `).join('');
-    html += `<tr>
-      <td style="color:var(--clr-text-s);font-size:.78rem;white-space:nowrap">${item.cat}</td>
-      <td><div class="score-item-name">${item.item}</div><div class="score-item-hint">${item.hint}</div></td>
-      <td style="display:none"></td>
-      <td><div class="score-radio-group">${radios}</div></td>
-    </tr>`;
+    const val = scores[idx] || 0;
+    let scoreCell = '';
+    if (readOnly) {
+      scoreCell = val > 0
+        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--clr-primary);color:#fff;font-weight:700">' + val + '</span>'
+        : '<span style="color:var(--clr-text-s);font-size:.82rem">未入力</span>';
+    } else {
+      const radios = [1,2,3,4,5].map(v =>
+        '<input type="radio" name="' + mode + '_score_' + idx + '" id="' + mode + '_sc_' + idx + '_' + v + '" value="' + v + '" ' + (val === v ? 'checked' : '') + ' onchange="onScoreChange(\'' + mode + '\''  + ',' + idx + ',' + v + ')"><label for="' + mode + '_sc_' + idx + '_' + v + '">' + v + '</label>'
+      ).join('');
+      scoreCell = '<div class="score-radio-group">' + radios + '</div>';
+    }
+    html += '<tr><td><div class="score-item-name">' + escHtml(item.item) + '</div></td><td><div class="score-item-hint">' + escHtml(item.hint) + '</div></td><td>' + scoreCell + '</td></tr>';
   });
   tbody.innerHTML = html;
 }
@@ -1300,7 +1323,7 @@ async function submitSelfEval() {
   const evalType = getEvalType(SESSION.jobType);
   const unset = selfScores.filter(s => !s).length;
   if (unset > 0) { toast(unset + '項目が未入力です', 'error'); evalStep(2); return; }
-  const year = SETTINGS['current_year'] || new Date().getFullYear();
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({
     action: 'saveSelfEval', mode: 'submitEval',
     year, staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden, evalType,
