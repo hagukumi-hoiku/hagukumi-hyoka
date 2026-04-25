@@ -508,6 +508,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">🌱</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>育保の杜　職員評価システム</p>
+      <p style="font-size:.72rem;color:var(--clr-border);margin-top:6px;letter-spacing:.05em">Ver.1.02</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -943,7 +944,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 // ============================================================
 //  設定
 // ============================================================
-const GAS_URL = 'AKfycbz0LNNaJchcPzsEdVCCPztwGYlb1b3QKjoqOJbaatRNdY9wXAWfiO47_pIWH_HxsCpZ';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0LNNaJchcPzsEdVCCPztwGYlb1b3QKjoqOJbaatRNdY9wXAWfiO47_pIWH_HxsCpZ/exec';
 
 // ============================================================
 //  評価項目定義
@@ -1087,6 +1088,9 @@ function doLogout() {
   document.getElementById('loginPw').value = '';
 }
 
+document.getElementById('loginId').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('loginPw').focus(); }
+});
 document.getElementById('loginPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 // ============================================================
