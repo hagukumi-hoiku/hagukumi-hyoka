@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価</title>
+<title>はぐくみ評価 Ver.1.02</title>
 <style>
 /* ============================================================
-   はぐくみ評価  Ver.1.01  CSS
+   はぐくみ評価  Ver.1.02  CSS
    テーマ: やわらかい保育現場らしさ × 実務的クリアネス
 ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap');
@@ -457,6 +457,38 @@ tr:hover td { background: rgba(74,124,111,.04); }
   .dashboard-grid { grid-template-columns: 1fr 1fr; }
   .modal.wide { max-width: 100%; }
 }
+
+/* ============================================================
+   印刷スタイル
+============================================================ */
+@media print {
+  body { background: #fff !important; font-size: 12px; }
+  .header, .sidebar, #toast, #loadingOverlay,
+  .btn, .modal-overlay, #appShell > .app-body > .sidebar { display: none !important; }
+  .main-content { padding: 0 !important; overflow: visible !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  #print-preview-area { display: block !important; }
+}
+
+/* 印刷プレビューエリア（通常時は非表示） */
+#print-preview-area { display: none; }
+
+/* 印刷プレビューモーダル */
+#printModal .modal { max-width: 860px; }
+.print-sheet { background: #fff; padding: 20px; }
+.print-sheet h2 { font-family: var(--font-disp); font-size: 1.1rem; color: var(--clr-primary-d); border-bottom: 2px solid var(--clr-primary); padding-bottom: 6px; margin-bottom: 14px; }
+.print-sheet .print-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; font-size: .85rem; }
+.print-sheet .print-meta span { color: var(--clr-text-s); }
+.print-sheet .print-meta strong { color: var(--clr-text); }
+.print-goal-box { background: #f8f8f6; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 14px; font-size: .88rem; line-height: 1.7; }
+.print-goal-box .print-label { font-size: .75rem; font-weight: 700; color: var(--clr-text-s); margin-bottom: 4px; }
+.print-score-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-bottom: 14px; }
+.print-score-table th { background: var(--clr-primary); color: #fff; padding: 7px 10px; text-align: left; }
+.print-score-table td { padding: 7px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+.print-score-table tr.cat-row td { background: #eef5f3; font-weight: 700; font-size: .78rem; color: var(--clr-primary-d); }
+.print-score-circle { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--clr-primary); color: #fff; font-weight: 700; font-size: .82rem; }
+.print-total-row { background: #eef5f3; font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -647,9 +679,12 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div class="card">
             <div class="card-title">✅ 確認・提出</div>
             <div id="evalConfirmContent"></div>
-            <div style="margin-top:20px;display:flex;justify-content:space-between;">
+            <div style="margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
               <button class="btn btn-outline" onclick="evalStep(2)">← 戻る</button>
-              <button class="btn btn-primary btn-lg" id="submitEvalBtn" onclick="submitSelfEval()">📨 自己評価を提出する</button>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-outline" onclick="openPrintPreview('self')">🖨️ 印刷プレビュー</button>
+                <button class="btn btn-primary btn-lg" id="submitEvalBtn" onclick="submitSelfEval()">📨 自己評価を提出する</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1395,6 +1430,7 @@ async function openMgrModal(recordId) {
   // 詳細取得
   const dr = await api({ action: 'getSelfEval', year, staffId: mgrEditRecord.staffId });
   const detail = dr.ok ? dr.data : null;
+  window._mgrDetail = detail || {};
 
   mgrEvalType = getEvalType(mgrEditRecord.jobType);
   const items = EVAL_ITEMS[mgrEvalType];
@@ -1635,6 +1671,104 @@ function showConfirm(title, msg, onOk) {
   document.getElementById('confirmModal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('open'); }
+
+// ============================================================
+//  印刷プレビュー
+// ============================================================
+function openPrintPreview(mode) {
+  const evalType = getEvalType(SESSION.jobType);
+  const items = EVAL_ITEMS[evalType];
+  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
+  let html = '';
+  if (mode === 'self') {
+    const reflectVal = document.getElementById('reflectH1Input') ? document.getElementById('reflectH1Input').value : (currentRecord && currentRecord.reflectH1 || '');
+    const goalH2Val = document.getElementById('goalH2Input') ? document.getElementById('goalH2Input').value : (currentRecord && currentRecord.goalH2 || '');
+    html = buildPrintSheet({ title:'自己評価シート', year, name:SESSION.name, jobType:SESSION.jobType, garden:SESSION.garden,
+      goalH1:(currentRecord&&currentRecord.goalH1)||'', reflectH1:reflectVal, goalH2:goalH2Val,
+      scores:selfScores, items, mode:'self', submitDate:currentRecord?(currentRecord.evalSubmitDate||''):'' });
+  } else if (mode === 'mgr') {
+    const mgrItems = EVAL_ITEMS[mgrEvalType];
+    const detail = window._mgrDetail || {};
+    html = buildPrintSheet({ title:'管理者評価シート', year, name:mgrEditRecord?mgrEditRecord.name:'', jobType:mgrEditRecord?mgrEditRecord.jobType:'', garden:'',
+      goalH1:detail.goalH1||'', reflectH1:detail.reflectH1||'', goalH2:detail.goalH2||'',
+      selfScores:detail.selfScores||[], gardenScores:mgrScores, items:mgrItems, mode:'mgr',
+      comment:document.getElementById('mgrComment')?document.getElementById('mgrComment').value:'' });
+  }
+  document.getElementById('printModalTitle').textContent = '🖨️ 印刷プレビュー';
+  document.getElementById('printSheetContent').innerHTML = html;
+  document.getElementById('printModal').classList.add('open');
+}
+
+function buildPrintSheet(d) {
+  const typeNames = {general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者'};
+  const evalType = getEvalType(d.jobType);
+  const maxScore = MAX_SCORE[evalType] || 75;
+  let rows = ''; let lastCat = '';
+  const scores = d.mode==='mgr' ? (d.gardenScores||[]) : (d.scores||[]);
+  const selfArr = d.mode==='mgr' ? (d.selfScores||[]) : [];
+  d.items.forEach((item, i) => {
+    if (item.cat !== lastCat) {
+      const cs = d.mode==='mgr' ? 4 : 3;
+      rows += '<tr class="cat-row"><td colspan="'+cs+'">◆ '+escHtml(item.cat)+'</td></tr>';
+      lastCat = item.cat;
+    }
+    const v = scores[i] || 0;
+    const circle = v > 0 ? '<span class="print-score-circle">'+v+'</span>' : '<span style="color:#aaa">―</span>';
+    if (d.mode==='mgr') {
+      const sv = selfArr[i] || 0;
+      rows += '<tr><td>'+escHtml(item.item)+'</td><td style="font-size:.75rem;color:#666">'+escHtml(item.hint)+'</td><td style="text-align:center;font-weight:700">'+(sv||'―')+'</td><td style="text-align:center">'+circle+'</td></tr>';
+    } else {
+      rows += '<tr><td>'+escHtml(item.item)+'</td><td style="font-size:.75rem;color:#666">'+escHtml(item.hint)+'</td><td style="text-align:center">'+circle+'</td></tr>';
+    }
+  });
+  const total = scores.reduce((a,b)=>a+b, 0);
+  const cs2 = d.mode==='mgr' ? 3 : 2;
+  rows += '<tr class="print-total-row"><td colspan="'+cs2+'" style="text-align:right;padding-right:20px">合　計</td>'+(d.mode==='mgr'?'<td></td>':'')+'<td style="text-align:center;font-size:1rem;font-weight:700">'+total+'点 / '+maxScore+'点</td></tr>';
+  const hcols = d.mode==='mgr'
+    ? '<th style="width:180px">評価項目</th><th>着眼点</th><th style="width:70px;text-align:center">自己評価</th><th style="width:80px;text-align:center">園評価</th>'
+    : '<th style="width:200px">評価項目</th><th>着眼点</th><th style="width:80px;text-align:center">自己評価</th>';
+  const commentBlock = (d.mode==='mgr' && d.comment)
+    ? '<div class="print-goal-box"><div class="print-label">評価コメント</div>'+escHtml(d.comment)+'</div>' : '';
+  return '<div style="border-bottom:1px solid #ddd;padding-bottom:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:.72rem;color:#999;margin-bottom:2px">育保の杜　はぐくみ評価システム</div><div style="font-family:var(--font-disp);font-size:1.2rem;font-weight:700;color:var(--clr-primary-d)">'+escHtml(d.title)+'</div></div><div style="text-align:right;font-size:.8rem;color:#666">'+escHtml(d.year)+'年度</div></div>'
+    + '<div class="print-meta"><span><span>氏名：</span><strong>'+escHtml(d.name)+'</strong></span><span><span>職種：</span><strong>'+escHtml(d.jobType)+'</strong></span><span><span>タイプ：</span><strong>'+escHtml(typeNames[evalType]||'')+'</strong></span>'+(d.garden?'<span><span>所属：</span><strong>'+escHtml(d.garden)+'</strong></span>':'')+(d.submitDate?'<span><span>提出日：</span><strong>'+escHtml(d.submitDate)+'</strong></span>':'')+'</div>'
+    + '<div class="print-goal-box"><div class="print-label">上半期 個人目標</div>'+escHtml(d.goalH1||'（未記入）')+'</div>'
+    + (d.reflectH1 ? '<div class="print-goal-box"><div class="print-label">上半期 振り返り</div>'+escHtml(d.reflectH1)+'</div>' : '')
+    + (d.goalH2 ? '<div class="print-goal-box"><div class="print-label">下半期 個人目標</div>'+escHtml(d.goalH2)+'</div>' : '')
+    + '<table class="print-score-table"><thead><tr>'+hcols+'</tr></thead><tbody>'+rows+'</tbody></table>'
+    + commentBlock
+    + '<div style="margin-top:20px;display:flex;gap:40px;font-size:.8rem;color:#888"><span>本人確認：_______________</span><span>管理者確認：_______________</span><span>印刷日：'+new Date().toLocaleDateString('ja-JP')+'</span></div>';
+}
+
+function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
+
+function doPrint() {
+  const c = document.getElementById('printSheetContent').innerHTML;
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>はぐくみ評価</title><style>@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');body{font-family:'Noto Sans JP',sans-serif;padding:20px;font-size:12px;color:#2c2c2c}.print-score-table{width:100%;border-collapse:collapse}.print-score-table th{background:#4a7c6f;color:#fff;padding:7px 10px;text-align:left}.print-score-table td{padding:6px 10px;border-bottom:1px solid #e0e0e0;vertical-align:top}.print-score-table tr.cat-row td{background:#eef5f3;font-weight:700;color:#2e5549}.print-score-circle{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#4a7c6f;color:#fff;font-weight:700}.print-total-row{background:#eef5f3;font-weight:700}.print-goal-box{background:#f8f8f6;border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:12px;line-height:1.7}.print-label{font-size:.72rem;font-weight:700;color:#666;margin-bottom:3px}.print-meta{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:.82rem}.print-meta span{color:#666}.print-meta strong{color:#2c2c2c}@media print{body{padding:0}}</style></head><body>'+c+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); }, 400);
+}
+
+function closePrintFromMgr() { openPrintPreview('mgr'); }
+
 </script>
+
+<!-- 印刷プレビューモーダル -->
+<div class="modal-overlay" id="printModal">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <div class="modal-title" id="printModalTitle">🖨️ 印刷プレビュー</div>
+      <button class="modal-close" onclick="closePrintModal()">✕</button>
+    </div>
+    <div class="modal-body" id="printModalBody" style="padding:0">
+      <div class="print-sheet" id="printSheetContent"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="closePrintModal()">閉じる</button>
+      <button class="btn btn-primary" onclick="doPrint()">🖨️ 印刷する</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
