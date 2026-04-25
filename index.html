@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.02</title>
+<title>はぐくみ評価 Ver.1.04</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232e5549'/><text y='.9em' font-size='75' x='12'>🌱</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232e5549'/><text y='.9em' font-size='75' x='12'>🌱</text></svg>">
 <style>
 /* ============================================================
-   はぐくみ評価  Ver.1.02  CSS
+   はぐくみ評価  Ver.1.04  CSS
    テーマ: やわらかい保育現場らしさ × 実務的クリアネス
 ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap');
@@ -508,7 +510,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">🌱</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>育保の杜　職員評価システム</p>
-      <p style="font-size:.72rem;color:var(--clr-border);margin-top:6px;letter-spacing:.05em">Ver.1.02</p>
+      <p style="font-size:.72rem;color:#bbb;margin-top:6px;letter-spacing:.08em">Ver.1.04</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -797,6 +799,37 @@ tr:hover td { background: rgba(74,124,111,.04); }
         </div>
       </section>
 
+      <!-- マイプロフィール -->
+      <section id="sec-profile" style="display:none">
+        <div class="page-title">👤 マイプロフィール</div>
+        <p class="page-sub">あなたの職員情報と資格を確認できます。資格情報の更新は管理者にご依頼ください。</p>
+        <div class="card">
+          <div class="card-title">📋 基本情報</div>
+          <div id="profileBasicContent"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎓 資格・免許</div>
+          <div id="profileQualContent"></div>
+        </div>
+      </section>
+
+      <!-- 評価履歴 -->
+      <section id="sec-history" style="display:none">
+        <div class="page-title">📊 評価履歴</div>
+        <p class="page-sub">過去5年間の評価履歴を確認できます。</p>
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between">
+            <span id="historyTitle">評価履歴</span>
+            <div id="historyStaffFilter" style="display:none;gap:8px;align-items:center">
+              <select class="fselect" id="historyStaffSel" style="width:160px" onchange="loadHistoryFiltered()">
+                <option value="">全職員</option>
+              </select>
+            </div>
+          </div>
+          <div id="historyContent"></div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -897,11 +930,96 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <option value="退職">退職</option>
           </select>
         </div>
+        <div class="fcol"><label class="flabel">担当クラス</label>
+          <input type="text" class="finput" id="fm_class" placeholder="例: もも組">
+          <p class="fhelp">正規職員のみ入力</p>
+        </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeStaffModal()">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveStaff()">💾 保存</button>
+    <!-- 資格タブ -->
+    <div id="staffQualTab" style="display:none;padding:0 24px 16px">
+      <div style="border-top:1px solid var(--clr-border);padding-top:16px">
+        <div style="font-size:.85rem;font-weight:700;color:var(--clr-primary-d);margin-bottom:14px">🎓 資格・免許</div>
+        <div class="frow">
+          <div class="fcol"><label class="flabel">保育士資格</label>
+            <select class="fselect" id="fq_hoikushi"><option value="">なし</option><option value="有">有</option></select>
+          </div>
+          <div class="fcol"><label class="flabel">登録番号</label>
+            <input type="text" class="finput" id="fq_hoikushi_no" placeholder="第○○○○号">
+          </div>
+          <div class="fcol"><label class="flabel">取得日</label>
+            <input type="date" class="finput" id="fq_hoikushi_date">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fcol"><label class="flabel">幼稚園教諭</label>
+            <select class="fselect" id="fq_yochien"><option value="">なし</option><option value="1種">1種</option><option value="2種">2種</option><option value="専修">専修</option></select>
+          </div>
+          <div class="fcol"><label class="flabel">幼稚園教諭取得日</label>
+            <input type="date" class="finput" id="fq_yochien_date">
+          </div>
+          <div class="fcol"><label class="flabel">調理師免許</label>
+            <select class="fselect" id="fq_chori"><option value="">なし</option><option value="有">有</option></select>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fcol"><label class="flabel">栄養士</label>
+            <select class="fselect" id="fq_eiyoshi"><option value="">なし</option><option value="栄養士">栄養士</option><option value="管理栄養士">管理栄養士</option></select>
+          </div>
+          <div class="fcol"><label class="flabel">社会福祉士</label>
+            <select class="fselect" id="fq_fukushi"><option value="">なし</option><option value="有">有</option></select>
+          </div>
+          <div class="fcol"><label class="flabel">調理師取得日</label>
+            <input type="date" class="finput" id="fq_chori_date">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fcol"><label class="flabel">救命救急講習</label>
+            <select class="fselect" id="fq_kyumei"><option value="">なし</option><option value="有">有</option></select>
+          </div>
+          <div class="fcol"><label class="flabel">取得日</label>
+            <input type="date" class="finput" id="fq_kyumei_date">
+          </div>
+          <div class="fcol"><label class="flabel">更新期限 ⚠️</label>
+            <input type="date" class="finput" id="fq_kyumei_exp">
+          </div>
+        </div>
+        <div style="margin:10px 0 12px;font-size:.8rem;font-weight:700;color:var(--clr-primary-d)">キャリアアップ研修 修了状況</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_mgmt"> マネジメント</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_nyuji"> 乳児保育</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_yoji"> 幼児教育</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_shogai"> 障害児保育</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_shokuiku"> 食育・アレルギー対応</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_hoken"> 保健衛生・安全管理</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="fq_ca_hogosha"> 保護者支援・子育て支援</label>
+        </div>
+        <div class="frow">
+          <div class="fcol"><label class="flabel">その他資格・免許</label>
+            <input type="text" class="finput" id="fq_other" placeholder="例: 幼保英語検定2級、普通自動車免許">
+          </div>
+        </div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn btn-primary btn-sm" onclick="saveQualifications()">💾 資格情報を保存</button>
+        </div>
+      </div>
+    </div>
+    <!-- 評価履歴タブ -->
+    <div id="staffHistoryTab" style="display:none;padding:0 24px 16px">
+      <div style="border-top:1px solid var(--clr-border);padding-top:16px" id="staffHistoryContent">
+        読み込み中...
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="tabBtnBasic" style="background:var(--clr-primary);color:#fff;border:1.5px solid var(--clr-primary)" onclick="switchStaffTab('basic')">基本情報</button>
+        <button class="btn btn-outline btn-sm" id="tabBtnQual" onclick="switchStaffTab('qual')">🎓 資格</button>
+        <button class="btn btn-outline btn-sm" id="tabBtnHistory" onclick="switchStaffTab('history')">📊 評価履歴</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeStaffModal()">閉じる</button>
+        <button class="btn btn-primary" id="staffSaveBtn" onclick="saveStaff()">💾 保存</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1088,10 +1206,12 @@ function doLogout() {
   document.getElementById('loginPw').value = '';
 }
 
-document.getElementById('loginId').addEventListener('keydown', e => {
+document.getElementById('loginId').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); document.getElementById('loginPw').focus(); }
 });
-document.getElementById('loginPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginPw').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+});
 
 // ============================================================
 //  アプリ初期化
@@ -1123,7 +1243,7 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
 }
 
-const SECTIONS = ['home','evalGoal','evalSelf','evalMgr','staff','settings'];
+const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalMgr','staff','settings'];
 
 function showSection(name) {
   SECTIONS.forEach(s => {
@@ -1135,6 +1255,8 @@ function showSection(name) {
   if (nav) nav.classList.add('active');
 
   if (name === 'home')     loadHome();
+  if (name === 'profile')  loadProfile();
+  if (name === 'history')  loadHistory();
   if (name === 'evalGoal') loadEvalGoal();
   if (name === 'evalSelf') loadEvalSelf();
   if (name === 'evalMgr')  { initMgrYearSel(); loadEvalList(); }
@@ -1578,8 +1700,11 @@ async function openStaffModal(staffId = null) {
       document.getElementById('fm_loginId').value = staff.loginId;
       document.getElementById('fm_role').value = staff.role;
       document.getElementById('fm_status').value = staff.status;
+      document.getElementById('fm_class').value = staff.className || '';
+      loadQualFields(staff.quals || {});
     }
   }
+  switchStaffTab('basic');
   document.getElementById('staffModal').classList.add('open');
 }
 
@@ -1605,8 +1730,9 @@ async function saveStaff() {
     otherYears: document.getElementById('fm_otherY').value,
     otherMonths: document.getElementById('fm_otherM').value,
     loginId, password: pw,
-    role: document.getElementById('fm_role').value,
-    staffStatus: document.getElementById('fm_status').value
+    role:        document.getElementById('fm_role').value,
+    staffStatus: document.getElementById('fm_status').value,
+    className:   document.getElementById('fm_class').value || ''
   });
   if (r.ok) { toast(r.msg, 'success'); closeStaffModal(); loadStaffList(); }
   else toast(r.msg, 'error');
@@ -1667,6 +1793,272 @@ function toast(msg, type = 'info') {
 }
 
 // 確認モーダル
+
+// ============================================================
+//  タブ切り替え（職員マスタモーダル）
+// ============================================================
+function switchStaffTab(tab) {
+  var basicBody = document.querySelector('#staffModal .modal-body');
+  var qualTab   = document.getElementById('staffQualTab');
+  var histTab   = document.getElementById('staffHistoryTab');
+  var btnBasic  = document.getElementById('tabBtnBasic');
+  var btnQual   = document.getElementById('tabBtnQual');
+  var btnHist   = document.getElementById('tabBtnHistory');
+  var saveBtn   = document.getElementById('staffSaveBtn');
+
+  basicBody.style.display = tab === 'basic' ? '' : 'none';
+  qualTab.style.display   = tab === 'qual'  ? '' : 'none';
+  histTab.style.display   = tab === 'history' ? '' : 'none';
+  saveBtn.style.display   = tab === 'basic' ? '' : 'none';
+
+  [btnBasic, btnQual, btnHist].forEach(function(b) {
+    if (!b) return;
+    b.style.background   = '';
+    b.style.color        = '';
+    b.className = 'btn btn-outline btn-sm';
+  });
+  var active = tab === 'basic' ? btnBasic : tab === 'qual' ? btnQual : btnHist;
+  if (active) { active.style.background = 'var(--clr-primary)'; active.style.color = '#fff'; active.className = 'btn btn-sm'; }
+
+  if (tab === 'history' && editingStaffId) loadStaffHistoryTab(editingStaffId);
+}
+
+// ============================================================
+//  資格フィールド読み込み・収集
+// ============================================================
+function loadQualFields(q) {
+  if (!q) q = {};
+  var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+  var chk = function(id, val) { var el = document.getElementById(id); if (el) el.checked = !!val; };
+  set('fq_hoikushi',       q.hoikushi || '');
+  set('fq_hoikushi_no',    q.hoikushi_no || '');
+  set('fq_hoikushi_date',  q.hoikushi_date || '');
+  set('fq_yochien',        q.yochien || '');
+  set('fq_yochien_date',   q.yochien_date || '');
+  set('fq_chori',          q.chori || '');
+  set('fq_chori_date',     q.chori_date || '');
+  set('fq_eiyoshi',        q.eiyoshi || '');
+  set('fq_fukushi',        q.fukushi || '');
+  set('fq_kyumei',         q.kyumei || '');
+  set('fq_kyumei_date',    q.kyumei_date || '');
+  set('fq_kyumei_exp',     q.kyumei_exp || '');
+  set('fq_other',          q.other || '');
+  chk('fq_ca_mgmt',    q.ca_mgmt);
+  chk('fq_ca_nyuji',   q.ca_nyuji);
+  chk('fq_ca_yoji',    q.ca_yoji);
+  chk('fq_ca_shogai',  q.ca_shogai);
+  chk('fq_ca_shokuiku',q.ca_shokuiku);
+  chk('fq_ca_hoken',   q.ca_hoken);
+  chk('fq_ca_hogosha', q.ca_hogosha);
+}
+
+function collectQualFields() {
+  var get = function(id) { var el = document.getElementById(id); return el ? el.value : ''; };
+  var chk = function(id) { var el = document.getElementById(id); return el ? el.checked : false; };
+  return {
+    hoikushi:      get('fq_hoikushi'),
+    hoikushi_no:   get('fq_hoikushi_no'),
+    hoikushi_date: get('fq_hoikushi_date'),
+    yochien:       get('fq_yochien'),
+    yochien_date:  get('fq_yochien_date'),
+    chori:         get('fq_chori'),
+    chori_date:    get('fq_chori_date'),
+    eiyoshi:       get('fq_eiyoshi'),
+    fukushi:       get('fq_fukushi'),
+    kyumei:        get('fq_kyumei'),
+    kyumei_date:   get('fq_kyumei_date'),
+    kyumei_exp:    get('fq_kyumei_exp'),
+    other:         get('fq_other'),
+    ca_mgmt:       chk('fq_ca_mgmt'),
+    ca_nyuji:      chk('fq_ca_nyuji'),
+    ca_yoji:       chk('fq_ca_yoji'),
+    ca_shogai:     chk('fq_ca_shogai'),
+    ca_shokuiku:   chk('fq_ca_shokuiku'),
+    ca_hoken:      chk('fq_ca_hoken'),
+    ca_hogosha:    chk('fq_ca_hogosha')
+  };
+}
+
+async function saveQualifications() {
+  if (!editingStaffId) { toast('職員が選択されていません', 'error'); return; }
+  var r = await api({ action:'saveQualifications', staffId: editingStaffId, quals: collectQualFields() });
+  if (r.ok) toast(r.msg, 'success');
+  else toast(r.msg, 'error');
+}
+
+// ============================================================
+//  職員マスタの評価履歴タブ
+// ============================================================
+async function loadStaffHistoryTab(staffId) {
+  var el = document.getElementById('staffHistoryContent');
+  el.innerHTML = '<p style="color:var(--clr-text-s);font-size:.85rem">読み込み中...</p>';
+  var r = await api({ action:'getEvalHistory', targetStaffId: staffId, role: SESSION.role });
+  if (!r.ok || !r.list.length) {
+    el.innerHTML = '<p style="color:var(--clr-text-s);font-size:.85rem;padding:10px">評価履歴がありません</p>';
+    return;
+  }
+  el.innerHTML = buildHistoryTable(r.list, true);
+}
+
+// ============================================================
+//  マイプロフィール
+// ============================================================
+async function loadProfile() {
+  var r = await api({ action:'getStaffDetail', staffId: SESSION.staffId });
+  if (!r.ok) { toast('プロフィール取得失敗', 'error'); return; }
+  var s = r.data;
+  var typeNames = {general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者'};
+  var evalType  = getEvalType(s.jobType);
+
+  document.getElementById('profileBasicContent').innerHTML = [
+    '<div style="display:flex;gap:20px;flex-wrap:wrap">',
+    row('氏名', s.name),
+    row('職種', s.jobType),
+    row('雇用区分', s.employment),
+    row('所属園', s.garden),
+    s.className ? row('担当クラス', s.className) : '',
+    row('評価シートタイプ', typeNames[evalType] || ''),
+    row('入職日（当園）', s.hireDate || '-'),
+    row('当園在籍', s.hireExp || '-'),
+    row('累計経験', s.totalExp || '-'),
+    row('年齢', s.age ? s.age + '歳' : '-'),
+    '</div>'
+  ].join('');
+
+  // 資格表示
+  var q = s.quals || {};
+  var qualItems = [];
+  if (q.hoikushi)   qualItems.push({ label:'保育士資格',   val: q.hoikushi + (q.hoikushi_no ? '　' + q.hoikushi_no : '') });
+  if (q.yochien)    qualItems.push({ label:'幼稚園教諭',   val: q.yochien });
+  if (q.chori)      qualItems.push({ label:'調理師免許',   val: q.chori });
+  if (q.eiyoshi)    qualItems.push({ label:'栄養士',       val: q.eiyoshi });
+  if (q.fukushi)    qualItems.push({ label:'社会福祉士',   val: q.fukushi });
+  if (q.kyumei) {
+    var exp = q.kyumei_exp ? '　更新期限: ' + q.kyumei_exp : '';
+    var warn = '';
+    if (q.kyumei_exp) {
+      var diff = (new Date(q.kyumei_exp) - new Date()) / 86400000;
+      if (diff < 0)   warn = ' <span class="badge badge-danger">期限切れ</span>';
+      else if (diff < 90) warn = ' <span class="badge badge-warning">期限まで' + Math.ceil(diff) + '日</span>';
+    }
+    qualItems.push({ label:'救命救急講習', val: q.kyumei + exp + warn });
+  }
+  if (q.other) qualItems.push({ label:'その他', val: q.other });
+
+  var caList = [];
+  if (q.ca_mgmt)    caList.push('マネジメント');
+  if (q.ca_nyuji)   caList.push('乳児保育');
+  if (q.ca_yoji)    caList.push('幼児教育');
+  if (q.ca_shogai)  caList.push('障害児保育');
+  if (q.ca_shokuiku)caList.push('食育・アレルギー対応');
+  if (q.ca_hoken)   caList.push('保健衛生・安全管理');
+  if (q.ca_hogosha) caList.push('保護者支援・子育て支援');
+  if (caList.length) qualItems.push({ label:'キャリアアップ研修', val: caList.join('　/　') });
+
+  if (!qualItems.length) {
+    document.getElementById('profileQualContent').innerHTML =
+      '<p style="color:var(--clr-text-s);font-size:.85rem">資格情報が登録されていません。管理者にご確認ください。</p>';
+  } else {
+    document.getElementById('profileQualContent').innerHTML =
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+      qualItems.map(function(qi) { return row(qi.label, qi.val); }).join('') +
+      '</div>';
+  }
+}
+
+function row(label, val) {
+  return '<div style="min-width:160px;margin-bottom:12px"><div class="flabel">' + escHtml(label) + '</div><div style="font-size:.9rem;font-weight:500">' + val + '</div></div>';
+}
+
+// ============================================================
+//  評価履歴
+// ============================================================
+async function loadHistory() {
+  var isAdmin = ['admin','encho','syunin'].includes(SESSION.role);
+  document.getElementById('historyTitle').textContent = isAdmin ? '全職員 評価履歴（過去5年）' : '自分の評価履歴（過去5年）';
+  var filterEl = document.getElementById('historyStaffFilter');
+
+  if (isAdmin) {
+    filterEl.style.display = 'flex';
+    // 職員リストを取得してセレクト構築
+    var sr = await api({ action:'getStaffList', role: SESSION.role, garden: SESSION.garden });
+    var sel = document.getElementById('historyStaffSel');
+    sel.innerHTML = '<option value="">全職員</option>';
+    if (sr.ok) {
+      sr.list.forEach(function(s) {
+        if (s.status !== '退職') {
+          var o = document.createElement('option');
+          o.value = s.staffId; o.textContent = s.name + '（' + s.jobType + '）';
+          sel.appendChild(o);
+        }
+      });
+    }
+  } else {
+    filterEl.style.display = 'none';
+  }
+
+  var r = await api({
+    action: 'getEvalHistory',
+    targetStaffId: isAdmin ? '' : SESSION.staffId,
+    role: SESSION.role
+  });
+  if (!r.ok) { toast('履歴取得失敗', 'error'); return; }
+  document.getElementById('historyContent').innerHTML =
+    r.list.length ? buildHistoryTable(r.list, isAdmin) :
+    '<p style="color:var(--clr-text-s);font-size:.85rem;padding:20px;text-align:center">評価履歴がありません</p>';
+}
+
+async function loadHistoryFiltered() {
+  var staffId = document.getElementById('historyStaffSel').value;
+  var r = await api({
+    action: 'getEvalHistory',
+    targetStaffId: staffId || '',
+    role: SESSION.role
+  });
+  if (!r.ok) return;
+  document.getElementById('historyContent').innerHTML =
+    r.list.length ? buildHistoryTable(r.list, true) :
+    '<p style="color:var(--clr-text-s);font-size:.85rem;padding:20px;text-align:center">評価履歴がありません</p>';
+}
+
+// 履歴テーブル生成
+function buildHistoryTable(list, isAdmin) {
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.83rem">';
+  html += '<thead><tr>';
+  html += '<th style="background:var(--clr-bg2);padding:8px 12px;white-space:nowrap">年度</th>';
+  if (isAdmin) html += '<th style="background:var(--clr-bg2);padding:8px 12px">氏名</th>';
+  html += '<th style="background:var(--clr-bg2);padding:8px 12px">上半期目標</th>';
+  html += '<th style="background:var(--clr-bg2);padding:8px 12px">上半期振り返り</th>';
+  if (isAdmin) {
+    html += '<th style="background:var(--clr-bg2);padding:8px 12px;text-align:center">自己合計</th>';
+    html += '<th style="background:var(--clr-bg2);padding:8px 12px;text-align:center">園評価合計</th>';
+    html += '<th style="background:var(--clr-bg2);padding:8px 12px;text-align:center">ランク</th>';
+    html += '<th style="background:var(--clr-bg2);padding:8px 12px;text-align:center">賞与加算A</th>';
+  }
+  html += '<th style="background:var(--clr-bg2);padding:8px 12px;text-align:center">状況</th>';
+  html += '</tr></thead><tbody>';
+
+  list.forEach(function(e) {
+    html += '<tr>';
+    html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);white-space:nowrap;font-weight:600">' + escHtml(e.year) + '年度</td>';
+    if (isAdmin) html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2)">' + escHtml(e.name) + '</td>';
+    html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);max-width:200px"><div style="white-space:pre-wrap;font-size:.8rem">' + escHtml((e.goalH1 || '').substring(0,60) + (e.goalH1 && e.goalH1.length > 60 ? '...' : '')) + '</div></td>';
+    html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);max-width:200px"><div style="white-space:pre-wrap;font-size:.8rem">' + escHtml((e.reflectH1 || '').substring(0,60) + (e.reflectH1 && e.reflectH1.length > 60 ? '...' : '')) + '</div></td>';
+    if (isAdmin) {
+      html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);text-align:center;font-weight:600">' + (e.selfTotal || '-') + '</td>';
+      html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);text-align:center;font-weight:600">' + (e.gardenTotal || '-') + '</td>';
+      var rank = e.gardenRank || '';
+      html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);text-align:center">' + (rank ? '<span class="rank-badge rank-' + rank + '" style="width:28px;height:28px;font-size:.78rem">' + rank + '</span>' : '-') + '</td>';
+      html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);text-align:center;font-weight:600">' + (e.bonus > 0 ? e.bonus + '点' : '-') + '</td>';
+    }
+    html += '<td style="padding:8px 12px;border-bottom:1px solid var(--clr-bg2);text-align:center"><span class="badge ' + statusBadge(e.status) + '">' + escHtml(e.status) + '</span></td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
 function showConfirm(title, msg, onOk) {
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMsg').textContent = msg;
@@ -1746,11 +2138,26 @@ function buildPrintSheet(d) {
 function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
 
 function doPrint() {
-  const c = document.getElementById('printSheetContent').innerHTML;
-  const w = window.open('','_blank','width=900,height=700');
-  w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>はぐくみ評価</title><style>@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');body{font-family:'Noto Sans JP',sans-serif;padding:20px;font-size:12px;color:#2c2c2c}.print-score-table{width:100%;border-collapse:collapse}.print-score-table th{background:#4a7c6f;color:#fff;padding:7px 10px;text-align:left}.print-score-table td{padding:6px 10px;border-bottom:1px solid #e0e0e0;vertical-align:top}.print-score-table tr.cat-row td{background:#eef5f3;font-weight:700;color:#2e5549}.print-score-circle{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#4a7c6f;color:#fff;font-weight:700}.print-total-row{background:#eef5f3;font-weight:700}.print-goal-box{background:#f8f8f6;border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:12px;line-height:1.7}.print-label{font-size:.72rem;font-weight:700;color:#666;margin-bottom:3px}.print-meta{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:.82rem}.print-meta span{color:#666}.print-meta strong{color:#2c2c2c}@media print{body{padding:0}}</style></head><body>'+c+'</body></html>');
+  var c = document.getElementById('printSheetContent').innerHTML;
+  var w = window.open('', '_blank', 'width=900,height=700');
+  var css = [
+    'body{font-family:sans-serif;padding:20px;font-size:12px;color:#2c2c2c}',
+    '.print-score-table{width:100%;border-collapse:collapse}',
+    '.print-score-table th{background:#4a7c6f;color:#fff;padding:7px 10px;text-align:left}',
+    '.print-score-table td{padding:6px 10px;border-bottom:1px solid #e0e0e0;vertical-align:top}',
+    '.print-score-table tr.cat-row td{background:#eef5f3;font-weight:700;color:#2e5549}',
+    '.print-score-circle{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#4a7c6f;color:#fff;font-weight:700}',
+    '.print-total-row{background:#eef5f3;font-weight:700}',
+    '.print-goal-box{background:#f8f8f6;border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:12px;line-height:1.7}',
+    '.print-label{font-size:.72rem;font-weight:700;color:#666;margin-bottom:3px}',
+    '.print-meta{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:.82rem}',
+    '.print-meta strong{color:#2c2c2c}',
+    '@media print{body{padding:0}}'
+  ].join('');
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>はぐくみ評価 印刷</title><style>' + css + '</style></head><body>' + c + '</body></html>');
   w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 400);
+  setTimeout(function(){ w.focus(); w.print(); }, 500);
 }
 
 function closePrintFromMgr() { openPrintPreview('mgr'); }
