@@ -11,6 +11,9 @@
 <meta name="apple-mobile-web-app-title" content="はぐくみ評価">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2e5549">
+<meta name="application-name" content="はぐくみ評価">
+<meta name="description" content="育保の杜 職員評価システム">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;はぐくみ評価&quot;,&quot;short_name&quot;:&quot;はぐくみ評価&quot;,&quot;description&quot;:&quot;育保の杜 職員評価システム&quot;,&quot;start_url&quot;:&quot;./&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#2e5549&quot;,&quot;theme_color&quot;:&quot;#2e5549&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232e5549'/%3E%3Ctext y='.9em' font-size='75' x='12'%3E🌱%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <style>
 /* ============================================================
    はぐくみ評価  Ver.1.06  CSS
@@ -575,16 +578,19 @@ tr:hover td { background: rgba(74,124,111,.04); }
     <nav class="sidebar" id="mainSidebar">
       <ul class="sidebar-nav" id="sidebarNav">
         <li class="active" id="nav-home"><button onclick="showSection('home')">🏠 ホーム</button></li>
+        <li id="nav-profile" style="display:none"><button onclick="showSection('profile')">👤 マイプロフィール</button></li>
         <div class="sidebar-divider"></div>
-        <div class="sidebar-section">自己評価</div>
-        <li id="nav-eval-goal"><button onclick="showSection('evalGoal')">📝 目標記入</button></li>
-        <li id="nav-eval-self"><button onclick="showSection('evalSelf')">✏️ 振り返り・自己評価</button></li>
-        <!-- 管理者以上に表示 -->
-        <li id="nav-eval-mgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 管理者評価</button></li>
+        <div class="sidebar-section" id="navSec-self">自己評価</div>
+        <li id="nav-evalGoal" style="display:none"><button onclick="showSection('evalGoal')">📝 上半期目標記入</button></li>
+        <li id="nav-evalSelf" style="display:none"><button onclick="showSection('evalSelf')">✏️ 振り返り・自己評価</button></li>
+        <div class="sidebar-divider" id="navDiv-mgr" style="display:none"></div>
+        <div class="sidebar-section" id="navSec-mgr" style="display:none">管理者評価</div>
+        <li id="nav-evalMgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 職員の評価入力</button></li>
+        <li id="nav-history" style="display:none"><button onclick="showSection('history')">📊 評価履歴</button></li>
         <li id="nav-bonus" style="display:none"><button onclick="showSection('bonus')">💴 賞与評価</button></li>
-        <div class="sidebar-divider"></div>
+        <div class="sidebar-divider admin-only" style="display:none"></div>
         <div class="sidebar-section admin-only" style="display:none">管理</div>
-        <li id="nav-staff" class="admin-only" style="display:none"><button onclick="showSection('staff')">👤 職員マスタ</button></li>
+        <li id="nav-staff" class="admin-only" style="display:none"><button onclick="showSection('staff')">👥 職員マスタ</button></li>
         <li id="nav-settings" class="admin-only" style="display:none"><button onclick="showSection('settings')">⚙️ 設定</button></li>
       </ul>
     </nav>
@@ -600,18 +606,21 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div class="page-title">🏠 ホーム</div>
         <p class="page-sub">ようこそ。現在の評価状況と本日のタスクを確認できます。</p>
 
-        <div class="dashboard-grid" id="dashboardGrid">
-          <div class="stat-card">
-            <div class="label">所属</div>
-            <div class="value" id="dashGarden" style="font-size:1rem;padding-top:6px">-</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">在籍年数（累計経験）</div>
-            <div class="value" id="dashExp" style="font-size:1.1rem;padding-top:6px">-</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">評価シートタイプ</div>
-            <div class="value" id="dashType" style="font-size:.95rem;padding-top:6px">-</div>
+        <!-- プロフィールカード -->
+        <div class="card" style="padding:20px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div style="width:50px;height:50px;border-radius:50%;background:var(--clr-primary);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌱</div>
+            <div style="flex:1;min-width:180px">
+              <div id="homeProfileName" style="font-family:var(--font-disp);font-size:1.15rem;font-weight:700;color:var(--clr-primary-d)">-</div>
+              <div id="homeProfileSub" style="font-size:.82rem;color:var(--clr-text-s);margin-top:3px">-</div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <div><div class="flabel">所属園</div><div style="font-size:.9rem;font-weight:500" id="dashGarden">-</div></div>
+              <div><div class="flabel">入職日</div><div style="font-size:.9rem;font-weight:500" id="homeHireDate">-</div></div>
+              <div><div class="flabel">当園在籍</div><div style="font-size:.9rem;font-weight:500" id="homeHireExp">-</div></div>
+              <div id="homeClassWrap" style="display:none"><div class="flabel">担当クラス</div><div style="font-size:.9rem;font-weight:500" id="homeClass">-</div></div>
+              <div><div class="flabel">対象年度</div><div style="font-size:.9rem;font-weight:500" id="dashYear">-</div></div>
+            </div>
           </div>
         </div>
 
@@ -934,12 +943,13 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <option value="保育補助">保育補助</option>
             <option value="保育士">保育士</option>
             <option value="調理員">調理員</option>
+            <option value="栄養士">栄養士</option>
             <option value="乳児リーダー">乳児リーダー</option>
             <option value="幼児リーダー">幼児リーダー</option>
             <option value="統括リーダー">統括リーダー</option>
             <option value="主任">主任</option>
             <option value="園長">園長</option>
-          </select>
+            <option value="理事長">理事長</option></select>
         </div>
         <div class="fcol">
           <label class="flabel">雇用区分<span class="req">*</span></label>
@@ -1216,10 +1226,11 @@ const EVAL_ITEMS = {
 const MAX_SCORE = { general_hoiku: 75, cooking: 75, yakushoku: 90, kanrisha: 90 };
 
 function getEvalType(jobType) {
-  if (jobType === '調理員') return 'cooking';
-  if (['園長'].includes(jobType)) return 'kanrisha';
+  if (jobType === '理事長') return 'none';
+  if (['調理員','栄養士'].includes(jobType)) return 'cooking';
+  if (jobType === '園長') return 'kanrisha';
   if (['乳児リーダー','幼児リーダー','統括リーダー','主任'].includes(jobType)) return 'yakushoku';
-  return 'general_hoiku';
+  return 'general_hoiku'; // 保育士・保育補助
 }
 
 // ============================================================
@@ -1306,31 +1317,33 @@ async function initApp() {
   window.PERM = { isAdmin, isEncho, isSyunin, isStaff, isPartTime,
                   canEval, canViewList, canManage, canBonus };
 
-  // メニュー制御
-  document.querySelectorAll('.admin-only').forEach(function(el){
-    el.style.display = canManage ? '' : 'none';
-  });
+  // ===== メニュー制御 =====
   var _nav = function(id, show) {
     var el = document.getElementById(id);
     if (el) el.style.display = show ? '' : 'none';
   };
-  _nav('nav-evalMgr',  canEval);
-  _nav('nav-bonus',    canBonus);
-  _nav('nav-history',  canViewList);
+
+  // admin-only クラス（職員マスタ・設定・区切り線）
+  document.querySelectorAll('.admin-only').forEach(function(el){
+    el.style.display = canManage ? '' : 'none';
+  });
+
+  // 自己評価メニュー: 正規全員 + admin以外
+  var canSelfEval = !isPartTime && !isAdmin;
   _nav('nav-profile',  !isPartTime);
-  _nav('nav-evalGoal', !isPartTime);
-  _nav('nav-evalSelf', !isPartTime);
-  _nav('nav-checksheet', true); // 全員（後で追加）
+  _nav('nav-evalGoal', canSelfEval);
+  _nav('nav-evalSelf', canSelfEval);
+
+  // 管理者評価メニュー: syunin/encho/admin
+  _nav('navDiv-mgr',   canEval);
+  _nav('navSec-mgr',   canEval);
+  _nav('nav-evalMgr',  canEval);
+  _nav('nav-history',  canViewList);
+  _nav('nav-bonus',    canBonus);
 
   // 設定取得
-  const sr = await api({ action: 'getSettings' });
+  var sr = await api({ action: 'getSettings' });
   if (sr.ok) SETTINGS = sr.settings;
-
-  // 非常勤はチェックシート画面へ（後で実装）
-  if (isPartTime && isStaff) {
-    showSection('home');
-    return;
-  }
 
   showSection('home');
 }
@@ -1369,82 +1382,101 @@ function showSection(name) {
 //  ホーム
 // ============================================================
 async function loadHome() {
-  document.getElementById('dashGarden').textContent = SESSION.garden;
+  var year = currentYear();
+  var perm = window.PERM || {};
+  var evalType = getEvalType(SESSION.jobType);
+  var typeNames = {general_hoiku:'一般職', cooking:'一般職（調理）', yakushoku:'役職者', kanrisha:'管理者', none:'―'};
 
-  // アナウンス
-  const ann = SETTINGS['announce'];
-  const annBar = document.getElementById('announceBar');
-  if (ann) {
-    annBar.style.display = 'flex';
-    document.getElementById('announceTitleEl').textContent = '📢 お知らせ';
-    document.getElementById('announceBodyEl').textContent = ann;
-  } else { annBar.style.display = 'none'; }
-
-  // 評価種別
-  const evalType = getEvalType(SESSION.jobType);
-  const typeNames = { general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者' };
-  document.getElementById('dashType').textContent = typeNames[evalType] + '｜満点' + MAX_SCORE[evalType] + '点';
-
-  // 今年度記録を取得
-  const year = String(SETTINGS['current_year'] || new Date().getFullYear());
-  const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
-  currentRecord = r.ok ? r.data : null;
-
-  // 在籍年数（職員マスタから取得は省略、SESSION に含まれていない場合のフォールバック）
-  document.getElementById('dashExp').textContent = '-';
-
-  // タスク
-  const mode = SETTINGS['eval_mode'] || 'goal';
-  const h1dl = SETTINGS['h1_deadline'] || '';
-  const h2dl = SETTINGS['h2_deadline'] || '';
-  const tasks = [];
-  const status = currentRecord ? currentRecord.status : '未提出';
-
-  if (mode === 'goal') {
-    if (!currentRecord || status === '未提出') {
-      tasks.push({ name: '📝 上半期個人目標の記入・提出', deadline: h1dl ? h1dl + ' まで' : '', status: '未完了', action: 'evalGoal', badge: 'danger' });
-    } else {
-      tasks.push({ name: '✅ 上半期個人目標', deadline: '提出済', status: '完了', action: null, badge: 'success' });
-    }
-  } else if (mode === 'eval') {
-    if (!currentRecord || !['自己評価提出済','管理者評価済'].includes(status)) {
-      tasks.push({ name: '✏️ 振り返り・自己評価の記入・提出', deadline: h2dl ? h2dl + ' まで' : '', status: '未完了', action: 'evalSelf', badge: 'danger' });
-    } else {
-      tasks.push({ name: '✅ 振り返り・自己評価', deadline: '提出済', status: '完了', action: null, badge: 'success' });
-    }
+  // プロフィールカード更新
+  document.getElementById('homeProfileName').textContent = SESSION.name + '　' + SESSION.age + '歳';
+  var subText = SESSION.jobType + '　' + SESSION.employment;
+  if (evalType !== 'none') subText += '　評価タイプ: ' + typeNames[evalType];
+  document.getElementById('homeProfileSub').textContent  = subText;
+  document.getElementById('dashGarden').textContent    = SESSION.garden || '-';
+  document.getElementById('homeHireDate').textContent  = SESSION.hireDate || '-';
+  document.getElementById('homeHireExp').textContent   = SESSION.hireExp || '-';
+  document.getElementById('dashYear').textContent      = year + '年度';
+  if (SESSION.className && SESSION.employment === '正規') {
+    document.getElementById('homeClassWrap').style.display = '';
+    document.getElementById('homeClass').textContent = SESSION.className;
   } else {
-    tasks.push({ name: '現在、提出期間外です', deadline: '', status: '', action: null, badge: 'muted' });
+    document.getElementById('homeClassWrap').style.display = 'none';
   }
 
-  const tl = document.getElementById('taskList');
-  tl.innerHTML = tasks.map(t => `
-    <li onclick="${t.action ? "showSection('" + t.action + "')" : ''}">
-      <div>
-        <div class="task-name">${t.name}</div>
-        ${t.deadline ? '<div class="task-deadline">期限: ' + t.deadline + '</div>' : ''}
-      </div>
-      <span class="badge badge-${t.badge}">${t.status}</span>
-    </li>
-  `).join('');
+  // アナウンス
+  var ann = SETTINGS['announce'] || '';
+  var annBar = document.getElementById('announceBar');
+  if (ann && annBar) {
+    annBar.style.display = 'flex';
+    document.getElementById('announceBodyEl').textContent = ann;
+  } else if (annBar) { annBar.style.display = 'none'; }
 
-  // サマリー
-  if (currentRecord && currentRecord.selfTotal > 0) {
-    document.getElementById('myEvalSummary').style.display = '';
-    document.getElementById('myEvalSummaryContent').innerHTML = `
-      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
-        <div><span class="flabel">自己評価合計</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-primary)">${currentRecord.selfTotal}<span style="font-size:.85rem;color:var(--clr-text-s)"> / ${MAX_SCORE[evalType]}点</span></div></div>
-        ${currentRecord.selfRank ? '<div><span class="flabel">自己ランク</span><div><span class="rank-badge rank-' + currentRecord.selfRank + '">' + currentRecord.selfRank + '</span></div></div>' : ''}
-        ${currentRecord.gardenTotal > 0 ? '<div><span class="flabel">園評価合計</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-accent)">' + currentRecord.gardenTotal + '<span style="font-size:.85rem;color:var(--clr-text-s)"> / ' + MAX_SCORE[evalType] + '点</span></div></div>' : ''}
-        ${currentRecord.gardenRank ? '<div><span class="flabel">園ランク</span><div><span class="rank-badge rank-' + currentRecord.gardenRank + '">' + currentRecord.gardenRank + '</span></div></div>' : ''}
-        ${currentRecord.bonus > 0 ? '<div><span class="flabel">賞与加算A</span><div style="font-size:1.6rem;font-weight:700;color:var(--clr-accent)">' + currentRecord.bonus + '<span style="font-size:.85rem;color:var(--clr-text-s)">点</span></div></div>' : ''}
-      </div>
-    `;
-  } else { document.getElementById('myEvalSummary').style.display = 'none'; }
+  // フェーズ説明
+  var modeDesc = {
+    goal:   '現在は【上半期目標記入フェーズ】です。「上半期目標記入」から提出してください。',
+    eval:   '現在は【振り返り・自己評価フェーズ】です。「振り返り・自己評価」から提出してください。',
+    mgr:    '現在は【管理者評価フェーズ】です。',
+    closed: '現在の評価期間は終了しています。'
+  };
+  var sub = document.getElementById('homeSubText');
+  if (sub) sub.textContent = modeDesc[SETTINGS['eval_mode'] || 'goal'] || '';
+
+  // 今年度レコード取得（理事長以外）
+  if (evalType !== 'none') {
+    var r = await api({action:'getSelfEval', year, staffId:SESSION.staffId});
+    currentRecord = (r.ok && r.data) ? r.data : null;
+  } else {
+    currentRecord = null;
+  }
+
+  // タスクリスト
+  var mode = SETTINGS['eval_mode'] || 'goal';
+  var h1dl = SETTINGS['h1_deadline'] || '';
+  var h2dl = SETTINGS['h2_deadline'] || '';
+  var status = currentRecord ? currentRecord.status : '未提出';
+  var tasks = [];
+
+  if (evalType === 'none') {
+    // 理事長: 評価管理タスク
+    tasks.push({name:'💴 賞与評価を確認・入力できます', deadline:'', badge:'info', action:'bonus'});
+    tasks.push({name:'📊 評価履歴を確認できます', deadline:'', badge:'info', action:'history'});
+  } else if (mode === 'goal') {
+    if (!currentRecord || status === '未提出') {
+      tasks.push({name:'📝 上半期個人目標の記入・提出', deadline:h1dl ? h1dl + ' まで' : '', badge:'danger', action:'evalGoal'});
+    } else {
+      tasks.push({name:'✅ 上半期個人目標　提出済み', deadline:currentRecord.goalSubmitDate || '', badge:'success', action:null});
+    }
+  } else if (mode === 'eval') {
+    if (!currentRecord || !currentRecord.goalH1) {
+      tasks.push({name:'⚠️ 上半期目標が未提出です', deadline:'', badge:'warning', action:'evalGoal'});
+    }
+    if (!['自己評価提出済','管理者評価済'].includes(status)) {
+      tasks.push({name:'✏️ 振り返り・自己評価の記入・提出', deadline:h2dl ? h2dl + ' まで' : '', badge:'danger', action:'evalSelf'});
+    } else {
+      tasks.push({name:'✅ 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDate || '', badge:'success', action:null});
+    }
+  } else {
+    tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
+  }
+
+  // 管理者評価のある人に進捗リマインダー
+  if (perm.canEval && mode !== 'closed') {
+    tasks.push({name:'⭐ 職員の評価入力は「職員の評価入力」から', deadline:'', badge:'info', action:'evalMgr'});
+  }
+
+  var tl = document.getElementById('taskList');
+  if (tl) tl.innerHTML = tasks.map(function(t) {
+    return '<li class="' + (t.action ? 'clickable' : '') + '" '
+      + (t.action ? 'onclick="showSection(\'' + t.action + '\')"' : '') + '>'
+      + '<div><div class="task-name">' + t.name + '</div>'
+      + (t.deadline ? '<div class="task-deadline">期限: ' + t.deadline + '</div>' : '')
+      + '</div><span class="badge badge-' + t.badge + '">'
+      + (t.badge==='success'?'完了':t.badge==='danger'?'未完了':t.badge==='warning'?'要確認':t.badge==='info'?'案内':'')
+      + '</span></li>';
+  }).join('');
 }
 
-// ============================================================
-//  目標記入
-// ============================================================
+
 async function loadEvalGoal() {
   const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
@@ -1821,6 +1853,9 @@ async function saveStaff() {
 
   if (!id || !name || !job || !loginId) { toast('必須項目を入力してください', 'error'); return; }
   if (!editingStaffId && !pw) { toast('新規登録時はパスワードが必要です', 'error'); return; }
+
+  // 新規登録時: editingStaffIdはnullなのでGASに isNew フラグを渡す
+  const isNew = !editingStaffId;
 
   const r = await api({
     action: 'saveStaff', staffId: id, name,
