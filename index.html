@@ -13,7 +13,7 @@
 <meta name="theme-color" content="#2e5549">
 <meta name="application-name" content="はぐくみ評価">
 <meta name="description" content="育保の杜 職員評価システム">
-<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;はぐくみ評価&quot;,&quot;short_name&quot;:&quot;はぐくみ評価&quot;,&quot;description&quot;:&quot;育保の杜 職員評価システム&quot;,&quot;start_url&quot;:&quot;./&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#2e5549&quot;,&quot;theme_color&quot;:&quot;#2e5549&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232e5549'/%3E%3Ctext y='.9em' font-size='75' x='12'%3E🌱%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+
 <style>
 /* ============================================================
    はぐくみ評価  Ver.1.06  CSS
@@ -532,6 +532,32 @@ tr:hover td { background: rgba(74,124,111,.04); }
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90}
 .sidebar-overlay.show{display:block}
 </style>
+<script>
+// PWA manifest動的生成
+(function(){
+  var manifest = {
+    name: 'はぐくみ評価',
+    short_name: 'はぐくみ評価',
+    description: '育保の杜 職員評価システム',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#ffffff',
+    theme_color: '#2e5549',
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='white'/%3E%3Ctext y='155' x='20' font-size='150'%3E📝%3C/text%3E%3C/svg%3E",
+      sizes: '192x192',
+      type: 'image/svg+xml',
+      purpose: 'any maskable'
+    }]
+  };
+  var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+})();
+</script>
 </head>
 <body>
 
@@ -1156,82 +1182,151 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0LNNaJchcPzsEdVCCPztw
 //  評価項目定義
 // ============================================================
 const EVAL_ITEMS = {
+  // ――― 一般職（保育士・保育補助） ―――
   general_hoiku: [
-    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
-    { cat:'活動実績', item:'ヒヤリハット改善含む園取組', hint:'ヒヤリハット・事故防止を意識した取組みを実施している' },
-    { cat:'知識', item:'キャリアアップ研修', hint:'研修を積極的に受講し業務に活かしている' },
-    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
-    { cat:'知識', item:'日々の自己研鑽', hint:'知識・技術の習得に日々努めている' },
-    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
-    { cat:'遂行能力', item:'クラス単位の取組・判断', hint:'クラス運営において適切な判断と取組みができている' },
-    { cat:'規律性', item:'協調性・チームワーク', hint:'同僚と協力し職場の雰囲気づくりに貢献している' },
-    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
-    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
-    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
-    { cat:'責任制', item:'担当業務の計画的遂行', hint:'担当業務を計画的に進めている' },
-    { cat:'責任制', item:'保護者・同僚への対応', hint:'保護者・同僚からの相談に誠実に対応している' },
-    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
-    { cat:'協調性', item:'担当以外の業務への協力', hint:'担当以外の業務にも積極的に協力している' }
+    {cat:'業績評価', item:'個人目標への行動',
+     hint:'年度始めに設定した個人目標に向けて、具体的な行動を着実に積み重ねているか'},
+    {cat:'活動実績', item:'ヒヤリハット改善含む園取組',
+     hint:'ヒヤリハットや事故防止に関する取組みに積極的に参加・改善提案を行っているか'},
+    {cat:'知識', item:'キャリアアップ研修',
+     hint:'キャリアアップ研修等を積極的に受講し、得た知識・技術を日々の保育に活かしているか'},
+    {cat:'知識', item:'園内業務の知識・技術',
+     hint:'日常の保育業務に必要な知識・技術を習得し、適切に実践しているか'},
+    {cat:'知識', item:'日々の自己研鑽',
+     hint:'保育士としての資質向上のため、知識・技術の習得に日々努めているか'},
+    {cat:'遂行能力', item:'的確な業務遂行',
+     hint:'担当する業務を正確かつ迅速に、計画的に遂行しているか'},
+    {cat:'遂行能力', item:'クラス単位の取組・判断',
+     hint:'クラス運営において状況を的確に判断し、適切な取組みができているか'},
+    {cat:'規律性', item:'協調性・チームワーク',
+     hint:'同僚と積極的に協力し合い、職場の良い雰囲気づくりに貢献しているか'},
+    {cat:'規律性', item:'時間・ルールの遵守',
+     hint:'就業時間や施設内のルール・マナーを正しく守っているか'},
+    {cat:'規律性', item:'報告・連絡・相談',
+     hint:'必要な情報を適切なタイミングで報告・連絡・相談しているか'},
+    {cat:'規律性', item:'身だしなみ・言葉遣い',
+     hint:'保育者として子どもや保護者・同僚に対して適切な身だしなみ・言葉遣いができているか'},
+    {cat:'責任制', item:'担当業務の計画的遂行',
+     hint:'担当する業務について責任を持って計画的に取り組んでいるか'},
+    {cat:'責任制', item:'保護者・同僚への対応',
+     hint:'保護者や同僚からの相談・依頼に誠実に向き合い、最後まで対応しているか'},
+    {cat:'協調性', item:'園方針に沿った保育方針',
+     hint:'園が掲げる保育方針・理念を理解し、日々の保育に反映させているか'},
+    {cat:'協調性', item:'担当以外の業務への協力',
+     hint:'自分の担当以外の業務についても状況を察して積極的に協力しているか'}
   ],
+  // ――― 一般職（調理員・栄養士） ―――
   cooking: [
-    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
-    { cat:'活動実績', item:'園行事等（ヒヤリハット除く）', hint:'園行事等に積極的に参加・貢献している' },
-    { cat:'知識', item:'キャリアアップ研修・調理専門知識', hint:'研修を積極的に受講し調理専門知識の向上に努めている' },
-    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
-    { cat:'知識', item:'日々の自己研鑽', hint:'知識・技術の習得に日々努めている' },
-    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
-    { cat:'遂行能力', item:'調理室内の取組・判断', hint:'調理室内において適切な判断と取組みができている' },
-    { cat:'規律性', item:'衛生管理・チームワーク', hint:'衛生管理を徹底し職場の雰囲気づくりに貢献している' },
-    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
-    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
-    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
-    { cat:'責任制', item:'担当業務の計画的遂行', hint:'担当業務を計画的に進めている' },
-    { cat:'責任制', item:'上司・同僚・部下への対応', hint:'上司・同僚・部下からの相談に誠実に対応している' },
-    { cat:'協調性', item:'園方針に沿った衛生管理', hint:'園の方針に沿った衛生管理を実践している' },
-    { cat:'協調性', item:'担当以外の業務への協力', hint:'担当以外の業務にも積極的に協力している' }
+    {cat:'業績評価', item:'個人目標への行動',
+     hint:'年度始めに設定した個人目標に向けて、具体的な行動を着実に積み重ねているか'},
+    {cat:'活動実績', item:'園行事等への貢献（ヒヤリハット除く）',
+     hint:'園行事や給食献立等の取組みに積極的に参加し、貢献しているか'},
+    {cat:'知識', item:'キャリアアップ研修・調理専門知識',
+     hint:'研修等を積極的に受講し、調理の専門知識・衛生管理の知識向上に努めているか'},
+    {cat:'知識', item:'園内業務の知識・技術',
+     hint:'日常の調理業務に必要な知識・技術を習得し、適切に実践しているか'},
+    {cat:'知識', item:'日々の自己研鑽',
+     hint:'調理員・栄養士としての資質向上のため、知識・技術の習得に日々努めているか'},
+    {cat:'遂行能力', item:'的確な業務遂行',
+     hint:'担当する業務を正確かつ迅速に、計画的に遂行しているか'},
+    {cat:'遂行能力', item:'調理室内の取組・判断',
+     hint:'調理室内において衛生・安全面を考慮した適切な判断と取組みができているか'},
+    {cat:'規律性', item:'衛生管理の徹底・チームワーク',
+     hint:'食中毒防止等の衛生管理を徹底し、調理室の良い雰囲気づくりに貢献しているか'},
+    {cat:'規律性', item:'時間・ルールの遵守',
+     hint:'就業時間や施設内のルール・マナーを正しく守っているか'},
+    {cat:'規律性', item:'報告・連絡・相談',
+     hint:'必要な情報を適切なタイミングで報告・連絡・相談しているか'},
+    {cat:'規律性', item:'身だしなみ・言葉遣い',
+     hint:'調理員・栄養士として適切な身だしなみ・言葉遣いができているか'},
+    {cat:'責任制', item:'担当業務の計画的遂行',
+     hint:'担当する業務について責任を持って計画的に取り組んでいるか'},
+    {cat:'責任制', item:'上司・同僚・部下からの相談への対応',
+     hint:'上司・同僚・部下からの相談・依頼に誠実に向き合い、最後まで対応しているか'},
+    {cat:'協調性', item:'園方針に沿った衛生管理',
+     hint:'園の方針・理念を理解し、衛生管理・食育活動に反映させているか'},
+    {cat:'協調性', item:'担当以外の業務への協力',
+     hint:'自分の担当以外の業務についても状況を察して積極的に協力しているか'}
   ],
+  // ――― 役職者（乳児・幼児・統括リーダー・主任） ―――
   yakushoku: [
-    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
-    { cat:'活動実績', item:'実行かつ管理できている', hint:'取組みを実行し、かつ管理・記録まで行えている' },
-    { cat:'知識', item:'キャリアアップ研修', hint:'研修を積極的に受講し業務に活かしている' },
-    { cat:'知識', item:'園内業務の知識・技術', hint:'日常業務に必要な知識・技術を習得している' },
-    { cat:'知識', item:'他職員への指導立場での習得', hint:'他職員に指導する立場として知識・技術を習得している' },
-    { cat:'遂行能力', item:'的確な業務遂行', hint:'指示された業務を正確・迅速に遂行している' },
-    { cat:'遂行能力', item:'クラス単位の取組・判断', hint:'クラス運営において適切な判断と取組みができている' },
-    { cat:'遂行能力', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下をまとめている' },
-    { cat:'規律性', item:'協調性・チームワーク', hint:'同僚と協力し職場の雰囲気づくりに貢献している' },
-    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
-    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
-    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'保育者として適切な身だしなみ・言葉遣いができている' },
-    { cat:'責任制', item:'役職者としての役割自覚', hint:'役職者としての役割を自覚して行動している' },
-    { cat:'責任制', item:'行事等の計画的準備と責任', hint:'行事等を計画的に準備し最後まで責任をもって対応している' },
-    { cat:'責任制', item:'保護者・同僚への最後まで対応', hint:'保護者・同僚への相談に最後まで対応している' },
-    { cat:'責任制', item:'問題発生時に自ら率先解決', hint:'問題発生時に自ら率先して解決に取り組んでいる' },
-    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
-    { cat:'協調性', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下が動きやすい環境をつくっている' }
+    {cat:'業績評価', item:'個人目標への行動',
+     hint:'年度始めに設定した個人目標に向けて、具体的な行動を着実に積み重ねているか'},
+    {cat:'活動実績', item:'計画の実行・管理',
+     hint:'取組みを単に実行するだけでなく、進捗を管理・記録し確実に完遂できているか'},
+    {cat:'知識', item:'キャリアアップ研修',
+     hint:'キャリアアップ研修等を積極的に受講し、得た知識・技術を業務に活かしているか'},
+    {cat:'知識', item:'園内業務の知識・技術',
+     hint:'日常の保育業務に必要な知識・技術を高い水準で習得し実践しているか'},
+    {cat:'知識', item:'他職員への指導を見据えた習得',
+     hint:'他職員に指導する立場として、より高い専門知識・技術を自ら習得しているか'},
+    {cat:'遂行能力', item:'的確な業務遂行',
+     hint:'担当する業務を正確かつ迅速に、計画的に遂行しているか'},
+    {cat:'遂行能力', item:'クラス単位の取組・判断',
+     hint:'クラス・チームの運営において状況を的確に判断し、適切な取組みができているか'},
+    {cat:'遂行能力', item:'リーダーシップ・部下の牽引',
+     hint:'リーダーシップを発揮し、部下が力を発揮できるよう積極的にまとめ・引っ張っているか'},
+    {cat:'規律性', item:'協調性・チームワーク',
+     hint:'部下・同僚と積極的に協力し合い、職場の良い雰囲気づくりに貢献しているか'},
+    {cat:'規律性', item:'時間・ルールの遵守',
+     hint:'就業時間や施設内のルール・マナーを正しく守り、部下の模範となっているか'},
+    {cat:'規律性', item:'報告・連絡・相談',
+     hint:'必要な情報を適切なタイミングで報告・連絡・相談しているか'},
+    {cat:'規律性', item:'身だしなみ・言葉遣い',
+     hint:'役職者として子ども・保護者・同僚に対して適切な身だしなみ・言葉遣いができているか'},
+    {cat:'責任制', item:'役職者としての自覚ある行動',
+     hint:'役職者としての役割・責任を自覚し、自らの言動に責任を持って行動しているか'},
+    {cat:'責任制', item:'行事等の計画的準備と責任ある完遂',
+     hint:'行事等を計画的に準備し、担当業務を最後まで責任をもって完遂しているか'},
+    {cat:'責任制', item:'保護者・同僚への相談への最後まで対応',
+     hint:'保護者・同僚からの相談に対して逃げずに向き合い、最後まで誠実に対応しているか'},
+    {cat:'責任制', item:'問題発生時に自ら率先して解決',
+     hint:'問題や課題が発生した際に、自ら率先して解決策を考え実行に移しているか'},
+    {cat:'協調性', item:'園方針に沿った保育方針の実践と浸透',
+     hint:'園の保育方針・理念を理解し実践するとともに、部下・後輩への浸透を図っているか'},
+    {cat:'協調性', item:'リーダーシップによる職場環境づくり',
+     hint:'リーダーシップを発揮し、部下が働きやすく力を発揮できる環境をつくっているか'}
   ],
+  // ――― 管理者（園長） ―――
   kanrisha: [
-    { cat:'業績評価', item:'個人目標への行動', hint:'年度始めに設定した目標に向けて着実に取り組んでいる' },
-    { cat:'活動実績', item:'実行かつ管理できている', hint:'取組みを実行し、かつ管理・記録まで行えている' },
-    { cat:'知識', item:'施設運営・職員指導の知識', hint:'施設運営に必要な知識を習得し職員指導に活かしている' },
-    { cat:'知識', item:'職員の技術・知識向上の指導育成', hint:'職員の技術・知識向上のために指導・育成を行っている' },
-    { cat:'知識', item:'情報収集等日々自己研鑽', hint:'情報収集を含め日々自己研鑽している' },
-    { cat:'遂行能力', item:'園全体を把握し職員へ指導・助言', hint:'園全体の状況を把握し職員へ適切な指導・助言を行っている' },
-    { cat:'遂行能力', item:'経営意識・無駄なコスト削減', hint:'経営意識をもち無駄なコスト削減に取り組んでいる' },
-    { cat:'遂行能力', item:'危険性想定・職員体制整備', hint:'危険性を想定し職員体制を適切に整備している' },
-    { cat:'規律性', item:'職員間・保護者等との協調', hint:'職員間・保護者等との良好な関係を構築している' },
-    { cat:'規律性', item:'時間・ルールの遵守', hint:'就業時間・施設のルールを守っている' },
-    { cat:'規律性', item:'報告・連絡・相談', hint:'必要な情報を適切に報告・連絡・相談している' },
-    { cat:'規律性', item:'身だしなみ・言葉遣い', hint:'管理者として適切な身だしなみ・言葉遣いができている' },
-    { cat:'責任制', item:'管理者としての役割自覚', hint:'管理者としての役割を自覚して行動している' },
-    { cat:'責任制', item:'行事等の計画的準備と責任', hint:'行事等を計画的に準備し最後まで責任をもって対応している' },
-    { cat:'責任制', item:'保護者・部下の相談に迅速対応', hint:'保護者・部下の相談に迅速かつ誠実に対応している' },
-    { cat:'責任制', item:'問題発生時に自ら率先解決', hint:'問題発生時に自ら率先して解決に取り組んでいる' },
-    { cat:'協調性', item:'園方針に沿った保育方針', hint:'園の保育方針に沿った保育を実践している' },
-    { cat:'協調性', item:'リーダーシップ・部下を引っ張る', hint:'リーダーシップを発揮し部下が動きやすい環境をつくっている' }
+    {cat:'業績評価', item:'個人目標への行動',
+     hint:'年度始めに設定した個人目標に向けて、具体的な行動を着実に積み重ねているか'},
+    {cat:'活動実績', item:'計画の実行・管理',
+     hint:'取組みを単に実行するだけでなく、進捗を管理・記録し確実に完遂できているか'},
+    {cat:'知識', item:'施設運営に必要な知識の習得と職員指導への活用',
+     hint:'施設運営・労務管理等に必要な知識を習得し、職員指導・育成に積極的に活かしているか'},
+    {cat:'知識', item:'職員の技術・知識向上のための指導育成',
+     hint:'職員一人ひとりの成長を把握し、技術・知識向上のための計画的な指導・育成を行っているか'},
+    {cat:'知識', item:'情報収集・日々の自己研鑽',
+     hint:'保育・経営・法改正等に関する最新情報を積極的に収集し、日々自己研鑽しているか'},
+    {cat:'遂行能力', item:'園全体の把握と職員への指導・助言',
+     hint:'園全体の状況を常に把握し、職員に対して適切・的確な指導や助言を行っているか'},
+    {cat:'遂行能力', item:'経営意識・コスト管理',
+     hint:'経営者意識を持ち、無駄なコストの削減や効率的な運営に取り組んでいるか'},
+    {cat:'遂行能力', item:'リスク想定・職員体制の整備',
+     hint:'事故・トラブル等のリスクを事前に想定し、適切な職員体制を整備しているか'},
+    {cat:'規律性', item:'職員間・保護者等との良好な関係構築',
+     hint:'職員間・保護者・関係機関等との良好な信頼関係を積極的に構築しているか'},
+    {cat:'規律性', item:'時間・ルールの遵守',
+     hint:'就業時間や施設内のルール・マナーを正しく守り、職員の模範となっているか'},
+    {cat:'規律性', item:'報告・連絡・相談',
+     hint:'必要な情報を適切なタイミングで報告・連絡・相談しているか'},
+    {cat:'規律性', item:'身だしなみ・言葉遣い',
+     hint:'管理者として子ども・保護者・職員等に対して適切な身だしなみ・言葉遣いができているか'},
+    {cat:'責任制', item:'管理者としての自覚ある行動',
+     hint:'管理者としての役割・責任を強く自覚し、自らの言動に責任を持って行動しているか'},
+    {cat:'責任制', item:'行事等の計画的準備と責任ある完遂',
+     hint:'行事等を計画的に準備し、担当業務を最後まで責任をもって完遂しているか'},
+    {cat:'責任制', item:'保護者・部下からの相談への迅速・誠実な対応',
+     hint:'保護者・部下からの相談に対して迅速かつ誠実に向き合い、解決まで責任を持って対応しているか'},
+    {cat:'責任制', item:'問題発生時に自ら率先して解決',
+     hint:'問題や課題が発生した際に、自ら率先して解決策を考え実行に移しているか'},
+    {cat:'協調性', item:'園方針に沿った保育方針の実践と浸透',
+     hint:'園の保育方針・理念を理解し実践するとともに、全職員への浸透を図っているか'},
+    {cat:'協調性', item:'リーダーシップによる職場環境づくり',
+     hint:'リーダーシップを発揮し、全職員が働きやすく力を発揮できる環境をつくっているか'}
   ]
 };
-
 const MAX_SCORE = { general_hoiku: 75, cooking: 75, yakushoku: 90, kanrisha: 90 };
 
 function getEvalType(jobType) {
@@ -1711,8 +1806,18 @@ async function openMgrModal(recordId) {
   // レコードを一覧から見つける
   const r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
   if (!r.ok) return;
+  // recordIdがDBにない場合（未提出）でもstaffIdで特定できるよう修正
   mgrEditRecord = r.list.find(x => x.recordId === recordId);
-  if (!mgrEditRecord) return;
+  if (!mgrEditRecord) {
+    // recordId = "年度-staffId" 形式からstaffIdを取り出す
+    var parts = recordId.split('-');
+    var sid = parts.slice(1).join('-');
+    mgrEditRecord = r.list.find(x => x.staffId === sid);
+  }
+  // それでも見つからない場合はstaffIdとして直接使う
+  if (!mgrEditRecord) {
+    mgrEditRecord = { recordId: recordId, staffId: recordId, name: '不明', jobType: '', garden: '' };
+  }
 
   // 詳細取得
   const dr = await api({ action: 'getSelfEval', year, staffId: mgrEditRecord.staffId });
@@ -1720,8 +1825,9 @@ async function openMgrModal(recordId) {
   window._mgrDetail = detail || {};
 
   mgrEvalType = getEvalType(mgrEditRecord.jobType);
-  const items = EVAL_ITEMS[mgrEvalType];
-  mgrScores = items.map((_, i) => (detail && detail.gardenScores[i]) || 0);
+  if (mgrEvalType === 'none') mgrEvalType = 'yakushoku'; // 理事長が主任/園長を評価する場合
+  const items = EVAL_ITEMS[mgrEvalType] || EVAL_ITEMS['general_hoiku'];
+  mgrScores = items.map((_, i) => (detail && detail.gardenScores && detail.gardenScores[i]) || 0);
 
   document.getElementById('mgrEvalModalTitle').textContent = mgrEditRecord.name + '（' + mgrEditRecord.jobType + '）の評価';
 
@@ -2340,6 +2446,7 @@ async function loadBonusList() {
 }
 
 async function openBonusModal(staffId) {
+  try {
   var year = document.getElementById('bonusYearSel').value;
   var term = document.getElementById('bonusTermSel').value;
   // 職員情報取得
@@ -2395,8 +2502,12 @@ async function openBonusModal(staffId) {
   renderBonusScoreTable(evalType);
   updateBonusTotal(evalType);
   document.getElementById('bonusModal').classList.add('open');
+  } catch(err) {
+    showLoading(false);
+    toast('評価入力エラー: ' + err.message, 'error');
+    console.error('openBonusModal error:', err);
+  }
 }
-
 function renderBonusScoreTable(evalType) {
   var isEncho = evalType === 'encho';
   var tbody = document.getElementById('bonusScoreBody');
