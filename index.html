@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>はぐくみ評価 Ver.1.06</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232e5549'/><text y='.9em' font-size='75' x='12'>🌱</text></svg>">
-<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAMAAAAKE/YAAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAADNQTFRFAAAALlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJLlVJ////XUNOyAAAABF0Uk5TABBQYICfr7/P3+/v7+/v7yTtFNcAAAABYktHRBJ7XHp+AAAAB3RJTUUH6QQZDwsqkwFp4AAAADxJREFUeNrtwTEBAAAAwqD1T20ND6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO/QAQAABAAAAB//ZAAAAASUVORK5CYII=">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='white' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='.88em' font-size='72' x='10'%3E📝%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='white'/%3E%3Ctext y='.88em' font-size='72' x='10'%3E📝%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="はぐくみ評価">
@@ -178,12 +178,21 @@ body {
 .app-body { display: flex; flex: 1; overflow: hidden; }
 
 .sidebar {
-  width: 220px; min-height: calc(100vh - 56px);
+  width: 240px;
   background: var(--clr-surface);
   border-right: 1px solid var(--clr-border);
   padding: 20px 0;
-  flex-shrink: 0;
   overflow-y: auto;
+  position: fixed;
+  left: -240px;
+  top: 56px;
+  height: calc(100vh - 56px);
+  z-index: 95;
+  transition: left .25s ease;
+}
+.sidebar.open {
+  left: 0;
+  box-shadow: 4px 0 20px rgba(0,0,0,.2);
 }
 .sidebar-nav { list-style: none; }
 .sidebar-nav li a, .sidebar-nav li button {
@@ -212,8 +221,10 @@ body {
 .sidebar-divider { border: none; border-top: 1px solid var(--clr-border); margin: 8px 0; }
 
 .main-content {
-  flex: 1; padding: 28px 32px;
-  overflow-y: auto; min-height: calc(100vh - 56px);
+  padding: 28px 32px;
+  overflow-y: auto;
+  min-height: calc(100vh - 56px);
+  width: 100%;
 }
 
 /* ============================================================
@@ -501,8 +512,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
 
 @media(max-width:900px){
-  .sidebar{position:fixed;left:-240px;top:56px;height:calc(100vh - 56px);z-index:95;transition:left .25s ease;width:240px}
-  .sidebar.open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+  .sidebar.open{left:0 !important;box-shadow:4px 0 20px rgba(0,0,0,.2)}
   .main-content{padding:14px}
   .frow{flex-direction:column!important;gap:10px}
   .fcol{min-width:100%!important}
@@ -537,10 +547,9 @@ tr:hover td { background: rgba(74,124,111,.04); }
 <div id="loginPage" class="page active">
   <div class="login-box">
     <div class="login-logo">
-      <div class="logo-icon">🌱</div>
+      <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.78rem;color:var(--clr-text-s);margin-top:4px">by 育保の杜</p>
       <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.06</p>
     </div>
     <div class="form-group">
@@ -564,7 +573,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   <header class="header">
     <div class="header-left">
       <button class="hamburger" onclick="toggleSidebar()" aria-label="メニュー">☰</button>
-      <span style="font-size:1.4rem">🌱</span>
+      <span style="font-size:1.4rem">📝</span>
       <span class="header-logo">はぐくみ<span>評価</span></span>
     </div>
     <div class="header-right">
@@ -1382,25 +1391,35 @@ function showSection(name) {
 //  ホーム
 // ============================================================
 async function loadHome() {
+  // taskListを初期化（エラーでも「読み込み中」のまま放置されないように）
+  var tl0 = document.getElementById('taskList');
+  if (tl0) tl0.innerHTML = '';
+  try {
   var year = currentYear();
   var perm = window.PERM || {};
   var evalType = getEvalType(SESSION.jobType);
   var typeNames = {general_hoiku:'一般職', cooking:'一般職（調理）', yakushoku:'役職者', kanrisha:'管理者', none:'―'};
 
   // プロフィールカード更新
-  document.getElementById('homeProfileName').textContent = SESSION.name + '　' + SESSION.age + '歳';
+  var ageStr = SESSION.age ? ('　' + SESSION.age + '歳') : '';
+  document.getElementById('homeProfileName').textContent = SESSION.name + ageStr;
   var subText = SESSION.jobType + '　' + SESSION.employment;
   if (evalType !== 'none') subText += '　評価タイプ: ' + typeNames[evalType];
-  document.getElementById('homeProfileSub').textContent  = subText;
-  document.getElementById('dashGarden').textContent    = SESSION.garden || '-';
-  document.getElementById('homeHireDate').textContent  = SESSION.hireDate || '-';
-  document.getElementById('homeHireExp').textContent   = SESSION.hireExp || '-';
-  document.getElementById('dashYear').textContent      = year + '年度';
+  document.getElementById('homeProfileSub').textContent = subText;
+  var setEl = function(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val || '-';
+  };
+  setEl('dashGarden',   SESSION.garden);
+  setEl('homeHireDate', SESSION.hireDate);
+  setEl('homeHireExp',  SESSION.hireExp || SESSION.totalExp);
+  setEl('dashYear',     year + '年度');
+  var classWrap = document.getElementById('homeClassWrap');
   if (SESSION.className && SESSION.employment === '正規') {
-    document.getElementById('homeClassWrap').style.display = '';
-    document.getElementById('homeClass').textContent = SESSION.className;
+    if (classWrap) classWrap.style.display = '';
+    setEl('homeClass', SESSION.className);
   } else {
-    document.getElementById('homeClassWrap').style.display = 'none';
+    if (classWrap) classWrap.style.display = 'none';
   }
 
   // アナウンス
@@ -1474,6 +1493,11 @@ async function loadHome() {
       + (t.badge==='success'?'完了':t.badge==='danger'?'未完了':t.badge==='warning'?'要確認':t.badge==='info'?'案内':'')
       + '</span></li>';
   }).join('');
+  } catch(e) {
+    console.error('loadHome error:', e);
+    var tl2 = document.getElementById('taskList');
+    if (tl2) tl2.innerHTML = '<li><span class="task-name" style="color:var(--clr-danger)">⚠️ 読み込みエラー: ' + e.message + '</span></li>';
+  }
 }
 
 
