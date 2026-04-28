@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>はぐくみ評価 Ver.1.06</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='white' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='.88em' font-size='72' x='10'%3E📝%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='white'/%3E%3Ctext y='.88em' font-size='72' x='10'%3E📝%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='30' fill='%23ffffff'/%3E%3Ctext y='62' x='100' font-size='60' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='108' x='100' font-size='18' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='134' x='100' font-size='13' text-anchor='middle' dominant-baseline='middle' fill='%23666666' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3Ctext y='158' x='100' font-size='12' text-anchor='middle' dominant-baseline='middle' fill='%234a7c6f' font-family='sans-serif'%3Eby 育保の杜%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="はぐくみ評価">
@@ -545,7 +545,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
     background_color: '#ffffff',
     theme_color: '#2e5549',
     icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='white'/%3E%3Ctext y='155' x='20' font-size='150'%3E📝%3C/text%3E%3C/svg%3E",
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='30' fill='white'/%3E%3Ctext y='62' x='100' font-size='60' text-anchor='middle'%3E📝%3C/text%3E%3Ctext y='108' x='100' font-size='18' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='134' x='100' font-size='13' text-anchor='middle' fill='%23666' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3Ctext y='158' x='100' font-size='12' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3Eby 育保の杜%3C/text%3E%3C/svg%3E",
       sizes: '192x192',
       type: 'image/svg+xml',
       purpose: 'any maskable'
@@ -622,7 +622,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div class="sidebar-section" id="navSec-mgr" style="display:none">管理者評価</div>
         <li id="nav-evalMgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 職員の評価入力</button></li>
         <li id="nav-history" style="display:none"><button onclick="showSection('history')">📊 評価履歴</button></li>
-        <li id="nav-bonus" style="display:none"><button onclick="showSection('bonus')">💴 賞与評価</button></li>
+        <li id="nav-bonus" style="display:none"><button onclick="showSection('bonus')">📋 賞与評価</button></li>
         <div class="sidebar-divider admin-only" style="display:none"></div>
         <div class="sidebar-section admin-only" style="display:none">管理</div>
         <li id="nav-staff" class="admin-only" style="display:none"><button onclick="showSection('staff')">👥 職員マスタ</button></li>
@@ -905,7 +905,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
       <!-- 賞与評価 -->
       <section id="sec-bonus" style="display:none">
-        <div class="page-title">💴 賞与評価</div>
+        <div class="page-title">📋 賞与評価</div>
         <p class="page-sub">賞与時の評価（A評価）を管理します。B加算は自己評価シートの園評価点から自動取得します。</p>
         <div class="card">
           <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1556,7 +1556,7 @@ async function loadHome() {
 
   if (evalType === 'none') {
     // 理事長: 評価管理タスク
-    tasks.push({name:'💴 賞与評価を確認・入力できます', deadline:'', badge:'info', action:'bonus'});
+    tasks.push({name:'📋 賞与評価を確認・入力できます', deadline:'', badge:'info', action:'bonus'});
     tasks.push({name:'📊 評価履歴を確認できます', deadline:'', badge:'info', action:'history'});
   } else if (mode === 'goal') {
     if (!currentRecord || status === '未提出') {
@@ -1767,28 +1767,64 @@ function initMgrYearSel() {
 }
 
 async function loadEvalList() {
-  const year = document.getElementById('mgrYearSel').value;
-  const garden = document.getElementById('mgrGardenSel').value;
-  const r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
+  var year   = document.getElementById('mgrYearSel').value;
+  var garden = document.getElementById('mgrGardenSel').value;
+  var perm   = window.PERM || {};
+  var showScore = SESSION.role === 'encho' || SESSION.role === 'admin';
+
+  // 評価済みレコードを取得
+  var r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
   if (!r.ok) return;
-  const tbody = document.getElementById('evalListBody');
-  const list = garden ? r.list.filter(x => x.garden === garden) : r.list;
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">データがありません</td></tr>'; return; }
-  tbody.innerHTML = list.map(e => `
-    <tr>
-      <td>${escHtml(e.name)}</td>
-      <td><span style="font-size:.8rem">${escHtml(e.jobType)}</span></td>
-      <td><span style="font-size:.8rem">${escHtml(e.garden)}</span></td>
-      <td style="font-size:.78rem">${e.evalSubmitDate || '-'}</td>
-      <td style="text-align:center;font-weight:600">${e.selfTotal || 0}</td>
-      <td style="text-align:center">${e.selfRank ? '<span class="rank-badge rank-' + e.selfRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.selfRank + '</span>' : '-'}</td>
-      <td style="text-align:center;font-weight:600">${e.gardenTotal || '-'}</td>
-      <td style="text-align:center">${e.gardenRank ? '<span class="rank-badge rank-' + e.gardenRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.gardenRank + '</span>' : '-'}</td>
-      <td style="text-align:center;font-weight:600">${e.bonus > 0 ? e.bonus + '点' : '-'}</td>
-      <td><span class="badge ${statusBadge(e.status)}">${e.status}</span></td>
-      <td><button class="btn btn-outline btn-sm" onclick="openMgrModal('${e.recordId}')">評価入力</button></td>
-    </tr>
-  `).join('');
+  var evalMap = {};
+  r.list.forEach(function(e){ evalMap[e.staffId] = e; });
+
+  // 全在籍職員を取得して突合（未提出でも表示）
+  var sr = await api({ action: 'getStaffList', role: SESSION.role, garden: SESSION.garden });
+  if (!sr.ok) return;
+  var allStaff = sr.list.filter(function(s){ return s.status === '在籍'; });
+
+  // 権限別フィルター
+  if (SESSION.role === 'syunin') {
+    allStaff = allStaff.filter(function(s){
+      return ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー'].includes(s.jobType);
+    });
+  } else if (SESSION.role === 'encho') {
+    allStaff = allStaff.filter(function(s){
+      return s.staffId !== SESSION.staffId &&
+        ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー','主任'].includes(s.jobType);
+    });
+  } else if (SESSION.role === 'admin') {
+    allStaff = allStaff.filter(function(s){ return ['主任','園長'].includes(s.jobType); });
+  }
+
+  if (garden) allStaff = allStaff.filter(function(s){ return s.garden === garden; });
+
+  var tbody = document.getElementById('evalListBody');
+  if (!allStaff.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allStaff.map(function(s) {
+    var e = evalMap[s.staffId];
+    var rid = e ? e.recordId : (year + '-' + s.staffId);
+    var row = '<tr>'
+      + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
+      + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
+      + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
+      + '<td style="font-size:.78rem">' + (e ? e.evalSubmitDate || '-' : '-') + '</td>';
+    if (showScore) {
+      row += '<td style="text-align:center;font-weight:600">' + (e ? e.selfTotal || 0 : '-') + '</td>'
+        + '<td style="text-align:center">' + (e && e.selfRank ? '<span class="rank-badge rank-' + e.selfRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.selfRank + '</span>' : '-') + '</td>'
+        + '<td style="text-align:center;font-weight:600">' + (e ? e.gardenTotal || '-' : '-') + '</td>'
+        + '<td style="text-align:center">' + (e && e.gardenRank ? '<span class="rank-badge rank-' + e.gardenRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.gardenRank + '</span>' : '-') + '</td>'
+        + '<td style="text-align:center;font-weight:600">' + (e && e.bonus > 0 ? e.bonus + '点' : '-') + '</td>';
+    }
+    row += '<td><span class="badge ' + statusBadge(e ? e.status : '未提出') + '">' + (e ? e.status : '未提出') + '</span></td>'
+      + '<td><button class="btn btn-outline btn-sm" onclick="openMgrModal2(\'' + escHtml(rid) + '\',\'' + escHtml(s.staffId) + '\')">'+'評価入力</button></td>'
+      + '</tr>';
+    return row;
+  }).join('');
 }
 
 function statusBadge(s) {
@@ -1800,6 +1836,84 @@ function statusBadge(s) {
 
 let mgrScores = [];
 let mgrEvalType = '';
+
+async function openMgrModal2(recordId, staffId) {
+  // staffIdを直接受け取るラッパー
+  const year = document.getElementById('mgrYearSel').value;
+  const dr = await api({ action: 'getSelfEval', year, staffId });
+  const detail = (dr.ok && dr.data) ? dr.data : null;
+  window._mgrDetail = detail || {};
+
+  // staffリストから職員情報取得
+  const sr = await api({ action: 'getStaffList', role: SESSION.role, garden: SESSION.garden });
+  const staffInfo = sr.ok ? sr.list.find(x => x.staffId === staffId) : null;
+
+  mgrEditRecord = {
+    recordId, staffId,
+    name:    staffInfo ? staffInfo.name    : (detail ? detail.name    : ''),
+    jobType: staffInfo ? staffInfo.jobType : (detail ? detail.jobType : ''),
+    garden:  staffInfo ? staffInfo.garden  : (detail ? detail.garden  : ''),
+    goalH1:  detail ? detail.goalH1 : ''
+  };
+
+  mgrEvalType = getEvalType(mgrEditRecord.jobType);
+  if (mgrEvalType === 'none') mgrEvalType = 'yakushoku';
+  const items = EVAL_ITEMS[mgrEvalType] || EVAL_ITEMS['general_hoiku'];
+  mgrScores = items.map((_, i) => (detail && detail.gardenScores && detail.gardenScores[i]) || 0);
+
+  document.getElementById('mgrEvalModalTitle').textContent =
+    mgrEditRecord.name + '（' + mgrEditRecord.jobType + '）の評価';
+
+  const selfScoresDisplay = detail && detail.selfScores ? detail.selfScores : [];
+  const isAdmin = SESSION.role === 'encho' || SESSION.role === 'admin';
+
+  let html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.85rem;line-height:1.7">'
+    + '<strong>上半期目標：</strong>' + escHtml(mgrEditRecord.goalH1 || '（未提出）') + '<br>'
+    + (detail && detail.reflectH1 ? '<strong>振り返り：</strong>' + escHtml(detail.reflectH1) + '<br>' : '')
+    + (detail && detail.goalH2 ? '<strong>下半期目標：</strong>' + escHtml(detail.goalH2) : '')
+    + '</div>'
+    + '<div class="table-wrap"><table class="score-table">'
+    + '<thead><tr><th style="width:180px">評価項目</th><th>着眼点</th>'
+    + (isAdmin ? '<th style="width:70px;text-align:center">自己評価</th>' : '')
+    + '<th style="width:260px;text-align:center">園評価（1〜5点）</th></tr></thead>'
+    + '<tbody id="mgrScoreBody"></tbody></table></div>'
+    + '<div style="margin-top:12px;text-align:right;font-weight:700;font-size:.9rem">園評価合計: <span id="mgrTotal" style="color:var(--clr-primary);font-size:1.1rem">0</span> 点</div>'
+    + '<div style="margin-top:16px"><label class="flabel">評価コメント（職員へのフィードバック）</label>'
+    + '<textarea class="ftextarea" id="mgrComment" rows="3" placeholder="コメントを入力">'
+    + escHtml(detail && detail.managerComment ? detail.managerComment : '')
+    + '</textarea></div>';
+
+  document.getElementById('mgrEvalModalBody').innerHTML = html;
+
+  // テーブル描画
+  let tbody2 = '';
+  let lastCat2 = '';
+  items.forEach(function(item, idx) {
+    if (item.cat !== lastCat2) {
+      tbody2 += '<tr class="score-cat-row"><td colspan="' + (isAdmin?4:3) + '">◆ ' + item.cat + '</td></tr>';
+      lastCat2 = item.cat;
+    }
+    const val = mgrScores[idx] || 0;
+    const radios = [1,2,3,4,5].map(function(v) {
+      return '<input type="radio" name="mgr_' + idx + '" id="mgr_' + idx + '_' + v + '" value="' + v + '" '
+        + (val === v ? 'checked' : '') + ' onchange="onMgrScore(' + idx + ',' + v + ')">'
+        + '<label for="mgr_' + idx + '_' + v + '">' + v + '</label>';
+    }).join('');
+    const sv = selfScoresDisplay[idx] || '-';
+    tbody2 += '<tr><td><div class="score-item-name">' + escHtml(item.item) + '</div>'
+      + '<div class="score-item-hint">' + escHtml(item.hint) + '</div></td>'
+      + (isAdmin ? '<td style="text-align:center;font-weight:700;font-size:1rem;color:var(--clr-primary)">' + sv + '</td>' : '')
+      + '<td><div class="score-radio-group">' + radios + '</div></td></tr>';
+  });
+  document.getElementById('mgrScoreBody').innerHTML = tbody2;
+  updateMgrTotal();
+  document.getElementById('mgrEvalModal').classList.add('open');
+}
+
+function onMgrScore(idx, val) {
+  mgrScores[idx] = val;
+  updateMgrTotal();
+}
 
 async function openMgrModal(recordId) {
   const year = document.getElementById('mgrYearSel').value;
@@ -2828,6 +2942,25 @@ function doPrint() {
 function closePrintFromMgr() { openPrintPreview('mgr'); }
 
 </script>
+
+
+<!-- 賞与評価入力モーダル -->
+<div class="modal-overlay" id="bonusModal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title" id="bonusModalTitle">賞与評価入力</div>
+      <button class="modal-close" onclick="closeBonusModal()">✕</button>
+    </div>
+    <div class="modal-body" id="bonusModalBody"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="openBonusPrint()">🖨️ 印刷プレビュー</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeBonusModal()">閉じる</button>
+        <button class="btn btn-primary" onclick="saveBonusEval()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- 印刷プレビューモーダル -->
 <div class="modal-overlay" id="printModal">
