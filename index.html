@@ -1247,6 +1247,10 @@ function getEvalType(jobType) {
 // ============================================================
 let SESSION = null;
 let SETTINGS = {};
+
+function currentYear() {
+  return String(SETTINGS['current_year'] || new Date().getFullYear());
+}
 let currentRecord = null;
 let selfScores = [];
 let editingStaffId = null;
