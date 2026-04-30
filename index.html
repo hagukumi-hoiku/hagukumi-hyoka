@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.06</title>
+<title>はぐくみ評価 Ver.1.07</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='30' fill='%23ffffff'/%3E%3Ctext y='62' x='100' font-size='60' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='108' x='100' font-size='18' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='134' x='100' font-size='13' text-anchor='middle' dominant-baseline='middle' fill='%23666666' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3Ctext y='158' x='100' font-size='12' text-anchor='middle' dominant-baseline='middle' fill='%234a7c6f' font-family='sans-serif'%3Eby 育保の杜%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%232e5549'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='128' x='90' font-size='26' font-weight='bold' text-anchor='middle' fill='%23ffffff' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='156' x='90' font-size='16' text-anchor='middle' fill='%23a8d8cb' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="はぐくみ評価">
@@ -175,7 +175,7 @@ body {
 .btn-logout:hover { background: rgba(255,255,255,.25); }
 
 /* サイドバー + メイン */
-.app-body { display: flex; flex: 1; overflow: hidden; }
+.app-body { display: flex; flex: 1; }
 
 .sidebar {
   width: 240px;
@@ -191,7 +191,7 @@ body {
   transition: left .25s ease;
 }
 .sidebar.open {
-  left: 0;
+  left: 0 !important;
   box-shadow: 4px 0 20px rgba(0,0,0,.2);
 }
 .sidebar-nav { list-style: none; }
@@ -471,7 +471,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
    レスポンシブ
 ============================================================ */
 @media (max-width: 768px) {
-  .sidebar { display: none; }
+  /* sidebar は left:-240px で非表示にするため display:none は使わない */
   .main-content { padding: 16px; }
   .frow { flex-direction: column; gap: 12px; }
   .modal { max-width: 100%; }
@@ -496,6 +496,20 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
 /* 印刷プレビューモーダル */
 #printModal .modal { max-width: 860px; }
+
+/* 評価一覧タブ */
+.eval-tab-btn {
+  padding: 8px 18px; font-size: .82rem; font-weight: 600;
+  border: none; background: none; cursor: pointer;
+  color: var(--clr-text-s); border-bottom: 3px solid transparent;
+  transition: var(--transition); font-family: var(--font-main);
+  margin-bottom: -2px;
+}
+.eval-tab-btn:hover { color: var(--clr-primary); }
+.eval-tab-btn.active-tab {
+  color: var(--clr-primary);
+  border-bottom-color: var(--clr-primary);
+}
 .print-sheet { background: #fff; padding: 20px; }
 .print-sheet h2 { font-family: var(--font-disp); font-size: 1.1rem; color: var(--clr-primary-d); border-bottom: 2px solid var(--clr-primary); padding-bottom: 6px; margin-bottom: 14px; }
 .print-sheet .print-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; font-size: .85rem; }
@@ -545,7 +559,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
     background_color: '#ffffff',
     theme_color: '#2e5549',
     icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='30' fill='white'/%3E%3Ctext y='62' x='100' font-size='60' text-anchor='middle'%3E📝%3C/text%3E%3Ctext y='108' x='100' font-size='18' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='134' x='100' font-size='13' text-anchor='middle' fill='%23666' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3Ctext y='158' x='100' font-size='12' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3Eby 育保の杜%3C/text%3E%3C/svg%3E",
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%232e5549'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='142' x='100' font-size='28' font-weight='bold' text-anchor='middle' fill='%23ffffff' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='173' x='100' font-size='17' text-anchor='middle' fill='%23a8d8cb' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E",
       sizes: '192x192',
       type: 'image/svg+xml',
       purpose: 'any maskable'
@@ -576,7 +590,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.06</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.07</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -660,7 +674,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
         </div>
 
         <div class="card">
-          <div class="card-title">📋 現在のタスク</div>
+          <div class="card-title" style="justify-content:space-between">
+            <span>📋 現在のタスク</span>
+            <button class="btn btn-outline btn-sm" onclick="loadHome()">🔄 更新</button>
+          </div>
           <ul class="task-list" id="taskList">
             <li><span class="task-name">読み込み中...</span></li>
           </ul>
@@ -772,26 +789,86 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <p class="page-sub">職員から提出された自己評価に対して、評価コメント・園評価点を入力します。</p>
 
         <div class="card">
-          <div class="card-title" style="justify-content: space-between;">
+          <div class="card-title" style="justify-content: space-between;flex-wrap:wrap;gap:8px">
             <span>📋 提出状況一覧</span>
-            <div style="display:flex;gap:8px;align-items:center;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <select class="fselect" id="mgrYearSel" style="width:100px;" onchange="loadEvalList()"></select>
               <select class="fselect" id="mgrGardenSel" style="width:140px;" onchange="loadEvalList()">
                 <option value="">全園</option>
                 <option value="はぐくみ保育園">はぐくみ</option>
                 <option value="第2はぐくみ保育園">第2はぐくみ</option>
               </select>
+              <button class="btn btn-outline btn-sm" onclick="loadEvalList()">🔄 更新</button>
             </div>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th>氏名</th><th>職種</th><th>所属園</th>
-                <th>提出日</th><th>自己合計</th><th>自己ランク</th>
-                <th>園評価合計</th><th>園ランク</th><th>賞与加算</th><th>状況</th><th>操作</th>
-              </tr></thead>
-              <tbody id="evalListBody"></tbody>
-            </table>
+
+          <!-- タブ -->
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:2px solid var(--clr-bg2);padding-bottom:0">
+            <button id="evalTab-self"  class="eval-tab-btn active-tab" onclick="switchEvalTab('self')">📝 自己評価</button>
+            <button id="evalTab-garden" class="eval-tab-btn" onclick="switchEvalTab('garden')">⭐ 園評価</button>
+            <button id="evalTab-bonus1" class="eval-tab-btn" onclick="switchEvalTab('bonus1')">💴 賞与一次評価</button>
+            <button id="evalTab-bonus2" class="eval-tab-btn" onclick="switchEvalTab('bonus2')">💴 賞与二次評価</button>
+          </div>
+
+          <!-- 自己評価タブ -->
+          <div id="evalTabPane-self">
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>氏名</th><th>職種</th><th>所属園</th>
+                  <th>提出日</th><th>状況</th><th>操作</th>
+                </tr></thead>
+                <tbody id="evalListBody-self"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 園評価タブ -->
+          <div id="evalTabPane-garden" style="display:none">
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>氏名</th><th>職種</th><th>所属園</th>
+                  <th>提出日</th>
+                  <th style="text-align:center">自己合計</th><th style="text-align:center">自己ランク</th>
+                  <th style="text-align:center">園評価合計</th><th style="text-align:center">園ランク</th>
+                  <th style="text-align:center">賞与加算B</th>
+                  <th>状況</th><th>操作</th>
+                </tr></thead>
+                <tbody id="evalListBody-garden"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 賞与一次評価タブ -->
+          <div id="evalTabPane-bonus1" style="display:none">
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>氏名</th><th>職種</th><th>所属園</th>
+                  <th style="text-align:center">A合計</th><th style="text-align:center">Aランク</th>
+                  <th style="text-align:center">B加算</th><th style="text-align:center">C加減</th>
+                  <th style="text-align:center">総合計</th><th>状況</th><th>操作</th>
+                </tr></thead>
+                <tbody id="evalListBody-bonus1"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 賞与二次評価タブ -->
+          <div id="evalTabPane-bonus2" style="display:none">
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>氏名</th><th>職種</th><th>所属園</th>
+                  <th style="text-align:center">A合計</th><th style="text-align:center">Aランク</th>
+                  <th style="text-align:center">B加算</th><th style="text-align:center">C加減</th>
+                  <th style="text-align:center">総合計</th><th style="text-align:center">総合ランク</th>
+                  <th>状況</th><th>操作</th>
+                </tr></thead>
+                <tbody id="evalListBody-bonus2"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -1148,9 +1225,12 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <button class="modal-close" onclick="closeMgrModal()">✕</button>
     </div>
     <div class="modal-body" id="mgrEvalModalBody"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
-      <button class="btn btn-primary" onclick="saveMgrEval()">💾 評価を保存</button>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="openPrintPreview('mgr')">🖨️ 印刷プレビュー</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
+        <button class="btn btn-primary" onclick="saveMgrEval()">💾 評価を保存</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1467,6 +1547,7 @@ function showPage(id) {
 const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalMgr','bonus','staff','settings'];
 
 function showSection(name) {
+  closeSidebar();
   SECTIONS.forEach(s => {
     const el = document.getElementById('sec-' + s);
     if (el) el.style.display = s === name ? '' : 'none';
@@ -1480,7 +1561,7 @@ function showSection(name) {
   if (name === 'history')  loadHistory();
   if (name === 'evalGoal') loadEvalGoal();
   if (name === 'evalSelf') loadEvalSelf();
-  if (name === 'evalMgr')  { initMgrYearSel(); loadEvalList(); }
+  if (name === 'evalMgr')  { initMgrYearSel(); switchEvalTab('self'); loadEvalList(); }
   if (name === 'staff')    loadStaffList();
   if (name === 'settings') loadSettings();
   if (name === 'bonus')    loadBonusSection();
@@ -1603,12 +1684,24 @@ async function loadHome() {
 async function loadEvalGoal() {
   const year = String(SETTINGS['current_year'] || new Date().getFullYear());
   const r = await api({ action: 'getSelfEval', year, staffId: SESSION.staffId });
-  currentRecord = r.ok ? r.data : null;
-  const st = document.getElementById('goalStatus');
+  currentRecord = (r.ok && r.data) ? r.data : null;
+  const inp = document.getElementById('goalH1Input');
+  const st  = document.getElementById('goalStatus');
+  const btn = document.querySelector('#sec-evalGoal .btn-primary');
   if (currentRecord && currentRecord.goalH1) {
-    document.getElementById('goalH1Input').value = currentRecord.goalH1;
-    st.textContent = '✅ 提出済（' + (currentRecord.goalSubmitDate || '') + '）';
-  } else { st.textContent = ''; }
+    inp.value    = currentRecord.goalH1;
+    inp.disabled = true;
+    inp.style.background = 'var(--clr-bg2)';
+    if (btn) { btn.disabled = true; btn.textContent = '✅ 提出済み'; }
+    st.textContent = '提出日: ' + (currentRecord.goalSubmitDate || '（記録なし）');
+    st.style.color = 'var(--clr-success)';
+  } else {
+    inp.value    = '';
+    inp.disabled = false;
+    inp.style.background = '';
+    if (btn) { btn.disabled = false; btn.textContent = '📨 提出する'; }
+    st.textContent = '';
+  }
 }
 
 async function submitGoal() {
@@ -1651,13 +1744,13 @@ async function loadEvalSelf() {
   // 提出済みなら読み取り専用テーブル
   renderScoreTable(items, selfScores, 'self', submitted);
   updateSelfTotal();
-  evalStep(1);
-
-  // 提出済みなら提出ボタンを無効化
+  // 提出済みなら確認・印刷画面（ステップ3）へ直行
   if (submitted) {
+    evalStep(3);
     const submitBtn = document.getElementById('submitEvalBtn');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '✅ 提出済み'; }
-    // ステップ1の「次へ」ボタンは進めるが確認画面で提出不可
+  } else {
+    evalStep(1);
   }
 }
 
@@ -1766,19 +1859,29 @@ function initMgrYearSel() {
   }
 }
 
+// 現在アクティブなタブ
+var _currentEvalTab = 'self';
+
+function switchEvalTab(tab) {
+  _currentEvalTab = tab;
+  ['self','garden','bonus1','bonus2'].forEach(function(t) {
+    var pane = document.getElementById('evalTabPane-' + t);
+    var btn  = document.getElementById('evalTab-' + t);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+    if (btn) btn.classList.toggle('active-tab', t === tab);
+  });
+}
+
 async function loadEvalList() {
   var year   = document.getElementById('mgrYearSel').value;
   var garden = document.getElementById('mgrGardenSel').value;
-  var perm   = window.PERM || {};
-  var showScore = SESSION.role === 'encho' || SESSION.role === 'admin';
 
-  // 評価済みレコードを取得
+  // 自己評価・園評価データ取得
   var r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: SESSION.garden });
   if (!r.ok) return;
   var evalMap = {};
   r.list.forEach(function(e){ evalMap[e.staffId] = e; });
 
-  // 全在籍職員を取得して突合（未提出でも表示）
   var sr = await api({ action: 'getStaffList', role: SESSION.role, garden: SESSION.garden });
   if (!sr.ok) return;
   var allStaff = sr.list.filter(function(s){ return s.status === '在籍'; });
@@ -1799,32 +1902,95 @@ async function loadEvalList() {
 
   if (garden) allStaff = allStaff.filter(function(s){ return s.garden === garden; });
 
-  var tbody = document.getElementById('evalListBody');
-  if (!allStaff.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
-    return;
+  var noData = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
+
+  // タブ「自己評価」
+  var selfBody = document.getElementById('evalListBody-self');
+  if (selfBody) {
+    selfBody.innerHTML = allStaff.length ? allStaff.map(function(s) {
+      var e = evalMap[s.staffId];
+      var rid = e ? e.recordId : (year + '-' + s.staffId);
+      return '<tr>'
+        + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
+        + '<td style="font-size:.78rem">' + (e && e.evalSubmitDate ? e.evalSubmitDate : '<span style="color:var(--clr-warning)">未提出</span>') + '</td>'
+        + '<td><span class="badge ' + statusBadge(e ? e.status : '未提出') + '">' + (e ? escHtml(e.status) : '未提出') + '</span></td>'
+        + '<td><button class="btn btn-outline btn-sm" onclick=\"openMgrModal2(\'\" + escHtml(rid) + \"\',\'\" + escHtml(s.staffId) + \"\')\">評価入力</button></td>'
+        + '</tr>';
+    }).join('') : noData;
   }
 
-  tbody.innerHTML = allStaff.map(function(s) {
-    var e = evalMap[s.staffId];
-    var rid = e ? e.recordId : (year + '-' + s.staffId);
-    var row = '<tr>'
+  // タブ「園評価」
+  var gardenBody = document.getElementById('evalListBody-garden');
+  if (gardenBody) {
+    gardenBody.innerHTML = allStaff.length ? allStaff.map(function(s) {
+      var e = evalMap[s.staffId];
+      var rid = e ? e.recordId : (year + '-' + s.staffId);
+      return '<tr>'
+        + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
+        + '<td style="font-size:.78rem">' + (e && e.evalSubmitDate ? e.evalSubmitDate : '<span style="color:var(--clr-warning)">未提出</span>') + '</td>'
+        + '<td style="text-align:center;font-weight:600">' + (e && e.selfTotal ? e.selfTotal : '-') + '</td>'
+        + '<td style="text-align:center">' + (e && e.selfRank ? '<span class="rank-badge rank-' + e.selfRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.selfRank + '</span>' : '-') + '</td>'
+        + '<td style="text-align:center;font-weight:600">' + (e && e.gardenTotal ? e.gardenTotal : '-') + '</td>'
+        + '<td style="text-align:center">' + (e && e.gardenRank ? '<span class="rank-badge rank-' + e.gardenRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.gardenRank + '</span>' : '-') + '</td>'
+        + '<td style="text-align:center;font-weight:600">' + (e && e.bonus > 0 ? e.bonus + '点' : '-') + '</td>'
+        + '<td><span class="badge ' + statusBadge(e ? e.status : '未提出') + '">' + (e ? escHtml(e.status) : '未提出') + '</span></td>'
+        + '<td><button class="btn btn-outline btn-sm" onclick=\"openMgrModal2(\'\" + escHtml(rid) + \"\',\'\" + escHtml(s.staffId) + \"\')\">評価入力</button></td>'
+        + '</tr>';
+    }).join('') : noData;
+  }
+
+  // タブ「賞与一次・二次評価」: 賞与DBを取得
+  var termSel = document.getElementById('bonusTermSel');
+  var curTerm = termSel ? termSel.value : '夏季';
+  var br = await api({ action: 'getBonusList', year, term: curTerm, role: SESSION.role, garden: SESSION.garden });
+  var bonusMap = {};
+  if (br.ok) br.list.forEach(function(b){ bonusMap[b.staffId] = b; });
+
+  var bonusStaff = sr.list.filter(function(s){
+    return s.status === '在籍' && s.jobType !== '理事長'
+           && (!garden || s.garden === garden);
+  });
+  if (SESSION.role === 'syunin') {
+    bonusStaff = bonusStaff.filter(function(s){
+      return ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー'].includes(s.jobType);
+    });
+  } else if (SESSION.role === 'encho') {
+    bonusStaff = bonusStaff.filter(function(s){ return s.staffId !== SESSION.staffId; });
+  }
+
+  var bonus1Body = document.getElementById('evalListBody-bonus1');
+  var bonus2Body = document.getElementById('evalListBody-bonus2');
+
+  function bonusRow(s, b, showGrandRank) {
+    return '<tr>'
       + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
-      + '<td style="font-size:.78rem">' + (e ? e.evalSubmitDate || '-' : '-') + '</td>';
-    if (showScore) {
-      row += '<td style="text-align:center;font-weight:600">' + (e ? e.selfTotal || 0 : '-') + '</td>'
-        + '<td style="text-align:center">' + (e && e.selfRank ? '<span class="rank-badge rank-' + e.selfRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.selfRank + '</span>' : '-') + '</td>'
-        + '<td style="text-align:center;font-weight:600">' + (e ? e.gardenTotal || '-' : '-') + '</td>'
-        + '<td style="text-align:center">' + (e && e.gardenRank ? '<span class="rank-badge rank-' + e.gardenRank + '" style="width:28px;height:28px;font-size:.78rem">' + e.gardenRank + '</span>' : '-') + '</td>'
-        + '<td style="text-align:center;font-weight:600">' + (e && e.bonus > 0 ? e.bonus + '点' : '-') + '</td>';
-    }
-    row += '<td><span class="badge ' + statusBadge(e ? e.status : '未提出') + '">' + (e ? e.status : '未提出') + '</span></td>'
-      + '<td><button class="btn btn-outline btn-sm" onclick="openMgrModal2(\'' + escHtml(rid) + '\',\'' + escHtml(s.staffId) + '\')">'+'評価入力</button></td>'
+      + '<td style="text-align:center;font-weight:600">' + (b ? b.aTotal + '/' + b.aMax : '-') + '</td>'
+      + '<td style="text-align:center">' + (b && b.aRank ? '<span class="rank-badge rank-' + b.aRank + '" style="width:28px;height:28px;font-size:.78rem">' + b.aRank + '</span>' : '-') + '</td>'
+      + '<td style="text-align:center;font-weight:600">' + (b ? b.bBonus + '点' : '-') + '</td>'
+      + '<td style="text-align:center;font-weight:600">' + (b !== null && b !== undefined ? b.cAdj : '-') + '</td>'
+      + '<td style="text-align:center;font-weight:700;color:var(--clr-primary-d)">' + (b ? b.grandTotal : '-') + '</td>'
+      + (showGrandRank ? '<td style="text-align:center">' + (b && b.grandRank ? '<span class="rank-badge rank-' + b.grandRank + '" style="width:28px;height:28px;font-size:.78rem">' + b.grandRank + '</span>' : '-') + '</td>' : '')
+      + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">' + (b ? escHtml(b.status) : '未評価') + '</span></td>'
+      + '<td><button class="btn btn-outline btn-sm" onclick=\"openBonusModal(\'\" + escHtml(s.staffId) + \"\')\">評価入力</button></td>'
       + '</tr>';
-    return row;
-  }).join('');
+  }
+
+  if (bonus1Body) {
+    bonus1Body.innerHTML = bonusStaff.length
+      ? bonusStaff.map(function(s){ return bonusRow(s, bonusMap[s.staffId] || null, false); }).join('')
+      : noData;
+  }
+  if (bonus2Body) {
+    bonus2Body.innerHTML = bonusStaff.length
+      ? bonusStaff.map(function(s){ return bonusRow(s, bonusMap[s.staffId] || null, true); }).join('')
+      : noData;
+  }
 }
 
 function statusBadge(s) {
@@ -1838,18 +2004,16 @@ let mgrScores = [];
 let mgrEvalType = '';
 
 async function openMgrModal2(recordId, staffId) {
-  // staffIdを直接受け取るラッパー
   const year = document.getElementById('mgrYearSel').value;
   const dr = await api({ action: 'getSelfEval', year, staffId });
   const detail = (dr.ok && dr.data) ? dr.data : null;
   window._mgrDetail = detail || {};
 
-  // staffリストから職員情報取得
   const sr = await api({ action: 'getStaffList', role: SESSION.role, garden: SESSION.garden });
   const staffInfo = sr.ok ? sr.list.find(x => x.staffId === staffId) : null;
 
   mgrEditRecord = {
-    recordId, staffId,
+    recordId, staffId, year,
     name:    staffInfo ? staffInfo.name    : (detail ? detail.name    : ''),
     jobType: staffInfo ? staffInfo.jobType : (detail ? detail.jobType : ''),
     garden:  staffInfo ? staffInfo.garden  : (detail ? detail.garden  : ''),
@@ -1866,16 +2030,28 @@ async function openMgrModal2(recordId, staffId) {
 
   const selfScoresDisplay = detail && detail.selfScores ? detail.selfScores : [];
   const isAdmin = SESSION.role === 'encho' || SESSION.role === 'admin';
+  const colSpan = isAdmin ? 4 : 3;
 
-  let html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.85rem;line-height:1.7">'
+  // 提出日・状況バー
+  const submitDateStr = detail && detail.evalSubmitDate ? detail.evalSubmitDate : '未提出';
+  const statusStr = detail ? (detail.status || '未提出') : '未提出';
+
+  let html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.85rem;line-height:1.8">'
+    + '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px">'
+    + '<span>提出日：<strong style="color:' + (detail && detail.evalSubmitDate ? 'var(--clr-success)' : 'var(--clr-danger)') + '">' + escHtml(submitDateStr) + '</strong></span>'
+    + '<span>状況：<span class="badge ' + statusBadge(statusStr) + '">' + escHtml(statusStr) + '</span></span>'
+    + '</div>'
     + '<strong>上半期目標：</strong>' + escHtml(mgrEditRecord.goalH1 || '（未提出）') + '<br>'
     + (detail && detail.reflectH1 ? '<strong>振り返り：</strong>' + escHtml(detail.reflectH1) + '<br>' : '')
-    + (detail && detail.goalH2 ? '<strong>下半期目標：</strong>' + escHtml(detail.goalH2) : '')
+    + (detail && detail.goalH2   ? '<strong>下半期目標：</strong>' + escHtml(detail.goalH2) : '')
     + '</div>'
     + '<div class="table-wrap"><table class="score-table">'
-    + '<thead><tr><th style="width:180px">評価項目</th><th>着眼点</th>'
-    + (isAdmin ? '<th style="width:70px;text-align:center">自己評価</th>' : '')
-    + '<th style="width:260px;text-align:center">園評価（1〜5点）</th></tr></thead>'
+    + '<thead><tr>'
+    + '<th style="width:160px">評価項目</th>'
+    + '<th>着眼点</th>'
+    + (isAdmin ? '<th style="width:60px;text-align:center">自己評価</th>' : '')
+    + '<th style="width:240px;text-align:center">園評価（1〜5点）</th>'
+    + '</tr></thead>'
     + '<tbody id="mgrScoreBody"></tbody></table></div>'
     + '<div style="margin-top:12px;text-align:right;font-weight:700;font-size:.9rem">園評価合計: <span id="mgrTotal" style="color:var(--clr-primary);font-size:1.1rem">0</span> 点</div>'
     + '<div style="margin-top:16px"><label class="flabel">評価コメント（職員へのフィードバック）</label>'
@@ -1885,12 +2061,12 @@ async function openMgrModal2(recordId, staffId) {
 
   document.getElementById('mgrEvalModalBody').innerHTML = html;
 
-  // テーブル描画
+  // tbody描画 - item と hint を別 td に分けてヘッダーと列数を揃える
   let tbody2 = '';
   let lastCat2 = '';
   items.forEach(function(item, idx) {
     if (item.cat !== lastCat2) {
-      tbody2 += '<tr class="score-cat-row"><td colspan="' + (isAdmin?4:3) + '">◆ ' + item.cat + '</td></tr>';
+      tbody2 += '<tr class="score-cat-row"><td colspan="' + colSpan + '">◆ ' + escHtml(item.cat) + '</td></tr>';
       lastCat2 = item.cat;
     }
     const val = mgrScores[idx] || 0;
@@ -1899,11 +2075,14 @@ async function openMgrModal2(recordId, staffId) {
         + (val === v ? 'checked' : '') + ' onchange="onMgrScore(' + idx + ',' + v + ')">'
         + '<label for="mgr_' + idx + '_' + v + '">' + v + '</label>';
     }).join('');
-    const sv = selfScoresDisplay[idx] || '-';
-    tbody2 += '<tr><td><div class="score-item-name">' + escHtml(item.item) + '</div>'
-      + '<div class="score-item-hint">' + escHtml(item.hint) + '</div></td>'
+    const sv = (selfScoresDisplay[idx] !== undefined && selfScoresDisplay[idx] !== 0)
+                ? selfScoresDisplay[idx] : '―';
+    tbody2 += '<tr>'
+      + '<td><div class="score-item-name">' + escHtml(item.item) + '</div></td>'
+      + '<td><div class="score-item-hint" style="font-size:.76rem;color:var(--clr-text-s)">' + escHtml(item.hint) + '</div></td>'
       + (isAdmin ? '<td style="text-align:center;font-weight:700;font-size:1rem;color:var(--clr-primary)">' + sv + '</td>' : '')
-      + '<td><div class="score-radio-group">' + radios + '</div></td></tr>';
+      + '<td><div class="score-radio-group">' + radios + '</div></td>'
+      + '</tr>';
   });
   document.getElementById('mgrScoreBody').innerHTML = tbody2;
   updateMgrTotal();
@@ -2002,8 +2181,14 @@ async function saveMgrEval() {
   const comment = document.getElementById('mgrComment').value.trim();
   const r = await api({
     action: 'saveManagerEval',
-    recordId: mgrEditRecord.recordId,
-    gardenScores: mgrScores, managerComment: comment
+    recordId:     mgrEditRecord.recordId,
+    staffId:      mgrEditRecord.staffId,
+    staffName:    mgrEditRecord.name,
+    jobType:      mgrEditRecord.jobType,
+    garden:       mgrEditRecord.garden,
+    year:         mgrEditRecord.year,
+    gardenScores: mgrScores,
+    managerComment: comment
   });
   if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
   else toast(r.msg, 'error');
