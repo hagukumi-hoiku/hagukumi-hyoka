@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.09</title>
+<title>はぐくみ評価 Ver.1.10</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.09</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.10</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -990,11 +990,16 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>氏名</th><th>職種</th><th>所属園</th><th>評価タイプ</th>
-              <th style="text-align:center">A合計</th><th style="text-align:center">Aランク</th>
-              <th style="text-align:center">A加算</th><th style="text-align:center">B加算</th>
-              <th style="text-align:center">C加減</th><th style="text-align:center">総合計</th>
-              <th style="text-align:center">総合ランク</th><th>状況</th><th>操作</th></tr></thead>
+              <thead><tr>
+                <th>氏名</th><th>職種</th><th>所属園</th>
+                <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem">A合計<br><span style="font-size:.7rem;font-weight:400">100点換算</span></th>
+                <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem">Aランク</th>
+                <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">B加算</th>
+                <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減<br><span style="font-size:.7rem;font-weight:400">理事長調整</span></th>
+                <th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>
+                <th style="text-align:center;font-size:.8rem">総合ランク</th>
+                <th>状況</th><th>操作</th>
+              </tr></thead>
               <tbody id="bonusListBody"></tbody>
             </table>
           </div>
@@ -2753,42 +2758,98 @@ async function loadBonusList() {
   var year   = document.getElementById('bonusYearSel').value;
   var term   = document.getElementById('bonusTermSel').value;
   var garden = document.getElementById('bonusGardenSel').value;
-  // 職員一覧を取得して賞与評価と突合
-  var sr = await api({action:'getStaffList', role:SESSION.role, garden:SESSION.garden});
-  if (!sr.ok) return;
-  var br = await api({action:'getBonusList', year, term, role:SESSION.role, garden:SESSION.garden});
-  if (!br.ok) return;
-  var bonusMap = {};
-  br.list.forEach(function(b){ bonusMap[b.staffId] = b; });
 
-  // 表示対象：在籍かつ正規のみ（パートは賞与対象外が多いが一旦全員表示）
-  var list = sr.list.filter(function(s){ return s.status === '在籍'; });
+  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden });
+  if (!sr.ok) return;
+
+  // ① 正規のみ・理事長除外
+  var list = sr.list.filter(function(s) {
+    return s.status === '在籍'
+        && s.employment === '正規'
+        && s.jobType !== '理事長';
+  });
   if (garden) list = list.filter(function(s){ return s.garden === garden; });
-  // 理事長は自分を除外、主任は自分の評価対象外職種除外
-  if (SESSION.role === 'encho') list = list.filter(function(s){ return s.staffId !== SESSION.staffId; });
-  if (SESSION.role === 'syunin') list = list.filter(function(s){ return ['保育補助','保育士','調理員','統括リーダー','幼児リーダー','乳児リーダー'].includes(s.jobType); });
+
+  // 権限別フィルター（adminは全員見られる）
+  if (SESSION.role === 'encho') {
+    list = list.filter(function(s){
+      return s.staffId !== SESSION.staffId
+          && ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー','主任'].includes(s.jobType);
+    });
+  } else if (SESSION.role === 'syunin') {
+    list = list.filter(function(s){
+      return ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー'].includes(s.jobType);
+    });
+  }
 
   var tbody = document.getElementById('bonusListBody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>'; return; }
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
+    return;
+  }
+
+  var br = await api({ action:'getBonusList', year, term, role:SESSION.role, garden:SESSION.garden });
+  var bonusMap = {};
+  if (br.ok) br.list.forEach(function(b){ bonusMap[String(b.staffId).trim()] = b; });
+
+  var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max1; }, 0); // 85
+  var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
+  var maxAll = max1 + max2; // 220
 
   tbody.innerHTML = list.map(function(s) {
-    var b = bonusMap[s.staffId];
-    var typeNames = {general:'一般職',leader:'リーダー',syunin:'主任',encho:'園長'};
+    var b = bonusMap[String(s.staffId).trim()];
+    var raw1 = 0, raw2 = 0;
+    if (b && b.scores1) b.scores1.forEach(function(v,i){ raw1 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w1:0); });
+    if (b && b.scores2) b.scores2.forEach(function(v,i){ raw2 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w2:0); });
+    var has1 = b && b.scores1 && b.scores1.some(Boolean);
+    var has2 = b && b.scores2 && b.scores2.some(Boolean);
     var evalType = getBonusEvalType(s.jobType);
+    var useMax = evalType === 'encho' ? max2 : maxAll;
+    var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
+    // A: 一次+二次の合計を100点満点換算
+    var aTotal100 = (has1||has2) ? Math.round((rawTotal / useMax) * 100 * 10) / 10 : null;
+    var aRank = aTotal100 !== null ? calcRankJS(aTotal100, 100) : '';
+    var bVal  = b ? (b.bBonus||0) : null;
+    var cVal  = b ? (b.cAdj||0)  : null;
+    var grand = aTotal100 !== null && bVal !== null
+      ? Math.round((aTotal100 * 0.7 + (bVal||0) + (cVal||0)) * 10) / 10
+      : null;
+    // 総合計＝A（70点換算）+ B + C → 100点満点でランク
+    var gRank = grand !== null ? calcRankJS(grand, 100) : '';
+
+    function cell(v, bg) {
+      return '<td style="text-align:center;font-weight:600;background:' + (bg||'transparent') + '">'
+        + (v !== null && v !== undefined ? v : '<span style="color:#ccc">-</span>') + '</td>';
+    }
+    function rkBadge(rank) {
+      return rank ? '<span class="rank-badge rank-' + escHtml(rank) + '" style="width:26px;height:26px;font-size:.75rem">' + escHtml(rank) + '</span>' : '<span style="color:#ccc">-</span>';
+    }
+
     return '<tr>'
       + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
-      + '<td style="font-size:.78rem">' + (typeNames[evalType]||'') + '</td>'
-      + '<td style="text-align:center;font-weight:600">' + (b ? b.aTotal + '/' + b.aMax : '-') + '</td>'
-      + '<td style="text-align:center">' + (b && b.aRank ? '<span class="rank-badge rank-' + b.aRank + '" style="width:28px;height:28px;font-size:.78rem">' + b.aRank + '</span>' : '-') + '</td>'
-      + '<td style="text-align:center;font-weight:600">' + (b ? b.aBonus + '点' : '-') + '</td>'
-      + '<td style="text-align:center;font-weight:600">' + (b ? b.bBonus + '点' : '-') + '</td>'
-      + '<td style="text-align:center;font-weight:600">' + (b ? b.cAdj : '-') + '</td>'
-      + '<td style="text-align:center;font-weight:700;color:var(--clr-primary-d)">' + (b ? b.grandTotal : '-') + '</td>'
-      + '<td style="text-align:center">' + (b && b.grandRank ? '<span class="rank-badge rank-' + b.grandRank + '" style="width:28px;height:28px;font-size:.78rem">' + b.grandRank + '</span>' : '-') + '</td>'
-      + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">' + (b ? b.status : '未評価') + '</span></td>'
-      + '<td><button class="btn btn-outline btn-sm" onclick="openBonusModal(\'' + escHtml(s.staffId) + '\')">評価入力</button></td>'
+      // A合計（100点換算）
+      + '<td style="text-align:center;font-weight:700;background:#f7fcff;color:var(--clr-primary-d)">'
+        + (aTotal100 !== null ? aTotal100 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+      + '<td style="text-align:center;background:#f7fcff">' + rkBadge(aRank) + '</td>'
+      // B加算
+      + '<td style="text-align:center;font-weight:600;background:#fffef5">'
+        + (bVal !== null ? bVal + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+      // C加減
+      + '<td style="text-align:center;font-weight:600;background:#fffef5">'
+        + (cVal ? (cVal>0?'+':'') + cVal : '<span style="color:#ccc">-</span>') + '</td>'
+      // 確定合計
+      + '<td style="text-align:center;font-weight:700;background:#fffef5;color:var(--clr-primary-d)">'
+        + (grand !== null ? grand + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+      // 総合ランク
+      + '<td style="text-align:center">' + rkBadge(gRank) + '</td>'
+      + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">'
+        + (b ? escHtml(b.status) : '未評価') + '</span></td>'
+      // ② data属性でonclickエスケープ問題を回避
+      + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">評価入力</button></td>'
       + '</tr>';
   }).join('');
 }
@@ -2820,7 +2881,7 @@ async function openBonusModal(staffId) {
   if (er.ok && er.data && er.data.bonus > 0) bBonus = er.data.bonus;
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
-  var maxScore = isEncho ? 135 : 220;
+  var maxRaw   = isEncho ? 135 : 220;   // 生の満点（計算用）
   bonusScores1 = BONUS_WEIGHTS.map(function(_,i){ return (currentBonusRecord && currentBonusRecord.scores1[i]) || 0; });
   bonusScores2 = BONUS_WEIGHTS.map(function(_,i){ return (currentBonusRecord && currentBonusRecord.scores2[i]) || 0; });
 
@@ -2832,8 +2893,8 @@ async function openBonusModal(staffId) {
   var html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.83rem">'
     + '<div style="display:flex;gap:20px;flex-wrap:wrap">'
     + '<span><span style="color:var(--clr-text-s)">評価タイプ：</span><strong>' + escHtml(evalType==='encho'?'園長用':evalType==='syunin'?'主任用':evalType==='leader'?'リーダー用':'一般職用') + '</strong></span>'
-    + '<span><span style="color:var(--clr-text-s)">満点：</span><strong>' + maxScore + '点</strong></span>'
-    + '<span><span style="color:var(--clr-text-s)">B加算（自動取得）：</span><strong>' + bBonus + '点</strong></span>'
+    + '<span><span style="color:var(--clr-text-s)">生の満点：</span><strong>' + maxRaw + '点 → 100点換算</strong></span>'
+    + '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>'
     + '</div></div>';
 
   // 評価テーブル
@@ -2844,7 +2905,7 @@ async function openBonusModal(staffId) {
   html += '<th style="width:130px;text-align:center">二次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
   html += '<th style="width:60px;text-align:center">小計</th>';
   html += '</tr></thead><tbody id="bonusScoreBody"></tbody></table></div>';
-  html += '<div style="margin-top:10px;text-align:right;font-weight:700">A評価合計（70点換算）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
+  html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（100点換算）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
 
   html += '<div class="frow" style="margin-top:16px">';
   html += '<div class="fcol"><label class="flabel">B加算（自己評価から自動取得）</label><div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-weight:700;font-size:.95rem">' + bBonus + '点</div><input type="hidden" id="bonusBVal" value="' + bBonus + '"></div>';
@@ -2957,10 +3018,11 @@ function calcBonusA70(evalType) {
 }
 function updateBonusTotal(evalType) {
   var raw  = calcBonusRaw(evalType);
-  var a70  = calcBonusA70(evalType);
   var maxR = (evalType === 'encho') ? 135 : 220;
+  // 100点満点換算
+  var a100 = Math.round((raw / maxR) * 100 * 10) / 10;
   var el = document.getElementById('bonusATotal');
-  if (el) el.textContent = a70 + '点（' + raw + '/' + maxR + '）';
+  if (el) el.textContent = a100 + '点（生点: ' + raw + '/' + maxR + '）';
 }
 
 async function saveBonusEval() {
