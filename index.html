@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.10</title>
+<title>はぐくみ評価 Ver.1.11</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.10</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.11</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -787,8 +787,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
       <!-- ======== 管理者評価 ======== -->
       <section id="sec-evalMgr" style="display:none">
-        <div class="page-title">⭐ 管理者評価</div>
-        <p class="page-sub">正規職員の自己評価・賞与評価を管理します。</p>
+        <div class="page-title">📝 職員評価（自己評価・園評価）</div>
+        <p class="page-sub">職員が提出した上半期目標・振り返り・自己評価に対して、<strong>園評価</strong>を入力します。<br>
+          <span style="font-size:.82rem;color:var(--clr-text-s)">園評価の結果（ランク）は、賞与評価の<strong>加算B</strong>として自動的に反映されます。</span>
+        </p>
 
         <!-- 年度・園フィルター（共通） -->
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
@@ -814,43 +816,6 @@ tr:hover td { background: rgba(74,124,111,.04); }
                 <th>状況</th><th>操作</th>
               </tr></thead>
               <tbody id="evalListBody-self"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 大カード②：賞与評価一覧 -->
-        <div class="card">
-          <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <span>✏️ 賞与評価一覧</span>
-            <select class="fselect" id="bonusTermSel2" style="width:110px;" onchange="loadEvalList()">
-              <option value="夏季">夏季賞与</option>
-              <option value="冬季">冬季賞与</option>
-            </select>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th rowspan="2">氏名</th><th rowspan="2">職種</th><th rowspan="2">所属園</th>
-                  <th style="text-align:center;background:#f0f8fd;color:#5b9ab5;font-size:.79rem;font-weight:600">一次評価</th>
-                  <th style="text-align:center;background:#f2fcf7;color:#5b9a78;font-size:.79rem;font-weight:600">二次評価</th>
-                  <th style="text-align:center;background:#fdfaf2;color:#9a8a45;font-size:.79rem;font-weight:600">総合計(A)</th>
-                  <th style="text-align:center;background:#fdfaf2;color:#9a8a45;font-size:.79rem;font-weight:600">B加算</th>
-                  <th style="text-align:center;background:#fdfaf2;color:#9a8a45;font-size:.79rem;font-weight:600">C加減</th>
-                  <th style="text-align:center;background:#fdfaf2;color:#7a6a25;font-size:.79rem;font-weight:700">確定合計</th>
-                  <th rowspan="2">ランク</th><th rowspan="2">状況</th><th rowspan="2">操作</th>
-                </tr>
-                <tr>
-                  <th style="text-align:center;font-size:.71rem;font-weight:400;background:#f7fcff;color:#7ab0c8">合計(A)</th>
-                  <th style="text-align:center;font-size:.71rem;font-weight:400;background:#f5fbf8;color:#7ab09a">合計(A)</th>
-                  <th style="text-align:center;font-size:.71rem;font-weight:400;background:#fffdf5;color:#b8a050">70点満点</th>
-                  <th style="text-align:center;font-size:.71rem;font-weight:400;background:#fffdf5;color:#b8a050">自己評価より</th>
-                  <th style="text-align:center;font-size:.71rem;font-weight:400;background:#fffdf5;color:#b8a050">理事長調整</th>
-                  <th style="text-align:center;font-size:.71rem;font-weight:500;background:#fffdf5;color:#7a6a25">A+B+C</th>
-                  <th colspan="0" style="display:none"></th>
-                </tr>
-              </thead>
-              <tbody id="evalListBody-bonus"></tbody>
             </table>
           </div>
         </div>
@@ -1657,9 +1622,16 @@ async function loadHome() {
     tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
   }
 
-  // 管理者評価のある人に進捗リマインダー
+  // 管理者向けタスク
   if (perm.canEval && mode !== 'closed') {
-    tasks.push({name:'⭐ 職員の評価入力は「職員の評価入力」から', deadline:'', badge:'info', action:'evalMgr'});
+    if (!perm.isAdmin) {
+      // 主任・園長: 職員評価（自己評価への園評価）
+      tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:'', badge:'info', action:'evalMgr'});
+    }
+    if (perm.canBonus) {
+      // 園長・理事長: 賞与評価
+      tasks.push({name:'✏️ 賞与評価の入力・確認', deadline:'', badge:'info', action:'bonus'});
+    }
   }
 
   var tl = document.getElementById('taskList');
@@ -1961,59 +1933,6 @@ async function loadEvalList() {
         + '<td style="text-align:center">' + (e && e.gardenRank ? '<span class="rank-badge rank-' + escHtml(e.gardenRank) + '" style="width:28px;height:28px;font-size:.78rem">' + escHtml(e.gardenRank) + '</span>' : '-') + '</td>'
         + '<td><span class="badge ' + statusBadge(e ? e.status : '未提出') + '">' + (e ? escHtml(e.status) : '未提出') + '</span></td>'
         + '<td><button class="btn btn-outline btn-sm" data-rid="' + escHtml(rid) + '" data-sid="' + escHtml(s.staffId) + '" onclick="openMgrModal2(this.dataset.rid,this.dataset.sid)">評価入力</button></td>'
-        + '</tr>';
-    }).join('') : noData;
-  }
-
-  // ── カード②：賞与評価一覧 ──
-  var termSel = document.getElementById('bonusTermSel2') || document.getElementById('bonusTermSel');
-  var curTerm = termSel ? termSel.value : '夏季';
-  var br = await api({ action: 'getBonusList', year, term: curTerm, role: SESSION.role, garden: SESSION.garden });
-  var bonusMap = {};
-  if (br.ok) br.list.forEach(function(b) { bonusMap[String(b.staffId).trim()] = b; });
-
-  var bonusBody = document.getElementById('evalListBody-bonus');
-  if (bonusBody) {
-    bonusBody.innerHTML = allStaff.length ? allStaff.map(function(s) {
-      var b = bonusMap[String(s.staffId).trim()];
-      var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max1; }, 0); // 85
-      var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
-      var raw1 = 0, raw2 = 0;
-      if (b && b.scores1) b.scores1.forEach(function(v,i){ raw1 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w1:0); });
-      if (b && b.scores2) b.scores2.forEach(function(v,i){ raw2 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w2:0); });
-      var has1 = b && b.scores1 && b.scores1.some(Boolean);
-      var has2 = b && b.scores2 && b.scores2.some(Boolean);
-      // 一次+二次の合算を70点満点換算
-      var maxAll = max1 + max2; // 220
-      var aTotal70 = (has1||has2) ? Math.round(((raw1+raw2)/maxAll)*70*10)/10 : null;
-      var bVal = b ? (b.bBonus||0) : null;
-      var cVal = b ? (b.cAdj||0) : null;
-      var grand = aTotal70!==null ? Math.round((aTotal70+(bVal||0)+(cVal||0))*10)/10 : null;
-      var gRank = grand!==null ? calcRankJS(grand, 100) : '';
-      function rk(rank) {
-        if (!rank) return '<span style="color:#bbb">-</span>';
-        return '<span class="rank-badge rank-'+escHtml(rank)+'" style="width:26px;height:26px;font-size:.75rem">'+escHtml(rank)+'</span>';
-      }
-      return '<tr>'
-        + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
-        + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
-        + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
-        + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
-          + (has1 ? raw1+'点' : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center;font-weight:600;background:#f5fbf8;color:#3a8060">'
-          + (has2 ? raw2+'点' : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center;font-weight:700;background:#fffef5;color:var(--clr-primary-d)">'
-          + (aTotal70!==null ? aTotal70+'点' : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center;font-weight:600;background:#fffef5">'
-          + (bVal!==null ? bVal+'点' : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center;font-weight:600;background:#fffef5">'
-          + (cVal ? (cVal>0?'+':'')+cVal : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center;font-weight:700;background:#fffef5;color:var(--clr-primary-d)">'
-          + (grand!==null ? grand+'点' : '<span style="color:#ccc">-</span>') + '</td>'
-        + '<td style="text-align:center">' + rk(gRank) + '</td>'
-        + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">'
-          + (b ? escHtml(b.status) : '未評価') + '</span></td>'
-        + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">評価入力</button></td>'
         + '</tr>';
     }).join('') : noData;
   }
@@ -2858,8 +2777,6 @@ async function openBonusModal(staffId) {
   try {
   // evalMgrセクションからの呼び出しか、bonusセクションからかを判定
   var yearEl = document.getElementById('mgrYearSel');
-  var termEl = document.getElementById('bonusTermSel2');
-  // bonusセクションが表示中ならそちらを優先
   var bonusSec = document.getElementById('sec-bonus');
   if (bonusSec && bonusSec.style.display !== 'none') {
     yearEl = document.getElementById('bonusYearSel') || yearEl;
@@ -3030,8 +2947,8 @@ async function saveBonusEval() {
   // コンテキスト判定（evalMgr or bonus section）
   var bonusSec = document.getElementById('sec-bonus');
   var inBonusSec = bonusSec && bonusSec.style.display !== 'none';
-  var year = (inBonusSec ? document.getElementById('bonusYearSel') : document.getElementById('mgrYearSel')).value;
-  var term = ((inBonusSec ? document.getElementById('bonusTermSel') : document.getElementById('bonusTermSel2')) || {value:'夏季'}).value;
+  var year = document.getElementById('bonusYearSel').value || currentYear();
+  var term = (document.getElementById('bonusTermSel') || {value:'夏季'}).value;
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
   var bBonus = parseInt(document.getElementById('bonusBVal').value) || 0;
