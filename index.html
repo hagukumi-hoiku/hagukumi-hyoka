@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.15</title>
+<title>はぐくみ評価 Ver.1.16</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.15</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.16</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -817,7 +817,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <table>
               <thead><tr>
                 <th>氏名</th><th>職種</th><th>所属園</th>
-                <th>提出日</th>
+                <th style="font-size:.78rem">自己評価<br>提出日</th>
                 <th style="text-align:center">自己合計</th>
                 <th style="text-align:center">自己ランク</th>
                 <th style="text-align:center">園評価合計</th>
@@ -1515,7 +1515,7 @@ function showPage(id) {
 
 const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalMgr','bonus','staff','settings'];
 
-function showSection(name) {
+async function showSection(name) {
   closeSidebar();
   SECTIONS.forEach(s => {
     const el = document.getElementById('sec-' + s);
@@ -1531,10 +1531,12 @@ function showSection(name) {
   if (name === 'evalGoal') loadEvalGoal();
   if (name === 'evalSelf') loadEvalSelf();
   if (name === 'evalMgr')  {
+    // SETTINGS が未ロードなら先に取得してから年度セレクト初期化
+    if (!SETTINGS['current_year']) {
+      var sr2 = await api({ action: 'getSettings' });
+      if (sr2.ok) SETTINGS = sr2.settings;
+    }
     initMgrYearSel();
-    // adminは賞与評価のみ表示
-    var selfCard = document.getElementById('evalMgrSelfCard');
-    if (selfCard) selfCard.style.display = SESSION.role === 'admin' ? 'none' : '';
     loadEvalList();
   }
   if (name === 'staff')    loadStaffList();
@@ -1893,11 +1895,15 @@ async function submitSelfEval() {
 // ============================================================
 function initMgrYearSel() {
   const sel = document.getElementById('mgrYearSel');
+  if (!sel) return;
+  // SETTINGS が未ロードでも動くよう currentYear() 関数で取得
+  const y = parseInt(currentYear());
+  if (sel.options.length > 0 && parseInt(sel.value) === y) return; // 既に正しい値なら不要
   sel.innerHTML = '';
-  const y = parseInt(SETTINGS['current_year'] || new Date().getFullYear());
   for (let i = y; i >= y - 3; i--) {
     const opt = document.createElement('option');
-    opt.value = i; opt.textContent = i + '年度';
+    opt.value = String(i); opt.textContent = i + '年度';
+    if (i === y) opt.selected = true;
     sel.appendChild(opt);
   }
 }
@@ -1914,9 +1920,9 @@ async function loadEvalList() {
   var cardTitle = document.getElementById('evalMgrCardTitle');
   if (cardTitle) cardTitle.textContent = isH1 ? '📝 上半期　自己評価・園評価 一覧' : '📝 下半期　自己評価・園評価 一覧';
 
-  // admin（理事長）は自己評価カード非表示
+  // admin（理事長）は自己評価カード：一覧は表示する（評価入力できる）
   var selfCard = document.getElementById('evalMgrSelfCard');
-  if (selfCard) selfCard.style.display = SESSION.role === 'admin' ? 'none' : '';
+  if (selfCard) selfCard.style.display = '';
 
   // admin（理事長）は全園・全職員を取得できるようgarden指定なし
   var apiGarden = SESSION.role === 'admin' ? '' : SESSION.garden;
