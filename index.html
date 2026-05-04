@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.16</title>
+<title>はぐくみ評価 Ver.1.17</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム',
+    description: '育保の杜 職員評価システム Ver.1.17',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.16</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.17</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -713,6 +713,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <section id="sec-evalSelf" style="display:none">
         <div class="page-title">✏️ 振り返り・自己評価</div>
         <p class="page-sub">上半期の振り返りと各評価項目への自己評価点を記入して提出します。</p>
+        <div id="evalSelfDeadlineInfo" style="margin-bottom:12px;padding:10px 14px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem"></div>
 
         <div class="steps" id="evalSteps">
           <div class="step active" id="step1"><div class="step-num">1</div><div class="step-label">振り返り</div></div>
@@ -873,7 +874,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div class="frow">
             <div class="fcol">
               <label class="flabel">対象年度</label>
-              <input type="number" class="finput" id="setYear" placeholder="例: 2025">
+              <input type="number" class="finput" id="setYear" placeholder="例: 2026">
             </div>
             <div class="fcol">
               <label class="flabel">評価モード</label>
@@ -887,12 +888,19 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </div>
           <div class="frow">
             <div class="fcol">
-              <label class="flabel">上半期目標 提出期限</label>
+              <label class="flabel">📅 上半期目標 提出期限</label>
               <input type="date" class="finput" id="setH1Deadline">
+              <p class="fhelp">職員が上半期目標を提出できる期日。期日後はフロントで警告表示。</p>
             </div>
             <div class="fcol">
-              <label class="flabel">振り返り・自己評価 提出期限</label>
+              <label class="flabel">📅 振り返り・自己評価 提出期限</label>
               <input type="date" class="finput" id="setH2Deadline">
+              <p class="fhelp">職員が振り返り・自己評価を提出できる期日。</p>
+            </div>
+            <div class="fcol">
+              <label class="flabel">📅 管理者（園評価）提出期限</label>
+              <input type="date" class="finput" id="setMgrDeadline">
+              <p class="fhelp">園長が園評価を理事長へ提出する期日。</p>
             </div>
           </div>
           <div class="frow">
@@ -1194,7 +1202,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <button class="btn btn-outline" onclick="openPrintPreview('mgr')">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
-        <button class="btn btn-primary" onclick="saveMgrEval()">💾 評価を保存</button>
+        <button class="btn btn-outline" id="mgrDraftBtn" onclick="saveMgrEval(true)">💾 一時保存</button>
+        <button class="btn btn-accent" id="mgrSubmitBtn" onclick="saveMgrEval(false)">📤 理事長へ提出</button>
       </div>
     </div>
   </div>
@@ -1621,6 +1630,7 @@ async function loadHome() {
   var mode = SETTINGS['eval_mode'] || 'goal';
   var h1dl = SETTINGS['h1_deadline'] || '';
   var h2dl = SETTINGS['h2_deadline'] || '';
+  var mgrDl= SETTINGS['mgr_deadline'] || '';
   var status = currentRecord ? currentRecord.status : '未提出';
   var tasks = [];
 
@@ -1629,7 +1639,7 @@ async function loadHome() {
     tasks.push({name:'✏️ 賞与評価の入力・C調整（理事長）', deadline:'', badge:'info', action:'bonus'});
     tasks.push({name:'📊 評価履歴の確認', deadline:'', badge:'info', action:'history'});
   } else if (mode === 'goal') {
-    var goalDone = currentRecord && currentRecord.status && currentRecord.status !== '未提出' && currentRecord.status !== '下書き';
+    var goalDone = currentRecord && ['上半期目標入力済','自己評価提出済','管理者評価入力中','管理者評価済'].includes(status);
     if (!goalDone) {
       tasks.push({name:'📝 上半期個人目標の記入・提出', deadline:h1dl ? h1dl + ' まで' : '', badge:'danger', action:'evalGoal'});
     } else {
@@ -1639,11 +1649,15 @@ async function loadHome() {
     if (!currentRecord || !currentRecord.goalH1) {
       tasks.push({name:'⚠️ 上半期目標が未提出です', deadline:'', badge:'warning', action:'evalGoal'});
     }
-    if (!['自己評価提出済','管理者評価済'].includes(status)) {
+    var evalDone = currentRecord && ['自己評価提出済','管理者評価入力中','管理者評価済'].includes(status);
+    if (!evalDone) {
       tasks.push({name:'✏️ 振り返り・自己評価の記入・提出', deadline:h2dl ? h2dl + ' まで' : '', badge:'danger', action:'evalSelf'});
     } else {
-      tasks.push({name:'✅ 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDate || '', badge:'success', action:null});
+      tasks.push({name:'✅ 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDateH1 || currentRecord.evalSubmitDate || '', badge:'success', action:null});
     }
+  } else if (mode === 'mgr') {
+    // 管理者評価フェーズ：職員には通知のみ
+    tasks.push({name:'🔍 管理者評価フェーズです。評価結果をお待ちください。', deadline:'', badge:'muted', action:null});
   } else {
     tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
   }
@@ -1651,7 +1665,8 @@ async function loadHome() {
   // 管理者向けタスク（理事長は上のブロックで処理済み）
   if (evalType !== 'none' && perm.canEval && mode !== 'closed') {
     if (!perm.isAdmin) {
-      tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:'', badge:'info', action:'evalMgr'});
+      var mgrDeadlineLabel = mgrDl ? mgrDl + ' まで' : '';
+      tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:mgrDeadlineLabel, badge:'info', action:'evalMgr'});
     }
     if (perm.canBonus) {
       tasks.push({name:'✏️ 賞与評価の入力・確認', deadline:'', badge:'info', action:'bonus'});
@@ -1684,8 +1699,15 @@ async function loadEvalGoal() {
   const st       = document.getElementById('goalStatus');
   const submitBtn = document.getElementById('submitGoalBtn');
   const draftBtn  = document.getElementById('draftGoalBtn');
-  const submitted = !!(currentRecord && ['上半期目標入力済','自己評価提出済','管理者評価済'].includes(currentRecord.status));
-  const hasDraft   = !!(currentRecord && currentRecord.goalH1 && !submitted);
+
+  // 提出済み判定（目標提出以上のステータス）
+  const submitted = !!(currentRecord && ['上半期目標入力済','自己評価提出済','管理者評価入力中','管理者評価済'].includes(currentRecord.status));
+  const hasDraft  = !!(currentRecord && currentRecord.goalH1 && !submitted);
+
+  // 期限チェック
+  const dl = SETTINGS['h1_deadline'] || '';
+  const today = new Date().toISOString().slice(0,10);
+  const overDeadline = dl && today > dl;
 
   if (submitted) {
     inp.value    = currentRecord.goalH1;
@@ -1693,22 +1715,26 @@ async function loadEvalGoal() {
     inp.style.background = 'var(--clr-bg2)';
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '✅ 提出済み'; }
     if (draftBtn)  { draftBtn.style.display = 'none'; }
-    st.innerHTML = '提出日: <strong>' + (currentRecord.goalSubmitDate || '（記録なし）') + '</strong>';
+    st.innerHTML = '✅ 提出日: <strong>' + (currentRecord.goalSubmitDate || '（記録なし）') + '</strong>　'
+      + '<span style="color:var(--clr-success);font-size:.82rem">提出済みのため変更できません</span>';
     st.style.color = 'var(--clr-success)';
   } else if (hasDraft) {
     inp.value    = currentRecord.goalH1;
     inp.disabled = false;
     inp.style.background = '';
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '📨 提出する'; }
+    if (submitBtn) { submitBtn.disabled = overDeadline; submitBtn.textContent = '📨 提出する'; }
     if (draftBtn)  { draftBtn.style.display = ''; draftBtn.disabled = false; draftBtn.textContent = '💾 一時保存'; }
-    st.innerHTML = '<span style="color:var(--clr-warning)">💾 一時保存中（未提出）</span>';
+    st.innerHTML = '<span style="color:var(--clr-warning)">💾 一時保存中（未提出）</span>'
+      + (overDeadline ? '　<span style="color:var(--clr-danger);font-size:.82rem">⚠️ 提出期限（' + dl + '）を過ぎています</span>' : (dl ? '　<span style="color:var(--clr-text-s);font-size:.82rem">期限: ' + dl + '</span>' : ''));
   } else {
     inp.value    = '';
     inp.disabled = false;
     inp.style.background = '';
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '📨 提出する'; }
+    if (submitBtn) { submitBtn.disabled = overDeadline; submitBtn.textContent = '📨 提出する'; }
     if (draftBtn)  { draftBtn.style.display = ''; draftBtn.disabled = false; draftBtn.textContent = '💾 一時保存'; }
-    st.textContent = '';
+    st.innerHTML = overDeadline
+      ? '<span style="color:var(--clr-danger)">⚠️ 提出期限（' + dl + '）を過ぎています。提出できません。</span>'
+      : (dl ? '<span style="color:var(--clr-text-s);font-size:.82rem">提出期限: ' + dl + '</span>' : '');
   }
 }
 
@@ -1752,7 +1778,12 @@ async function loadEvalSelf() {
   currentRecord = (r.ok && r.data) ? r.data : null;
 
   // 提出済みフラグ
-  const submitted = !!(currentRecord && ['自己評価提出済','管理者評価済'].includes(currentRecord.status));
+  const submitted = !!(currentRecord && ['自己評価提出済','管理者評価入力中','管理者評価済'].includes(currentRecord.status));
+
+  // 期限チェック
+  const dl = SETTINGS['h2_deadline'] || '';
+  const today = new Date().toISOString().slice(0,10);
+  const overDeadline = dl && today > dl;
 
   // 上半期目標（確認表示）
   const goalH1El = document.getElementById('goalH1Readonly');
@@ -1776,6 +1807,23 @@ async function loadEvalSelf() {
   reflectEl.style.background = submitted ? 'var(--clr-bg2)' : '';
   goalH2El.style.background  = submitted ? 'var(--clr-bg2)' : '';
 
+  // 期限表示エリア（ステップ1の振り返り欄の下）
+  var dlInfoEl = document.getElementById('evalSelfDeadlineInfo');
+  if (dlInfoEl) {
+    if (submitted) {
+      dlInfoEl.innerHTML = '✅ <strong>自己評価提出済み</strong>（' + (currentRecord.evalSubmitDateH1 || currentRecord.evalSubmitDate || '') + '）　再入力・再提出はできません。';
+      dlInfoEl.style.color = 'var(--clr-success)';
+    } else if (overDeadline) {
+      dlInfoEl.innerHTML = '⚠️ 提出期限（' + dl + '）を過ぎています。提出できません。';
+      dlInfoEl.style.color = 'var(--clr-danger)';
+    } else if (dl) {
+      dlInfoEl.innerHTML = '📅 振り返り・自己評価 提出期限: <strong>' + dl + '</strong>';
+      dlInfoEl.style.color = 'var(--clr-text-s)';
+    } else {
+      dlInfoEl.textContent = '';
+    }
+  }
+
   const evalType = getEvalType(SESSION.jobType);
   const items = EVAL_ITEMS[evalType];
   selfScores = items.map((_, i) => (currentRecord && currentRecord.selfScores && currentRecord.selfScores[i]) || 0);
@@ -1783,13 +1831,19 @@ async function loadEvalSelf() {
   // 提出済みなら読み取り専用テーブル
   renderScoreTable(items, selfScores, 'self', submitted);
   updateSelfTotal();
-  // 提出済みなら確認・印刷画面（ステップ3）へ直行
+
+  // 提出済みまたは期限超過なら提出ボタン無効
   if (submitted) {
     evalStep(3);
     const submitBtn = document.getElementById('submitEvalBtn');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '✅ 提出済み'; }
   } else {
     evalStep(1);
+    const submitBtn = document.getElementById('submitEvalBtn');
+    if (submitBtn) {
+      submitBtn.disabled = overDeadline;
+      submitBtn.textContent = overDeadline ? '⚠️ 期限超過（提出不可）' : '📨 自己評価を提出する';
+    }
   }
 }
 
@@ -2005,6 +2059,7 @@ function calcRankJS(score, max) {
 
 function statusBadge(s) {
   if (s === '管理者評価済') return 'badge-success';
+  if (s === '管理者評価入力中') return 'badge-warning';
   if (s === '自己評価提出済') return 'badge-info';
   if (s === '上半期目標入力済') return 'badge-warning';
   return 'badge-muted';
@@ -2152,6 +2207,28 @@ async function openMgrModal2(recordId, staffId, half) {
   });
   document.getElementById('mgrScoreBody').innerHTML = tbody2;
   updateMgrTotal();
+
+  // 管理者評価済（提出済）の場合はスコア操作不可にしてボタン無効
+  var isSubmitted = (statusStr === '管理者評価済');
+  var mgrDl = SETTINGS['mgr_deadline'] || '';
+  var todayStr = new Date().toISOString().slice(0,10);
+  var overMgrDl = mgrDl && todayStr > mgrDl;
+  var draftBtn2  = document.getElementById('mgrDraftBtn');
+  var submitBtn2 = document.getElementById('mgrSubmitBtn');
+  if (isSubmitted) {
+    if (draftBtn2)  { draftBtn2.disabled = true; draftBtn2.style.opacity = '.4'; }
+    if (submitBtn2) { submitBtn2.disabled = true; submitBtn2.textContent = '✅ 提出済み'; submitBtn2.style.opacity = '.6'; }
+    // スコアラジオを全部無効化
+    document.querySelectorAll('#mgrScoreBody input[type=radio]').forEach(function(inp){ inp.disabled = true; });
+    var mgrCommentEl = document.getElementById('mgrComment');
+    if (mgrCommentEl) { mgrCommentEl.disabled = true; mgrCommentEl.style.background = 'var(--clr-bg2)'; }
+  } else if (overMgrDl) {
+    if (submitBtn2) {
+      submitBtn2.disabled = true;
+      submitBtn2.title = '管理者評価期限（' + mgrDl + '）を過ぎています';
+    }
+  }
+
   document.getElementById('mgrEvalModal').classList.add('open');
 }
 
@@ -2251,25 +2328,52 @@ function updateMgrTotal() {
 
 function closeMgrModal() { document.getElementById('mgrEvalModal').classList.remove('open'); }
 
-async function saveMgrEval() {
+async function saveMgrEval(isDraft) {
+  isDraft = (isDraft === true);
   const unset = mgrScores.filter(s => !s).length;
   if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
   const comment = document.getElementById('mgrComment').value.trim();
   const half    = (mgrEditRecord && mgrEditRecord.half) || 'h1';
-  const r = await api({
-    action:         'saveManagerEval',
-    recordId:       mgrEditRecord.recordId,
-    staffId:        mgrEditRecord.staffId,
-    staffName:      mgrEditRecord.name,
-    jobType:        mgrEditRecord.jobType,
-    garden:         mgrEditRecord.garden,
-    year:           mgrEditRecord.year,
-    half:           half,          // ← 上半期/下半期を明示
-    gardenScores:   mgrScores,
-    managerComment: comment
-  });
-  if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
-  else toast(r.msg, 'error');
+
+  if (!isDraft) {
+    // 提出前に確認
+    const halfLabel = half === 'h1' ? '上半期' : '下半期';
+    showConfirm('評価を提出します',
+      halfLabel + '評価を理事長へ提出します。提出後は変更できません。よろしいですか？',
+      async function() {
+        const r = await api({
+          action:         'saveManagerEval',
+          recordId:       mgrEditRecord.recordId,
+          staffId:        mgrEditRecord.staffId,
+          staffName:      mgrEditRecord.name,
+          jobType:        mgrEditRecord.jobType,
+          garden:         mgrEditRecord.garden,
+          year:           mgrEditRecord.year,
+          half:           half,
+          draft:          false,
+          gardenScores:   mgrScores,
+          managerComment: comment
+        });
+        if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
+        else toast(r.msg, 'error');
+      });
+  } else {
+    const r = await api({
+      action:         'saveManagerEval',
+      recordId:       mgrEditRecord.recordId,
+      staffId:        mgrEditRecord.staffId,
+      staffName:      mgrEditRecord.name,
+      jobType:        mgrEditRecord.jobType,
+      garden:         mgrEditRecord.garden,
+      year:           mgrEditRecord.year,
+      half:           half,
+      draft:          true,
+      gardenScores:   mgrScores,
+      managerComment: comment
+    });
+    if (r.ok) { toast(r.msg, 'success'); loadEvalList(); }
+    else toast(r.msg, 'error');
+  }
 }
 
 // ============================================================
@@ -2408,15 +2512,14 @@ async function loadSettings() {
       return yy + '-' + mm + '-' + dd;
     }
     var s = String(v).trim();
-    // ISO形式 or YYYY-MM-DD はそのまま
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
-    // スラッシュ区切り（2025/04/30）
     var m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
     if (m) return m[1] + '-' + String(m[2]).padStart(2,'0') + '-' + String(m[3]).padStart(2,'0');
     return s;
   }
-  document.getElementById('setH1Deadline').value = normDate(SETTINGS['h1_deadline']);
-  document.getElementById('setH2Deadline').value = normDate(SETTINGS['h2_deadline']);
+  document.getElementById('setH1Deadline').value  = normDate(SETTINGS['h1_deadline']);
+  document.getElementById('setH2Deadline').value  = normDate(SETTINGS['h2_deadline']);
+  document.getElementById('setMgrDeadline').value = normDate(SETTINGS['mgr_deadline']);
 }
 
 async function saveSettings() {
@@ -2425,7 +2528,8 @@ async function saveSettings() {
     eval_mode:    document.getElementById('setMode').value,
     announce:     document.getElementById('setAnnounce').value,
     h1_deadline:  document.getElementById('setH1Deadline').value,
-    h2_deadline:  document.getElementById('setH2Deadline').value
+    h2_deadline:  document.getElementById('setH2Deadline').value,
+    mgr_deadline: document.getElementById('setMgrDeadline').value
   };
   const r = await api({ action: 'saveSettings', settings });
   if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); } else toast(r.msg, 'error');
