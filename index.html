@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.17</title>
+<title>はぐくみ評価 Ver.1.19</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.17',
+    description: '育保の杜 職員評価システム Ver.1.19',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.17</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.19</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -688,7 +688,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
       <!-- ======== 目標記入 ======== -->
       <section id="sec-evalGoal" style="display:none">
-        <div class="page-title">📝 個人目標記入</div>
+        <div class="page-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>📝 個人目標記入</span>
+          <button class="btn btn-outline btn-sm" onclick="loadEvalGoal()">🔄 再読み込み</button>
+        </div>
         <p class="page-sub">年度の上半期個人目標を記入して提出します。</p>
         <div class="card">
           <div class="card-title">上半期 個人目標</div>
@@ -713,7 +716,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <section id="sec-evalSelf" style="display:none">
         <div class="page-title">✏️ 振り返り・自己評価</div>
         <p class="page-sub">上半期の振り返りと各評価項目への自己評価点を記入して提出します。</p>
-        <div id="evalSelfDeadlineInfo" style="margin-bottom:12px;padding:10px 14px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div id="evalSelfDeadlineInfo" style="flex:1;padding:10px 14px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem"></div>
+          <button class="btn btn-outline btn-sm" onclick="loadEvalSelf()">🔄 再読み込み</button>
+        </div>
 
         <div class="steps" id="evalSteps">
           <div class="step active" id="step1"><div class="step-num">1</div><div class="step-label">振り返り</div></div>
@@ -975,10 +981,9 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <table>
               <thead><tr>
                 <th>氏名</th><th>職種</th><th>所属園</th>
-                <th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次合計<br><span style="font-size:.7rem;font-weight:400">生点</span></th>
-                <th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次合計<br><span style="font-size:.7rem;font-weight:400">生点</span></th>
+                <th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">加重合計</span></th>
+                <th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次評価<br><span style="font-size:.7rem;font-weight:400">加重合計</span></th>
                 <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem;font-weight:600">A合計<br><span style="font-size:.7rem;font-weight:400">100点換算</span></th>
-                <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem">Aランク</th>
                 <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">B加算<br><span style="font-size:.7rem;font-weight:400">自動転記</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減<br><span style="font-size:.7rem;font-weight:400">理事長調整</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>
@@ -1791,9 +1796,14 @@ async function loadEvalSelf() {
     if (currentRecord && currentRecord.goalH1) {
       goalH1El.textContent = currentRecord.goalH1;
       goalH1El.style.color = '';
+      goalH1El.style.background = 'var(--clr-bg)';
+    } else if (currentRecord && !currentRecord.goalH1) {
+      // レコードはあるが目標が空（一時保存状態など）
+      goalH1El.innerHTML = '<span style="color:var(--clr-warning)">⚠️ 上半期目標が保存されていません。「上半期目標記入」から目標を提出してください。</span>';
     } else {
-      goalH1El.innerHTML = '<span style="color:var(--clr-warning)">⚠️ 上半期目標が未提出です。「上半期目標記入」から先に提出してください。</span>';
-      goalH1El.style.color = '';
+      // レコード自体が存在しない
+      goalH1El.innerHTML = '<span style="color:var(--clr-warning)">⚠️ 上半期目標が未提出です。先に「上半期目標記入」から提出してください。</span>'
+        + '　<button class="btn btn-outline btn-sm" onclick="showSection(\'evalGoal\')">目標記入へ →</button>';
     }
   }
 
@@ -2897,45 +2907,75 @@ function buildHistoryTable(list, isAdmin) {
 
 // 評価履歴印刷プレビュー
 function openHistoryPrint(year) {
-  var staffId = SESSION.staffId;
+  // loadHistory と同じロジックで targetStaffId を決定
+  var isAdminUser = ['admin','encho','syunin'].includes(SESSION.role);
   var sel = document.getElementById('historyStaffSel');
-  if (sel && sel.value) staffId = sel.value;
+  var targetId;
+  if (sel && sel.value) {
+    // 管理者が特定職員を絞り込み中
+    targetId = sel.value;
+  } else if (isAdminUser) {
+    // 管理者で絞り込みなし → 全職員（loadHistory と同じ）
+    targetId = '';
+  } else {
+    // 一般職員は自分のみ
+    targetId = SESSION.staffId;
+  }
 
-  api({ action:'getEvalHistory', targetStaffId: staffId, role: SESSION.role }).then(function(r) {
+  api({ action:'getEvalHistory', targetStaffId: targetId, role: SESSION.role }).then(function(r) {
     if (!r.ok) { toast('履歴取得失敗','error'); return; }
-    var e = r.list.find(function(x){ return String(x.year) === String(year); });
-    if (!e) { toast(year + '年度のデータがありません','error'); return; }
+    // 管理者で全職員表示中の場合は該当年度の全員分を印刷
+    var targets = r.list.filter(function(x){ return String(x.year) === String(year); });
+    if (!targets.length) { toast(year + '年度のデータがありません','error'); return; }
 
-    var w = window.open('','_blank','width=800,height:700');
+    var w = window.open('','_blank','width=860,height=700');
     w.document.open();
-    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + e.name + ' ' + year + '年度 評価</title>'
-      + '<style>body{font-family:sans-serif;font-size:14px;color:#222;padding:24px;max-width:800px;margin:0 auto}'
-      + 'h1{font-size:18px;border-bottom:2px solid #2e5549;padding-bottom:8px;color:#2e5549}'
-      + 'h2{font-size:14px;color:#2e5549;margin:18px 0 6px;border-left:4px solid #2e5549;padding-left:8px}'
-      + 'table{width:100%;border-collapse:collapse;margin-bottom:12px}'
-      + 'th{background:#f0f0f0;padding:6px 10px;text-align:left;font-size:12px;white-space:nowrap;width:140px}'
-      + 'td{padding:6px 10px;border-bottom:1px solid #ddd}'
-      + '.rk{display:inline-block;width:26px;height:26px;border-radius:50%;background:#2e5549;color:#fff;text-align:center;line-height:26px;font-weight:bold;font-size:12px}'
-      + '@media print{button{display:none}}'
-      + '</style></head><body>'
-      + '<button onclick="window.print()" style="float:right;padding:6px 14px;background:#2e5549;color:#fff;border:none;border-radius:4px;cursor:pointer">🖨️ 印刷</button>'
-      + '<h1>' + escHtml(e.name) + '（' + escHtml(e.jobType) + '）　' + year + '年度　評価シート</h1>'
-      + '<table>'
-      + '<tr><th>所属園</th><td>' + escHtml(e.garden||'') + '</td><th>提出日</th><td>' + escHtml(e.evalSubmitDate||'') + '</td></tr>'
-      + '<tr><th>状況</th><td colspan="3"><strong>' + escHtml(e.status||'') + '</strong></td></tr>'
-      + '</table>'
-      + '<h2>上半期目標</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f8;border-radius:4px">' + escHtml(e.goalH1||'（未記入）') + '</div>'
-      + '<h2>上半期振り返り</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f8;border-radius:4px">' + escHtml(e.reflectH1||'（未記入）') + '</div>'
-      + (e.goalH2 ? '<h2>下半期目標</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f8;border-radius:4px">' + escHtml(e.goalH2) + '</div>' : '')
-      + (e.reflectH2 ? '<h2>下半期振り返り</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f8;border-radius:4px">' + escHtml(e.reflectH2) + '</div>' : '')
-      + '<h2>評価結果</h2>'
-      + '<table>'
-      + '<tr><th>自己評価合計</th><td>' + (e.selfTotal||'-') + '</td><th>自己評価ランク</th><td>' + (e.selfRank ? '<span class="rk">'+e.selfRank+'</span>' : '-') + '</td></tr>'
-      + '<tr><th>園評価合計</th><td>' + (e.gardenTotal||'-') + '</td><th>園評価ランク</th><td>' + (e.gardenRank ? '<span class="rk">'+e.gardenRank+'</span>' : '-') + '</td></tr>'
-      + '<tr><th>賞与加算B</th><td>' + (e.bonus||'-') + '点</td><th></th><td></td></tr>'
-      + '</table>'
-      + (e.managerComment ? '<h2>評価コメント</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f8;border-radius:4px">' + escHtml(e.managerComment) + '</div>' : '')
-      + '</body></html>');
+    var css = 'body{font-family:sans-serif;font-size:13px;color:#222;padding:20px;max-width:840px;margin:0 auto}'
+      + 'h1{font-size:17px;border-bottom:2px solid #2e5549;padding-bottom:6px;color:#2e5549;margin-bottom:12px}'
+      + 'h2{font-size:13px;color:#2e5549;margin:14px 0 4px;border-left:3px solid #2e5549;padding-left:6px}'
+      + 'table{width:100%;border-collapse:collapse;margin-bottom:10px}'
+      + 'th{background:#f0f0f0;padding:5px 8px;text-align:left;font-size:11px;white-space:nowrap;width:130px}'
+      + 'td{padding:5px 8px;border-bottom:1px solid #ddd}'
+      + '.rk{display:inline-block;width:24px;height:24px;border-radius:50%;background:#2e5549;color:#fff;text-align:center;line-height:24px;font-weight:bold;font-size:11px}'
+      + '.page-break{page-break-before:always;margin-top:20px}'
+      + '@media print{button{display:none}.page-break{page-break-before:always}}';
+
+    var body = '<button onclick="window.print()" style="float:right;padding:5px 12px;background:#2e5549;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-bottom:10px">🖨️ 印刷</button>';
+
+    targets.forEach(function(e, idx) {
+      if (idx > 0) body += '<div class="page-break"></div>';
+      body += '<h1>' + escHtml(e.name) + '（' + escHtml(e.jobType) + '）　' + year + '年度　評価シート</h1>'
+        + '<table>'
+        + '<tr><th>所属園</th><td>' + escHtml(e.garden||'') + '</td><th>ステータス</th><td><strong>' + escHtml(e.status||'') + '</strong></td></tr>'
+        + '<tr><th>提出日</th><td>' + escHtml(e.evalSubmitDate||'（未提出）') + '</td><th></th><td></td></tr>'
+        + '</table>'
+        + '<h2>上半期目標</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px;min-height:30px">' + escHtml(e.goalH1||'（未記入）') + '</div>'
+        + '<h2>上半期振り返り</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px;min-height:30px">' + escHtml(e.reflectH1||'（未記入）') + '</div>'
+        + (e.goalH2 ? '<h2>下半期目標</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.goalH2) + '</div>' : '')
+        + (e.reflectH2 ? '<h2>下半期振り返り</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.reflectH2) + '</div>' : '');
+
+      if (isAdminUser && (e.selfTotal || e.gardenTotal)) {
+        body += '<h2>評価結果（上半期）</h2>'
+          + '<table>'
+          + '<tr><th>自己評価合計</th><td>' + (e.selfTotal||'-') + '</td><th>自己ランク</th><td>' + (e.selfRank ? '<span class="rk">'+escHtml(e.selfRank)+'</span>' : '-') + '</td></tr>'
+          + '<tr><th>園評価合計</th><td>' + (e.gardenTotal||'-') + '</td><th>園評価ランク</th><td>' + (e.gardenRank ? '<span class="rk">'+escHtml(e.gardenRank)+'</span>' : '-') + '</td></tr>'
+          + '<tr><th>冬季賞与B加算</th><td>' + (e.bonus > 0 ? e.bonus + '点' : '-') + '</td><th></th><td></td></tr>'
+          + '</table>';
+        if (e.selfTotalH2 || e.gardenTotalH2) {
+          body += '<h2>評価結果（下半期）</h2>'
+            + '<table>'
+            + '<tr><th>自己評価合計</th><td>' + (e.selfTotalH2||'-') + '</td><th>自己ランク</th><td>' + (e.selfRankH2 ? '<span class="rk">'+escHtml(e.selfRankH2)+'</span>' : '-') + '</td></tr>'
+            + '<tr><th>園評価合計</th><td>' + (e.gardenTotalH2||'-') + '</td><th>園評価ランク</th><td>' + (e.gardenRankH2 ? '<span class="rk">'+escHtml(e.gardenRankH2)+'</span>' : '-') + '</td></tr>'
+            + '<tr><th>翌年夏季賞与B加算</th><td>' + (e.bonusH2 > 0 ? e.bonusH2 + '点' : '-') + '</td><th></th><td></td></tr>'
+            + '</table>';
+        }
+        if (e.managerComment) body += '<h2>評価コメント（上半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerComment) + '</div>';
+        if (e.managerCommentH2) body += '<h2>評価コメント（下半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerCommentH2) + '</div>';
+      }
+      body += '<div style="margin-top:16px;display:flex;gap:32px;font-size:.75rem;color:#888"><span>本人確認：_______________</span><span>管理者確認：_______________</span><span>印刷日：' + new Date().toLocaleDateString('ja-JP') + '</span></div>';
+    });
+
+    w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>' + year + '年度 評価シート</title><style>' + css + '</style></head><body>' + body + '</body></html>');
     w.document.close();
   });
 }
@@ -3107,20 +3147,19 @@ async function loadBonusList() {
       + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
-      // 一次合計（生点）
+      // 一次評価（加重合計）
       + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
         + (has1 ? raw1 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      // 二次合計（生点）
+      // 二次評価（加重合計）
       + '<td style="text-align:center;font-weight:600;background:#f5fbf8;color:#3a8060">'
         + (has2 ? raw2 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      // A合計（100点換算）
+      // A合計（100点換算）※Aランク列は廃止
       + '<td style="text-align:center;font-weight:700;background:#f0f8fd;color:var(--clr-primary-d)">'
         + (aTotal100 !== null ? aTotal100 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      + '<td style="text-align:center;background:#f0f8fd">' + rkBadge(aRank) + '</td>'
-      // B加算（自己評価の園評価ランクから自動転記）
+      // B加算
       + '<td style="text-align:center;font-weight:600;background:#fffef5">'
         + (bVal !== null ? bVal + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      // C加減（理事長のみ編集可、他は閲覧のみ）
+      // C加減
       + '<td style="text-align:center;font-weight:600;background:#fffef5">'
         + (cVal ? (cVal > 0 ? '+' : '') + cVal : '<span style="color:#ccc">-</span>') + '</td>'
       // 確定合計
