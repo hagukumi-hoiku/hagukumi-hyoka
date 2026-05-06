@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.19</title>
+<title>はぐくみ評価 Ver.1.22</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.19',
+    description: '育保の杜 職員評価システム Ver.1.22',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.19</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.22</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -628,7 +628,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div class="sidebar-divider"></div>
         <div class="sidebar-section" id="navSec-self">自己評価</div>
         <li id="nav-evalGoal" style="display:none"><button onclick="showSection('evalGoal')">📝 上半期目標記入</button></li>
-        <li id="nav-evalSelf" style="display:none"><button onclick="showSection('evalSelf')">✏️ 振り返り・自己評価</button></li>
+        <li id="nav-evalSelf" style="display:none"><button onclick="showSection('evalSelf')">✏️ 上半期振り返り・自己評価</button></li>
+        <li id="nav-evalSelfH2" style="display:none"><button onclick="showSection('evalSelfH2')">✏️ 下半期振り返り・自己評価</button></li>
         <div class="sidebar-divider" id="navDiv-mgr" style="display:none"></div>
         <div class="sidebar-section" id="navSec-mgr" style="display:none">管理者評価</div>
         <li id="nav-evalMgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 職員の評価入力</button></li>
@@ -714,7 +715,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
       <!-- ======== 振り返り・自己評価 ======== -->
       <section id="sec-evalSelf" style="display:none">
-        <div class="page-title">✏️ 振り返り・自己評価</div>
+        <div class="page-title">✏️ 上半期 振り返り・自己評価</div>
         <p class="page-sub">上半期の振り返りと各評価項目への自己評価点を記入して提出します。</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <div id="evalSelfDeadlineInfo" style="flex:1;padding:10px 14px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem"></div>
@@ -792,6 +793,79 @@ tr:hover td { background: rgba(74,124,111,.04); }
         </div>
       </section>
 
+      <!-- ======== 下半期 振り返り・自己評価 ======== -->
+      <section id="sec-evalSelfH2" style="display:none">
+        <div class="page-title">✏️ 下半期 振り返り・自己評価</div>
+        <p class="page-sub">下半期の振り返りと各評価項目への自己評価点を記入して提出します。</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div id="evalSelfH2DeadlineInfo" style="flex:1;padding:10px 14px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem"></div>
+          <button class="btn btn-outline btn-sm" onclick="loadEvalSelfH2()">🔄 再読み込み</button>
+        </div>
+
+        <div class="steps" id="evalH2Steps">
+          <div class="step active" id="h2step1"><div class="step-num">1</div><div class="step-label">振り返り</div></div>
+          <div class="step" id="h2step2"><div class="step-num">2</div><div class="step-label">評価入力</div></div>
+          <div class="step" id="h2step3"><div class="step-num">3</div><div class="step-label">確認・提出</div></div>
+        </div>
+
+        <!-- ステップ1：下半期振り返り -->
+        <div id="evalH2Step1">
+          <div class="card">
+            <div class="card-title">📝 下半期の振り返り</div>
+            <div class="frow">
+              <div class="fcol" style="flex:1">
+                <label class="flabel">下半期 個人目標（確認）</label>
+                <div id="goalH2Readonly" style="padding:10px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.88rem;min-height:60px;line-height:1.6;color:var(--clr-text-s)">読み込み中...</div>
+              </div>
+            </div>
+            <div class="frow" style="margin-top:16px;">
+              <div class="fcol" style="flex:1">
+                <label class="flabel">下半期 振り返り<span class="req">*</span></label>
+                <textarea class="ftextarea" id="reflectH2Input" rows="4" placeholder="下半期の振り返りを記入してください"></textarea>
+              </div>
+            </div>
+            <div style="margin-top:16px;text-align:right;">
+              <button class="btn btn-primary" onclick="evalStepH2(2)">次へ →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ステップ2：下半期評価入力 -->
+        <div id="evalH2Step2" style="display:none">
+          <div class="card">
+            <div class="card-title">🌟 評価項目・自己評価点の入力（下半期）</div>
+            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:16px;">各項目について 1〜5点 で自己評価を入力してください</p>
+            <div class="table-wrap">
+              <table class="score-table" id="selfH2ScoreTable">
+                <thead><tr>
+                  <th style="width:160px">評価項目</th>
+                  <th>着眼点</th>
+                  <th style="width:240px;text-align:center">自己評価（1〜5点）</th>
+                </tr></thead>
+                <tbody id="selfH2ScoreBody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+              <button class="btn btn-outline" onclick="evalStepH2(1)">← 戻る</button>
+              <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfH2Total" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
+              <button class="btn btn-primary" onclick="evalStepH2(3)">次へ →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ステップ3：確認・提出 -->
+        <div id="evalH2Step3" style="display:none">
+          <div class="card">
+            <div class="card-title">✅ 確認・提出（下半期）</div>
+            <div id="evalH2ConfirmContent"></div>
+            <div style="margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+              <button class="btn btn-outline" onclick="evalStepH2(2)">← 戻る</button>
+              <button class="btn btn-primary btn-lg" id="submitEvalH2Btn" onclick="submitSelfEvalH2()">📨 下半期自己評価を提出する</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ======== 管理者評価 ======== -->
       <section id="sec-evalMgr" style="display:none">
         <div class="page-title">📝 職員評価（自己評価・園評価）</div>
@@ -805,10 +879,11 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <!-- フィルターバー -->
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
           <select class="fselect" id="mgrYearSel" style="width:100px;" onchange="loadEvalList()"></select>
-          <select class="fselect" id="mgrHalfSel" style="width:130px;" onchange="loadEvalList()">
+          <select class="fselect" id="mgrHalfSel" style="width:130px;" onchange="onMgrHalfChange()">
             <option value="h1">上半期評価</option>
             <option value="h2">下半期評価</option>
           </select>
+          <div id="mgrHalfNote" style="display:none;padding:6px 12px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.82rem;color:var(--clr-primary-d)"></div>
           <select class="fselect" id="mgrGardenSel" style="width:160px;" onchange="loadEvalList()">
             <option value="">全園</option>
             <option value="はぐくみ保育園">はぐくみ保育園</option>
@@ -879,15 +954,23 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div class="card-title">🗓️ 評価スケジュール</div>
           <div class="frow">
             <div class="fcol">
-              <label class="flabel">対象年度</label>
+              <label class="flabel">対象年度（current_year）</label>
               <input type="number" class="finput" id="setYear" placeholder="例: 2026">
+              <p class="fhelp">現在進行中の年度。4月に翌年度へ更新。</p>
+            </div>
+            <div class="fcol">
+              <label class="flabel">下半期評価 対象年度（h2_eval_year）</label>
+              <input type="number" class="finput" id="setH2EvalYear" placeholder="例: 2026">
+              <p class="fhelp">下半期振り返り・自己評価・園評価が参照する年度。通常は current_year - 1。<br>例: 2027年に2026年度H2評価を実施中 → 2026 を設定。</p>
             </div>
             <div class="fcol">
               <label class="flabel">評価モード</label>
               <select class="fselect" id="setMode">
                 <option value="goal">目標記入フェーズ（4月）</option>
-                <option value="eval">振り返り・自己評価フェーズ（10月）</option>
-                <option value="mgr">管理者評価フェーズ</option>
+                <option value="eval">上半期振り返り・自己評価フェーズ（9月）</option>
+                <option value="mgr">上半期管理者評価フェーズ（10〜11月）</option>
+                <option value="eval_h2">下半期振り返り・自己評価フェーズ（3月）</option>
+                <option value="mgr_h2">下半期管理者評価フェーズ（5〜6月）</option>
                 <option value="closed">締切済（参照のみ）</option>
               </select>
             </div>
@@ -896,17 +979,29 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div class="fcol">
               <label class="flabel">📅 上半期目標 提出期限</label>
               <input type="date" class="finput" id="setH1Deadline">
-              <p class="fhelp">職員が上半期目標を提出できる期日。期日後はフロントで警告表示。</p>
+              <p class="fhelp">職員が上半期目標を提出できる期日。期日後は警告表示。（例: 4月末）</p>
             </div>
             <div class="fcol">
-              <label class="flabel">📅 振り返り・自己評価 提出期限</label>
+              <label class="flabel">📅 上半期 振り返り・自己評価 提出期限</label>
               <input type="date" class="finput" id="setH2Deadline">
-              <p class="fhelp">職員が振り返り・自己評価を提出できる期日。</p>
+              <p class="fhelp">職員が上半期の振り返り・自己評価を提出できる期日。（例: 9月末）</p>
             </div>
             <div class="fcol">
-              <label class="flabel">📅 管理者（園評価）提出期限</label>
+              <label class="flabel">📅 上半期 管理者（園評価）提出期限</label>
               <input type="date" class="finput" id="setMgrDeadline">
-              <p class="fhelp">園長が園評価を理事長へ提出する期日。</p>
+              <p class="fhelp">園長が上半期の園評価を理事長へ提出する期日。（例: 11月末）</p>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fcol">
+              <label class="flabel">📅 下半期 振り返り・自己評価 提出期限</label>
+              <input type="date" class="finput" id="setH2EvalDeadline">
+              <p class="fhelp">職員が下半期の振り返り・自己評価を提出できる期日。年度末（翌カレンダー年3月末）。</p>
+            </div>
+            <div class="fcol">
+              <label class="flabel">📅 下半期 管理者（園評価）提出期限</label>
+              <input type="date" class="finput" id="setH2MgrDeadline">
+              <p class="fhelp">園長が下半期の園評価を提出する期日。翌カレンダー年6月末。</p>
             </div>
           </div>
           <div class="frow">
@@ -918,6 +1013,12 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div style="margin-top:16px;">
             <button class="btn btn-primary" onclick="saveSettings()">💾 設定を保存</button>
           </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔧 データ修復</div>
+          <p style="font-size:.83rem;color:var(--clr-text-s)">DBのrecordId・年度列がGoogleSheetsにより日付型に変換されてしまった場合、以下のボタンで一括修復します。</p>
+          <button class="btn btn-outline" onclick="repairRecordIdsAction()">🛠️ recordId日付型を修復</button>
+          <span id="repairResult" style="margin-left:12px;font-size:.83rem"></span>
         </div>
       </section>
 
@@ -983,7 +1084,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
                 <th>氏名</th><th>職種</th><th>所属園</th>
                 <th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">加重合計</span></th>
                 <th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次評価<br><span style="font-size:.7rem;font-weight:400">加重合計</span></th>
-                <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem;font-weight:600">A合計<br><span style="font-size:.7rem;font-weight:400">100点換算</span></th>
+                <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem;font-weight:600">A合計<br><span style="font-size:.7rem;font-weight:400">70点満点換算</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">B加算<br><span style="font-size:.7rem;font-weight:400">自動転記</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減<br><span style="font-size:.7rem;font-weight:400">理事長調整</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>
@@ -1409,8 +1510,26 @@ function currentYear() {
   var n = parseInt(y);
   return String(isNaN(n) ? new Date().getFullYear() : n);
 }
+
+/**
+ * 下半期評価の対象年度を返す。
+ * 設定の h2_eval_year が有効ならそちらを使用、なければ current_year - 1 をデフォルトとする。
+ * 下半期評価は翌カレンダー年（3月〜6月）に実施するが、
+ * レコードは前年度（fiscal year）に属するため、年度がずれる問題をこれで解決する。
+ */
+function h2EvalYear() {
+  var hy = SETTINGS['h2_eval_year'];
+  if (hy) {
+    if (typeof hy === 'object' && hy.getFullYear) return String(hy.getFullYear());
+    var n = parseInt(hy);
+    if (!isNaN(n) && n > 2000) return String(n);
+  }
+  // デフォルト: 現在の年度設定の前年度
+  return String(parseInt(currentYear()) - 1);
+}
 let currentRecord = null;
 let selfScores = [];
+let selfScoresH2 = [];
 let editingStaffId = null;
 let mgrEditRecord = null;
 
@@ -1502,8 +1621,9 @@ async function initApp() {
   // 自己評価メニュー: 正規全員 + admin以外
   var canSelfEval = !isPartTime && !isAdmin;  // admin(理事長)は自己評価なし、賞与のみ
   _nav('nav-profile',  !isPartTime);
-  _nav('nav-evalGoal', canSelfEval);
-  _nav('nav-evalSelf', canSelfEval);
+  _nav('nav-evalGoal',    canSelfEval);
+  _nav('nav-evalSelf',    canSelfEval);
+  _nav('nav-evalSelfH2',  canSelfEval);
 
   // 管理者評価メニュー: syunin/encho/admin
   _nav('navDiv-mgr',   canEval);
@@ -1527,7 +1647,7 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
 }
 
-const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalMgr','bonus','staff','settings'];
+const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalSelfH2','evalMgr','bonus','staff','settings'];
 
 async function showSection(name) {
   closeSidebar();
@@ -1543,7 +1663,8 @@ async function showSection(name) {
   if (name === 'profile')  loadProfile();
   if (name === 'history')  loadHistory();
   if (name === 'evalGoal') loadEvalGoal();
-  if (name === 'evalSelf') loadEvalSelf();
+  if (name === 'evalSelf')   loadEvalSelf();
+  if (name === 'evalSelfH2') loadEvalSelfH2();
   if (name === 'evalMgr')  {
     // SETTINGS が未ロードなら先に取得してから年度セレクト初期化
     if (!SETTINGS['current_year']) {
@@ -1584,7 +1705,6 @@ async function loadHome() {
   setEl('dashGarden',   SESSION.garden);
   setEl('homeHireDate', SESSION.hireDate);
   setEl('homeHireExp',  SESSION.hireExp || SESSION.totalExp);
-  setEl('dashYear',     year + '年度');
   var classWrap = document.getElementById('homeClassWrap');
   if (SESSION.className && SESSION.employment === '正規') {
     if (classWrap) classWrap.style.display = '';
@@ -1601,23 +1721,36 @@ async function loadHome() {
     document.getElementById('announceBodyEl').textContent = ann;
   } else if (annBar) { annBar.style.display = 'none'; }
 
-  // フェーズ説明
+  var mode = SETTINGS['eval_mode'] || 'goal';
+
+  // フェーズ説明（ホームの案内文）
   var modeDesc = {
-    goal:   '現在は【上半期目標記入フェーズ】です。「上半期目標記入」から提出してください。',
-    eval:   '現在は【振り返り・自己評価フェーズ】です。「振り返り・自己評価」から提出してください。',
-    mgr:    '現在は【管理者評価フェーズ】です。',
-    closed: '現在の評価期間は終了しています。'
+    goal:    '現在は【上半期目標記入フェーズ】です。「上半期目標記入」から提出してください。',
+    eval:    '現在は【上半期 振り返り・自己評価フェーズ】です。「上半期振り返り・自己評価」から提出してください。',
+    mgr:     '現在は【上半期 管理者評価フェーズ】です。（' + currentYear() + '年度）',
+    eval_h2: '現在は【下半期 振り返り・自己評価フェーズ】です（対象: ' + h2EvalYear() + '年度）。「下半期振り返り・自己評価」から提出してください。',
+    mgr_h2:  '現在は【下半期 管理者評価フェーズ】です（対象: ' + h2EvalYear() + '年度）。',
+    closed:  '現在の評価期間は終了しています。'
   };
   var sub = document.getElementById('homeSubText');
-  if (sub) sub.textContent = modeDesc[SETTINGS['eval_mode'] || 'goal'] || '';
+  if (sub) sub.textContent = modeDesc[mode] || '';
 
   // 今年度レコード取得（理事長以外）
+  // eval_h2 / mgr_h2 モード時は前年度（h2EvalYear）のレコードを参照
+  var recordYear = (mode === 'eval_h2' || mode === 'mgr_h2') ? h2EvalYear() : year;
   if (evalType !== 'none') {
-    var r2 = await api({action:'getSelfEval', year, staffId:SESSION.staffId});
+    var r2 = await api({action:'getSelfEval', year: recordYear, staffId:SESSION.staffId});
     currentRecord = (r2.ok && r2.data) ? r2.data : null;
   } else {
     currentRecord = null;
   }
+
+  // ダッシュボードの年度表示（下半期フェーズ時は対象年度も表示）
+  var yearLabel = year + '年度';
+  if (mode === 'eval_h2' || mode === 'mgr_h2') {
+    yearLabel = year + '年度（' + h2EvalYear() + '年度下半期評価中）';
+  }
+  setEl('dashYear', yearLabel);
   // 理事長(admin): 自己評価カード・フェーズ説明を非表示
   var myEvalCard = document.getElementById('myEvalSummary');
   var homePhase  = document.getElementById('homeSubText');
@@ -1632,10 +1765,9 @@ async function loadHome() {
   }
 
   // タスクリスト
-  var mode = SETTINGS['eval_mode'] || 'goal';
-  var h1dl = SETTINGS['h1_deadline'] || '';
-  var h2dl = SETTINGS['h2_deadline'] || '';
-  var mgrDl= SETTINGS['mgr_deadline'] || '';
+  var h1dl  = SETTINGS['h1_deadline']  || '';
+  var h2dl  = SETTINGS['h2_deadline']  || '';
+  var mgrDl = SETTINGS['mgr_deadline'] || '';
   var status = currentRecord ? currentRecord.status : '未提出';
   var tasks = [];
 
@@ -1656,13 +1788,27 @@ async function loadHome() {
     }
     var evalDone = currentRecord && ['自己評価提出済','管理者評価入力中','管理者評価済'].includes(status);
     if (!evalDone) {
-      tasks.push({name:'✏️ 振り返り・自己評価の記入・提出', deadline:h2dl ? h2dl + ' まで' : '', badge:'danger', action:'evalSelf'});
+      tasks.push({name:'✏️ 上半期 振り返り・自己評価の記入・提出', deadline:h2dl ? h2dl + ' まで' : '', badge:'danger', action:'evalSelf'});
     } else {
-      tasks.push({name:'✅ 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDateH1 || currentRecord.evalSubmitDate || '', badge:'success', action:null});
+      tasks.push({name:'✅ 上半期 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDateH1 || currentRecord.evalSubmitDate || '', badge:'success', action:null});
+    }
+  } else if (mode === 'eval_h2') {
+    // 下半期評価フェーズ
+    var h2EvalDl = SETTINGS['h2_eval_deadline'] || '';
+    var h2EvalDone = !!(currentRecord && currentRecord.evalSubmitDateH2);
+    if (!currentRecord || !currentRecord.goalH2) {
+      tasks.push({name:'⚠️ 下半期目標が未設定です（上半期振り返りで設定）', deadline:'', badge:'warning', action:'evalSelf'});
+    }
+    if (!h2EvalDone) {
+      tasks.push({name:'✏️ 下半期 振り返り・自己評価の記入・提出', deadline:h2EvalDl ? h2EvalDl + ' まで' : '', badge:'danger', action:'evalSelfH2'});
+    } else {
+      tasks.push({name:'✅ 下半期 振り返り・自己評価　提出済み', deadline:currentRecord.evalSubmitDateH2 || '', badge:'success', action:null});
     }
   } else if (mode === 'mgr') {
     // 管理者評価フェーズ：職員には通知のみ
-    tasks.push({name:'🔍 管理者評価フェーズです。評価結果をお待ちください。', deadline:'', badge:'muted', action:null});
+    tasks.push({name:'🔍 上半期 管理者評価フェーズです。評価結果をお待ちください。', deadline:'', badge:'muted', action:null});
+  } else if (mode === 'mgr_h2') {
+    tasks.push({name:'🔍 下半期 管理者評価フェーズです（' + h2EvalYear() + '年度）。評価結果をお待ちください。', deadline:'', badge:'muted', action:null});
   } else {
     tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
   }
@@ -1670,8 +1816,10 @@ async function loadHome() {
   // 管理者向けタスク（理事長は上のブロックで処理済み）
   if (evalType !== 'none' && perm.canEval && mode !== 'closed') {
     if (!perm.isAdmin) {
-      var mgrDeadlineLabel = mgrDl ? mgrDl + ' まで' : '';
-      tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:mgrDeadlineLabel, badge:'info', action:'evalMgr'});
+      var mgrDlLabel = (mode === 'mgr_h2')
+        ? (SETTINGS['h2_mgr_deadline'] ? SETTINGS['h2_mgr_deadline'] + ' まで' : '')
+        : (mgrDl ? mgrDl + ' まで' : '');
+      tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:mgrDlLabel, badge:'info', action:'evalMgr'});
     }
     if (perm.canBonus) {
       tasks.push({name:'✏️ 賞与評価の入力・確認', deadline:'', badge:'info', action:'bonus'});
@@ -1888,13 +2036,20 @@ function renderScoreTable(items, scores, mode, readOnly) {
 }
 
 function onScoreChange(mode, idx, val) {
-  if (mode === 'self') { selfScores[idx] = val; updateSelfTotal(); }
-  else if (mode === 'mgr') { mgrScores[idx] = val; updateMgrTotal(); }
+  if (mode === 'self')   { selfScores[idx]   = val; updateSelfTotal(); }
+  else if (mode === 'selfH2') { selfScoresH2[idx] = val; updateSelfH2Total(); }
+  else if (mode === 'mgr')   { mgrScores[idx]   = val; updateMgrTotal(); }
 }
 
 function updateSelfTotal() {
   const total = selfScores.reduce((a, b) => a + b, 0);
   document.getElementById('selfTotal').textContent = total;
+}
+
+function updateSelfH2Total() {
+  const total = selfScoresH2.reduce((a, b) => a + b, 0);
+  const el = document.getElementById('selfH2Total');
+  if (el) el.textContent = total;
 }
 
 function evalStep(step) {
@@ -1953,22 +2108,185 @@ async function submitSelfEval() {
   if (r.ok) { toast(r.msg, 'success'); showSection('home'); } else toast(r.msg, 'error');
 }
 
+// ============================================================
+//  下半期 振り返り・自己評価
+// ============================================================
+function evalStepH2(step) {
+  [1,2,3].forEach(s => {
+    document.getElementById('evalH2Step' + s).style.display = s === step ? '' : 'none';
+    const stepEl = document.getElementById('h2step' + s);
+    if (stepEl) {
+      stepEl.classList.remove('active','done');
+      if (s < step) stepEl.classList.add('done');
+      if (s === step) stepEl.classList.add('active');
+    }
+  });
+  if (step === 3) buildEvalConfirmH2();
+}
 
-// ============================================================
-//  管理者評価
-// ============================================================
+async function loadEvalSelfH2() {
+  // 下半期評価は h2EvalYear() の年度レコードを対象とする（年度またぎ対応）
+  var evalYear = h2EvalYear();
+  const r = await api({ action: 'getSelfEval', year: evalYear, staffId: SESSION.staffId });
+  currentRecord = (r.ok && r.data) ? r.data : null;
+
+  // 提出済みフラグ（下半期）: evalSubmitDateH2 が入っていれば提出済み
+  const submittedH2 = !!(currentRecord && currentRecord.evalSubmitDateH2);
+
+  // 期限チェック（下半期自己評価）
+  const dl = SETTINGS['h2_eval_deadline'] || '';
+  const today = new Date().toISOString().slice(0,10);
+  const overDeadline = dl && today > dl;
+
+  // 対象年度バナー
+  const dlInfoEl = document.getElementById('evalSelfH2DeadlineInfo');
+  var yearBannerHtml = '📌 対象年度: <strong>' + evalYear + '年度</strong>の下半期評価';
+  if (parseInt(evalYear) !== parseInt(currentYear()) - 1) {
+    yearBannerHtml += '　<span style="color:var(--clr-warning);font-size:.8rem">（管理者が対象年度を手動設定: ' + evalYear + '年度）</span>';
+  }
+  // 下半期目標（確認表示）
+  const goalH2El = document.getElementById('goalH2Readonly');
+  if (goalH2El) {
+    if (currentRecord && currentRecord.goalH2) {
+      goalH2El.textContent = currentRecord.goalH2;
+      goalH2El.style.background = 'var(--clr-bg)';
+    } else if (currentRecord && !currentRecord.goalH2) {
+      goalH2El.innerHTML = '<span style="color:var(--clr-warning)">⚠️ 下半期目標が設定されていません。上半期の振り返り・自己評価で下半期目標を入力してください。</span>'
+        + '　<button class="btn btn-outline btn-sm" onclick="showSection(\'evalSelf\')">上半期振り返りへ →</button>';
+    } else {
+      goalH2El.innerHTML = '<span style="color:var(--clr-warning)">⚠️ ' + evalYear + '年度の上半期記録が見つかりません。上半期の目標記入・振り返り・自己評価を完了してください。</span>';
+    }
+  }
+
+  // 振り返り入力エリア
+  const reflectEl = document.getElementById('reflectH2Input');
+  if (reflectEl) {
+    reflectEl.value    = (currentRecord && currentRecord.reflectH2) || '';
+    reflectEl.disabled = submittedH2;
+    reflectEl.style.background = submittedH2 ? 'var(--clr-bg2)' : '';
+  }
+
+  // 期限情報・対象年度バナー表示
+  if (dlInfoEl) {
+    if (submittedH2) {
+      dlInfoEl.innerHTML = yearBannerHtml + '　✅ <strong>提出済み</strong>（' + (currentRecord.evalSubmitDateH2 || '') + '）　再入力・再提出はできません。';
+      dlInfoEl.style.color = 'var(--clr-success)';
+    } else if (overDeadline) {
+      dlInfoEl.innerHTML = yearBannerHtml + '<br>⚠️ 提出期限（' + dl + '）を過ぎています。提出できません。';
+      dlInfoEl.style.color = 'var(--clr-danger)';
+    } else if (dl) {
+      dlInfoEl.innerHTML = yearBannerHtml + '　<span style="color:var(--clr-text-s)">📅 提出期限: <strong>' + dl + '</strong></span>';
+      dlInfoEl.style.color = '';
+    } else {
+      dlInfoEl.innerHTML = yearBannerHtml;
+      dlInfoEl.style.color = '';
+    }
+  }
+
+  // スコアテーブル
+  const evalType = getEvalType(SESSION.jobType);
+  const items = EVAL_ITEMS[evalType];
+  selfScoresH2 = items.map((_, i) => (currentRecord && currentRecord.selfScoresH2 && currentRecord.selfScoresH2[i]) || 0);
+  renderScoreTable(items, selfScoresH2, 'selfH2', submittedH2);
+  updateSelfH2Total();
+
+  // 提出済みなら確認画面へ
+  const submitBtn = document.getElementById('submitEvalH2Btn');
+  if (submittedH2) {
+    evalStepH2(3);
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '✅ 提出済み'; }
+  } else {
+    evalStepH2(1);
+    if (submitBtn) {
+      submitBtn.disabled = overDeadline;
+      submitBtn.textContent = overDeadline ? '⚠️ 期限超過（提出不可）' : '📨 下半期自己評価を提出する';
+    }
+  }
+}
+
+function buildEvalConfirmH2() {
+  const evalType = getEvalType(SESSION.jobType);
+  const items = EVAL_ITEMS[evalType];
+  const total = selfScoresH2.reduce((a, b) => a + b, 0);
+  const rank = calcRankJS(total, MAX_SCORE[evalType]);
+  const reflectVal = document.getElementById('reflectH2Input') ? document.getElementById('reflectH2Input').value : '';
+  let html = `
+    <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
+      <div class="flabel">下半期 振り返り</div>
+      <p style="font-size:.88rem;line-height:1.6">${escHtml(reflectVal)}</p>
+    </div>
+    <div style="display:flex;gap:20px;align-items:center;margin-bottom:16px;">
+      <div><span class="flabel">自己評価合計</span><div style="font-size:1.8rem;font-weight:700;color:var(--clr-primary)">${total}<span style="font-size:.85rem;color:var(--clr-text-s)"> / ${MAX_SCORE[evalType]}点</span></div></div>
+      <div><span class="flabel">達成率</span><div style="font-size:1.4rem;font-weight:600;color:var(--clr-primary-l)">${Math.round(total/MAX_SCORE[evalType]*100)}%</div></div>
+      <div><span class="flabel">自己ランク（参考）</span><div><span class="rank-badge rank-${rank}">${rank}</span></div></div>
+    </div>
+    <details><summary style="cursor:pointer;font-size:.85rem;color:var(--clr-text-s);margin-bottom:8px;">評価点詳細を確認</summary>
+    <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+    <thead><tr><th style="background:var(--clr-bg2);padding:6px 10px">項目</th><th style="background:var(--clr-bg2);padding:6px 10px;text-align:center">点数</th></tr></thead><tbody>`;
+  items.forEach((item, i) => {
+    html += `<tr><td style="padding:5px 10px;border-bottom:1px solid var(--clr-bg2)">${escHtml(item.item)}</td><td style="padding:5px 10px;text-align:center;border-bottom:1px solid var(--clr-bg2);font-weight:600">${selfScoresH2[i] || 0}</td></tr>`;
+  });
+  html += '</tbody></table></details>';
+  document.getElementById('evalH2ConfirmContent').innerHTML = html;
+}
+
+async function submitSelfEvalH2() {
+  const evalType = getEvalType(SESSION.jobType);
+  const unset = selfScoresH2.filter(s => !s).length;
+  if (unset > 0) { toast(unset + '項目が未入力です', 'error'); evalStepH2(2); return; }
+  const reflectH2 = document.getElementById('reflectH2Input') ? document.getElementById('reflectH2Input').value.trim() : '';
+  if (!reflectH2) { toast('下半期の振り返りを入力してください', 'error'); evalStepH2(1); return; }
+  const year = h2EvalYear();  // 下半期評価の対象年度（年度またぎ対応）
+  const r = await api({
+    action: 'saveSelfEval', mode: 'submitEvalH2',
+    year, staffId: SESSION.staffId, name: SESSION.name,
+    jobType: SESSION.jobType, garden: SESSION.garden, evalType,
+    reflectH2,
+    selfScoresH2
+  });
+  if (r.ok) { toast(r.msg, 'success'); showSection('home'); } else toast(r.msg, 'error');
+}
+// 上半期/下半期切替時に年度セレクタを自動調整
+function onMgrHalfChange() {
+  var halfSel = document.getElementById('mgrHalfSel');
+  var yearSel = document.getElementById('mgrYearSel');
+  if (!halfSel || !yearSel) { loadEvalList(); return; }
+  if (halfSel.value === 'h2') {
+    var h2y = String(h2EvalYear());
+    if (yearSel.querySelector('option[value="' + h2y + '"]')) {
+      yearSel.value = h2y;
+    }
+    // H2年度バナーを表示
+    var note = document.getElementById('mgrHalfNote');
+    if (note) {
+      note.innerHTML = '📌 下半期評価の対象年度: <strong>' + h2y + '年度</strong>（設定の「下半期評価 対象年度」で変更可）';
+      note.style.display = '';
+    }
+  } else {
+    var note2 = document.getElementById('mgrHalfNote');
+    if (note2) note2.style.display = 'none';
+  }
+  loadEvalList();
+}
+
 function initMgrYearSel() {
   const sel = document.getElementById('mgrYearSel');
   if (!sel) return;
-  // SETTINGS が未ロードでも動くよう currentYear() 関数で取得
   const y = parseInt(currentYear());
-  if (sel.options.length > 0 && parseInt(sel.value) === y) return; // 既に正しい値なら不要
   sel.innerHTML = '';
-  for (let i = y; i >= y - 3; i--) {
+  for (let i = y; i >= y - 4; i--) {
     const opt = document.createElement('option');
     opt.value = String(i); opt.textContent = i + '年度';
     if (i === y) opt.selected = true;
     sel.appendChild(opt);
+  }
+  // H2の場合は h2_eval_year を自動選択
+  var halfSel = document.getElementById('mgrHalfSel');
+  if (halfSel && halfSel.value === 'h2') {
+    var h2y = parseInt(h2EvalYear());
+    if (h2y && sel.querySelector('option[value="' + h2y + '"]')) {
+      sel.value = String(h2y);
+    }
   }
 }
 
@@ -2508,8 +2826,9 @@ async function loadSettings() {
   var cy = SETTINGS['current_year'];
   if (cy instanceof Date) cy = cy.getFullYear();
   else { cy = parseInt(cy); if (isNaN(cy)) cy = new Date().getFullYear(); }
-  document.getElementById('setYear').value = cy;
-  document.getElementById('setMode').value = SETTINGS['eval_mode'] || 'goal';
+  document.getElementById('setYear').value    = cy;
+  document.getElementById('setH2EvalYear').value = parseInt(SETTINGS['h2_eval_year']) || (cy - 1);
+  document.getElementById('setMode').value    = SETTINGS['eval_mode'] || 'goal';
   document.getElementById('setAnnounce').value = SETTINGS['announce'] || '';
 
   // 期限日: Sheetsが Date 型で返す場合 → YYYY-MM-DD 形式に変換
@@ -2530,16 +2849,31 @@ async function loadSettings() {
   document.getElementById('setH1Deadline').value  = normDate(SETTINGS['h1_deadline']);
   document.getElementById('setH2Deadline').value  = normDate(SETTINGS['h2_deadline']);
   document.getElementById('setMgrDeadline').value = normDate(SETTINGS['mgr_deadline']);
+  document.getElementById('setH2EvalDeadline').value = normDate(SETTINGS['h2_eval_deadline']);
+  document.getElementById('setH2MgrDeadline').value  = normDate(SETTINGS['h2_mgr_deadline']);
+}
+
+async function repairRecordIdsAction() {
+  const el = document.getElementById('repairResult');
+  if (el) el.textContent = '修復中...';
+  const r = await api({ action: 'repairRecordIds' });
+  if (el) {
+    el.textContent = r.ok ? ('✅ ' + r.msg) : ('❌ ' + r.msg);
+    el.style.color = r.ok ? 'var(--clr-success)' : 'var(--clr-danger)';
+  }
 }
 
 async function saveSettings() {
   const settings = {
-    current_year: document.getElementById('setYear').value,
-    eval_mode:    document.getElementById('setMode').value,
-    announce:     document.getElementById('setAnnounce').value,
-    h1_deadline:  document.getElementById('setH1Deadline').value,
-    h2_deadline:  document.getElementById('setH2Deadline').value,
-    mgr_deadline: document.getElementById('setMgrDeadline').value
+    current_year:     document.getElementById('setYear').value,
+    h2_eval_year:     document.getElementById('setH2EvalYear').value,
+    eval_mode:        document.getElementById('setMode').value,
+    announce:         document.getElementById('setAnnounce').value,
+    h1_deadline:      document.getElementById('setH1Deadline').value,
+    h2_deadline:      document.getElementById('setH2Deadline').value,
+    mgr_deadline:     document.getElementById('setMgrDeadline').value,
+    h2_eval_deadline: document.getElementById('setH2EvalDeadline').value,
+    h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value
   };
   const r = await api({ action: 'saveSettings', settings });
   if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); } else toast(r.msg, 'error');
@@ -3124,15 +3458,14 @@ async function loadBonusList() {
     var evalType = getBonusEvalType(s.jobType);
     var useMax = evalType === 'encho' ? max2 : maxAll;
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
-    // A: 一次+二次の合計を100点満点換算
-    var aTotal100 = (has1||has2) ? Math.round((rawTotal / useMax) * 100 * 10) / 10 : null;
-    var aRank = aTotal100 !== null ? calcRankJS(aTotal100, 100) : '';
+    // A: 70点満点換算
+    var aTotal70 = (has1||has2) ? Math.round((rawTotal / useMax) * 70 * 10) / 10 : null;
     var bVal  = b ? (b.bBonus||0) : null;
     var cVal  = b ? (b.cAdj||0)  : null;
-    var grand = aTotal100 !== null && bVal !== null
-      ? Math.round((aTotal100 * 0.7 + (bVal||0) + (cVal||0)) * 10) / 10
+    // 確定合計 = A（70点）+ B加算 + C加減 → 100点満点
+    var grand = aTotal70 !== null && bVal !== null
+      ? Math.round((aTotal70 + (bVal||0) + (cVal||0)) * 10) / 10
       : null;
-    // 総合計＝A（70点換算）+ B + C → 100点満点でランク
     var gRank = grand !== null ? calcRankJS(grand, 100) : '';
 
     function cell(v, bg) {
@@ -3153,9 +3486,9 @@ async function loadBonusList() {
       // 二次評価（加重合計）
       + '<td style="text-align:center;font-weight:600;background:#f5fbf8;color:#3a8060">'
         + (has2 ? raw2 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      // A合計（100点換算）※Aランク列は廃止
+      // A合計（70点満点）
       + '<td style="text-align:center;font-weight:700;background:#f0f8fd;color:var(--clr-primary-d)">'
-        + (aTotal100 !== null ? aTotal100 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+        + (aTotal70 !== null ? aTotal70 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
       // B加算
       + '<td style="text-align:center;font-weight:600;background:#fffef5">'
         + (bVal !== null ? bVal + '点' : '<span style="color:#ccc">-</span>') + '</td>'
@@ -3192,11 +3525,19 @@ async function openBonusModal(staffId) {
   // 既存賞与評価取得
   var br = await api({action:'getBonusEval', year, term, staffId});
   currentBonusRecord = (br.ok && br.data) ? br.data : null;
-  // B加算を自己評価シートから取得（前年度下半期→夏季 / 当年度上半期→冬季）
+  // B加算を自己評価シートから取得
+  // ・冬季賞与 → 当年度上半期の園評価ランク加算（bonusH1）
+  // ・夏季賞与 → 前年度下半期の園評価ランク加算（bonusH2）
   var evalYear = term === '夏季' ? String(parseInt(year)-1) : year;
   var er = await api({action:'getSelfEval', year:evalYear, staffId});
   var bBonus = 0;
-  if (er.ok && er.data && er.data.bonus > 0) bBonus = er.data.bonus;
+  if (er.ok && er.data) {
+    if (term === '夏季') {
+      bBonus = er.data.bonusH2 || 0;  // 前年度下半期の園評価ランク → 夏季B加算
+    } else {
+      bBonus = er.data.bonusH1 || er.data.bonus || 0;  // 当年度上半期の園評価ランク → 冬季B加算
+    }
+  }
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
   var maxRaw   = isEncho ? 135 : 220;   // 生の満点（計算用）
@@ -3211,7 +3552,7 @@ async function openBonusModal(staffId) {
   var html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.83rem">'
     + '<div style="display:flex;gap:20px;flex-wrap:wrap">'
     + '<span><span style="color:var(--clr-text-s)">評価タイプ：</span><strong>' + escHtml(evalType==='encho'?'園長用':evalType==='syunin'?'主任用':evalType==='leader'?'リーダー用':'一般職用') + '</strong></span>'
-    + '<span><span style="color:var(--clr-text-s)">生の満点：</span><strong>' + maxRaw + '点 → 100点換算</strong></span>'
+    + '<span><span style="color:var(--clr-text-s)">A合計: 生点÷満点×70：</span><strong>' + maxRaw + '点生点 → 70点満点換算</strong></span>'
     + '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>'
     + '</div></div>';
 
@@ -3223,7 +3564,7 @@ async function openBonusModal(staffId) {
   html += '<th style="width:130px;text-align:center">二次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
   html += '<th style="width:60px;text-align:center">小計</th>';
   html += '</tr></thead><tbody id="bonusScoreBody"></tbody></table></div>';
-  html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（100点換算）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
+  html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（70点満点）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
 
   html += '<div class="frow" style="margin-top:16px">';
   html += '<div class="fcol"><label class="flabel">B加算（自己評価から自動取得）</label><div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-weight:700;font-size:.95rem">' + bBonus + '点</div><input type="hidden" id="bonusBVal" value="' + bBonus + '"></div>';
@@ -3337,10 +3678,10 @@ function calcBonusA70(evalType) {
 function updateBonusTotal(evalType) {
   var raw  = calcBonusRaw(evalType);
   var maxR = (evalType === 'encho') ? 135 : 220;
-  // 100点満点換算
-  var a100 = Math.round((raw / maxR) * 100 * 10) / 10;
+  // A合計: 70点満点換算
+  var a70 = Math.round((raw / maxR) * 70 * 10) / 10;
   var el = document.getElementById('bonusATotal');
-  if (el) el.textContent = a100 + '点（生点: ' + raw + '/' + maxR + '）';
+  if (el) el.textContent = a70 + '点（生点: ' + raw + '/' + maxR + '）';
 }
 
 async function saveBonusEval() {
