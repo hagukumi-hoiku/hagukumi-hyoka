@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.23</title>
+<title>はぐくみ評価 Ver.1.24</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.23',
+    description: '育保の杜 職員評価システム Ver.1.24',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.23</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.24</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -969,7 +969,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div class="fcol">
               <label class="flabel">下半期評価 対象年度（h2_eval_year）</label>
               <input type="number" class="finput" id="setH2EvalYear" placeholder="例: 2026">
-              <p class="fhelp">下半期振り返り・自己評価・園評価が参照する年度。通常は current_year - 1。<br>例: 2027年に2026年度H2評価を実施中 → 2026 を設定。</p>
+              <p class="fhelp">下半期振り返り・自己評価・園評価が参照する年度。<strong>通常は current_year と同じ値</strong>。<br>例外: 4月に current_year を2027に更新した後も2026年度H2評価が未完了 → 2026 を設定。</p>
             </div>
             <div class="fcol">
               <label class="flabel">評価モード</label>
@@ -1520,9 +1520,13 @@ function currentYear() {
 
 /**
  * 下半期評価の対象年度を返す。
- * 設定の h2_eval_year が有効ならそちらを使用、なければ current_year - 1 をデフォルトとする。
- * 下半期評価は翌カレンダー年（3月〜6月）に実施するが、
- * レコードは前年度（fiscal year）に属するため、年度がずれる問題をこれで解決する。
+ *
+ * 通常は当年度（current_year）と同じ。
+ * 例: 2026年度のH1もH2もすべて「2026年度レコード」に記録する。
+ *
+ * 【年度またぎが発生するケース】
+ * 4月に current_year を2027に更新した後も、まだ2026年度のH2評価が完了していない場合のみ
+ * 管理者が h2_eval_year を明示的に2026に設定する。
  */
 function h2EvalYear() {
   var hy = SETTINGS['h2_eval_year'];
@@ -1531,8 +1535,8 @@ function h2EvalYear() {
     var n = parseInt(hy);
     if (!isNaN(n) && n > 2000) return String(n);
   }
-  // デフォルト: 現在の年度設定の前年度
-  return String(parseInt(currentYear()) - 1);
+  // デフォルト: 現在の年度設定と同じ（H1もH2も同一年度レコード）
+  return currentYear();
 }
 let currentRecord = null;
 let selfScores = [];
@@ -1735,8 +1739,8 @@ async function loadHome() {
     goal:    '現在は【上半期目標記入フェーズ】です。「上半期目標記入」から提出してください。',
     eval:    '現在は【上半期 振り返り・自己評価フェーズ】です。「上半期振り返り・自己評価」から提出してください。',
     mgr:     '現在は【上半期 管理者評価フェーズ】です。（' + currentYear() + '年度）',
-    eval_h2: '現在は【下半期 振り返り・自己評価フェーズ】です（対象: ' + h2EvalYear() + '年度）。「下半期振り返り・自己評価」から提出してください。',
-    mgr_h2:  '現在は【下半期 管理者評価フェーズ】です（対象: ' + h2EvalYear() + '年度）。',
+    eval_h2: '現在は【下半期 振り返り・自己評価フェーズ】です（' + h2EvalYear() + '年度下半期）。「下半期振り返り・自己評価」から提出してください。',
+    mgr_h2:  '現在は【下半期 管理者評価フェーズ】です（' + h2EvalYear() + '年度下半期）。',
     closed:  '現在の評価期間は終了しています。'
   };
   var sub = document.getElementById('homeSubText');
@@ -2154,8 +2158,9 @@ async function loadEvalSelfH2() {
   // 対象年度バナー
   const dlInfoEl = document.getElementById('evalSelfH2DeadlineInfo');
   var yearBannerHtml = '📌 対象年度: <strong>' + evalYear + '年度</strong>の下半期評価';
-  if (parseInt(evalYear) !== parseInt(currentYear()) - 1) {
-    yearBannerHtml += '　<span style="color:var(--clr-warning);font-size:.8rem">（管理者が対象年度を手動設定: ' + evalYear + '年度）</span>';
+  // current_year と h2_eval_year が異なる場合のみ注記
+  if (evalYear !== currentYear()) {
+    yearBannerHtml += '　<span style="color:var(--clr-warning);font-size:.8rem">（年度またぎ設定中: h2_eval_year=' + evalYear + '、current_year=' + currentYear() + '）</span>';
   }
   // 下半期目標（確認表示）
   const goalH2El = document.getElementById('goalH2Readonly');
@@ -2837,7 +2842,7 @@ async function loadSettings() {
   if (cy instanceof Date) cy = cy.getFullYear();
   else { cy = parseInt(cy); if (isNaN(cy)) cy = new Date().getFullYear(); }
   document.getElementById('setYear').value    = cy;
-  document.getElementById('setH2EvalYear').value = parseInt(SETTINGS['h2_eval_year']) || (cy - 1);
+  document.getElementById('setH2EvalYear').value = parseInt(SETTINGS['h2_eval_year']) || cy;
   document.getElementById('setMode').value    = SETTINGS['eval_mode'] || 'goal';
   document.getElementById('setAnnounce').value = SETTINGS['announce'] || '';
 
