@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.24</title>
+<title>はぐくみ評価 Ver.1.25</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.24',
+    description: '育保の杜 職員評価システム Ver.1.25',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.24</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.25</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -630,6 +630,9 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <li id="nav-evalGoal" style="display:none"><button onclick="showSection('evalGoal')">📝 上半期目標記入</button></li>
         <li id="nav-evalSelf" style="display:none"><button onclick="showSection('evalSelf')">✏️ 上半期振り返り・自己評価</button></li>
         <li id="nav-evalSelfH2" style="display:none"><button onclick="showSection('evalSelfH2')">✏️ 下半期振り返り・自己評価</button></li>
+        <li id="nav-phaseInfo" style="display:none;pointer-events:none;padding:4px 0 8px 0">
+          <div id="navPhaseLabel" style="font-size:.72rem;padding:4px 10px;border-radius:99px;font-weight:600;text-align:center;line-height:1.4"></div>
+        </li>
         <div class="sidebar-divider" id="navDiv-mgr" style="display:none"></div>
         <div class="sidebar-section" id="navSec-mgr" style="display:none">管理者評価</div>
         <li id="nav-evalMgr" style="display:none"><button onclick="showSection('evalMgr')">⭐ 職員の評価入力</button></li>
@@ -1636,6 +1639,36 @@ async function initApp() {
   _nav('nav-evalSelf',    canSelfEval);
   _nav('nav-evalSelfH2',  canSelfEval);
 
+  // フェーズバッジ（評価モードを視覚化）
+  var phaseInfo = document.getElementById('nav-phaseInfo');
+  var phaseLabel = document.getElementById('navPhaseLabel');
+  var mode = SETTINGS['eval_mode'] || 'goal';
+  var phaseMap = {
+    goal:    { label: '📝 目標記入フェーズ',      bg:'#e8f4e8', color:'#2e6b3e', nav: 'evalGoal'    },
+    eval:    { label: '✏️ 上半期評価フェーズ',    bg:'#e8f0fa', color:'#2a4fa8', nav: 'evalSelf'    },
+    mgr:     { label: '🔍 上半期 管理者評価',      bg:'#fff3e0', color:'#8a5c00', nav: 'evalMgr'     },
+    eval_h2: { label: '✏️ 下半期評価フェーズ',    bg:'#e8f0fa', color:'#2a4fa8', nav: 'evalSelfH2'  },
+    mgr_h2:  { label: '🔍 下半期 管理者評価',      bg:'#fff3e0', color:'#8a5c00', nav: 'evalMgr'     },
+    closed:  { label: '⏸ 評価期間外',             bg:'#f0f0f0', color:'#888',    nav: null          }
+  };
+  var ph = phaseMap[mode] || phaseMap['closed'];
+  if (canSelfEval || canEval) {
+    if (phaseInfo) phaseInfo.style.display = '';
+    if (phaseLabel) {
+      phaseLabel.textContent = ph.label;
+      phaseLabel.style.background = ph.bg;
+      phaseLabel.style.color = ph.color;
+    }
+    // 現在フェーズに対応するナビ項目を強調
+    SECTIONS.forEach(function(s) {
+      var navEl = document.getElementById('nav-' + s);
+      if (navEl) {
+        var btn = navEl.querySelector('button');
+        if (btn) btn.style.borderLeft = (ph.nav === s) ? '3px solid ' + ph.color : '';
+      }
+    });
+  }
+
   // 管理者評価メニュー: syunin/encho/admin
   _nav('navDiv-mgr',   canEval);
   _nav('navSec-mgr',   canEval);
@@ -2439,7 +2472,7 @@ async function openMgrModal2(recordId, staffId, half) {
   var year = yearEl ? yearEl.value : currentYear();
   if (!year) year = currentYear();
 
-  const dr = await api({ action: 'getSelfEval', year, staffId });
+  const dr = await api({ action: 'getSelfEval', year, targetStaffId: staffId });
   const detail = (dr.ok && dr.data) ? dr.data : null;
   window._mgrDetail = detail || {};
 
@@ -2610,7 +2643,7 @@ async function openMgrModal(recordId) {
   }
 
   // 詳細取得
-  const dr = await api({ action: 'getSelfEval', year, staffId: mgrEditRecord.staffId });
+  const dr = await api({ action: 'getSelfEval', year, targetStaffId: mgrEditRecord.staffId });
   const detail = dr.ok ? dr.data : null;
   window._mgrDetail = detail || {};
 
@@ -2705,13 +2738,13 @@ async function saveMgrEval() {  const unset = mgrScores.filter(s => !s).length;
   const r = await api({
     action:         'saveManagerEval',
     recordId:       mgrEditRecord.recordId,
-    staffId:        mgrEditRecord.staffId,
+    targetStaffId:  mgrEditRecord.staffId,   // api()のstaffId上書き回避
     staffName:      mgrEditRecord.name,
     jobType:        mgrEditRecord.jobType,
     garden:         mgrEditRecord.garden,
     year:           mgrEditRecord.year,
     half:           half,
-    draft:          true,   // 常に一時保存（提出は一括ボタンで行う）
+    draft:          true,
     gardenScores:   mgrScores,
     managerComment: comment
   });
@@ -2891,7 +2924,7 @@ async function saveSettings() {
     h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value
   };
   const r = await api({ action: 'saveSettings', settings });
-  if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); } else toast(r.msg, 'error');
+  if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); initNav(); } else toast(r.msg, 'error');
 }
 
 // ============================================================
