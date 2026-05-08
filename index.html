@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.22</title>
+<title>はぐくみ評価 Ver.1.23</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -549,7 +549,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.22',
+    description: '育保の杜 職員評価システム Ver.1.23',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +587,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.22</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.23</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -894,7 +894,15 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
         <!-- 自己評価一覧カード（adminは非表示） -->
         <div class="card" id="evalMgrSelfCard">
-          <div class="card-title" id="evalMgrCardTitle">📝 上半期　自己評価・園評価 一覧</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <div class="card-title" id="evalMgrCardTitle" style="margin-bottom:0">📝 上半期　自己評価・園評価 一覧</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="evalMgrStatusCount" style="font-size:.82rem;color:var(--clr-text-s)"></span>
+              <button class="btn btn-accent" id="bulkSubmitBtn" onclick="bulkSubmitEvals()" style="display:none">
+                📤 全員分を理事長へ提出
+              </button>
+            </div>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr>
@@ -1308,8 +1316,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <button class="btn btn-outline" onclick="openPrintPreview('mgr')">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
-        <button class="btn btn-outline" id="mgrDraftBtn" onclick="saveMgrEval(true)">💾 一時保存</button>
-        <button class="btn btn-accent" id="mgrSubmitBtn" onclick="saveMgrEval(false)">📤 理事長へ提出</button>
+        <button class="btn btn-primary" id="mgrDraftBtn" onclick="saveMgrEval()">💾 一時保存</button>
       </div>
     </div>
   </div>
@@ -1755,12 +1762,18 @@ async function loadHome() {
   var myEvalCard = document.getElementById('myEvalSummary');
   var homePhase  = document.getElementById('homeSubText');
   var homeClassW = document.getElementById('homeClassWrap');
+  // 評価サマリーカードは管理者（canEval）のみ表示
   if (evalType === 'none') {
     if (myEvalCard) myEvalCard.style.display  = 'none';
     if (homePhase)  homePhase.style.display   = 'none';
     if (homeClassW) homeClassW.style.display  = 'none';
-  } else {
+  } else if (window.PERM && window.PERM.canEval) {
+    // 管理者・主任・園長: サマリー表示
     if (myEvalCard) myEvalCard.style.display  = '';
+    if (homePhase)  homePhase.style.display   = '';
+  } else {
+    // 一般職員: サマリー不要
+    if (myEvalCard) myEvalCard.style.display  = 'none';
     if (homePhase)  homePhase.style.display   = '';
   }
 
@@ -2339,17 +2352,13 @@ async function loadEvalList() {
   tbody.innerHTML = allStaff.length ? allStaff.map(function(s) {
     var e = evalMap[String(s.staffId).trim()];
     var rid = String(year) + '-' + String(s.staffId).trim();
-
-    // 上半期 or 下半期でフィールドを切替
     var selfTotal   = e ? (isH1 ? (e.selfTotalH1  || e.selfTotal  || 0) : (e.selfTotalH2  || 0)) : '-';
     var selfRank    = e ? (isH1 ? (e.selfRankH1   || e.selfRank   || '') : (e.selfRankH2   || '')) : '';
     var gardenTotal = e ? (isH1 ? (e.gardenTotalH1|| e.gardenTotal|| 0) : (e.gardenTotalH2 || 0)) : '-';
     var gardenRank  = e ? (isH1 ? (e.gardenRankH1 || e.gardenRank || '') : (e.gardenRankH2  || '')) : '';
     var bonusVal    = e ? (isH1 ? (e.bonusH1 || e.bonus || 0) : (e.bonusH2 || 0)) : 0;
     var submitDate  = e ? (isH1 ? (e.evalSubmitDateH1 || e.evalSubmitDate || '') : (e.evalSubmitDateH2 || '')) : '';
-    var gardenDate  = e ? (isH1 ? (e.gardenEvalDateH1 || e.managerEvalDate || '') : (e.gardenEvalDateH2 || '')) : '';
-
-    var statusVal = e ? (e.status || '未提出') : '未提出';
+    var statusVal   = e ? (e.status || '未提出') : '未提出';
 
     function rkBadge(rank) {
       return rank ? '<span class="rank-badge rank-' + escHtml(rank) + '" style="width:26px;height:26px;font-size:.75rem">' + escHtml(rank) + '</span>' : '-';
@@ -2369,6 +2378,27 @@ async function loadEvalList() {
       + '<td><button class="btn btn-outline btn-sm" data-rid="' + escHtml(rid) + '" data-sid="' + escHtml(s.staffId) + '" data-half="' + half + '" onclick="openMgrModal2(this.dataset.rid,this.dataset.sid,this.dataset.half)">評価入力</button></td>'
       + '</tr>';
   }).join('') : noData;
+
+  // 一時保存件数カウント → 一括提出ボタンの表示切替
+  var draftStatus   = isH1 ? '管理者評価入力中' : '下半期管理者評価入力中';
+  var submitStatus  = isH1 ? '管理者評価済'     : '下半期管理者評価済';
+  var draftCount    = 0, submittedCount = 0;
+  allStaff.forEach(function(s) {
+    var e = evalMap[String(s.staffId).trim()];
+    var st = e ? (e.status || '未提出') : '未提出';
+    if (st === draftStatus)  draftCount++;
+    if (st === submitStatus) submittedCount++;
+  });
+  var statusCountEl = document.getElementById('evalMgrStatusCount');
+  var bulkBtn = document.getElementById('bulkSubmitBtn');
+  if (statusCountEl) {
+    statusCountEl.textContent = '一時保存: ' + draftCount + '件　提出済: ' + submittedCount + '件';
+  }
+  if (bulkBtn) {
+    // 一時保存中が1件以上あれば一括提出ボタンを表示
+    bulkBtn.style.display = draftCount > 0 ? '' : 'none';
+    bulkBtn.textContent = '📤 全員分を理事長へ提出（' + draftCount + '件）';
+  }
 }
 
 function calcBonusRankFromRaw(raw, maxRaw) {
@@ -2436,8 +2466,8 @@ async function openMgrModal2(recordId, staffId, half) {
     });
   }
 
-  const isEncho = SESSION.role === 'encho' || SESSION.role === 'admin';
-  const colSpan = isEncho ? 4 : 3;
+  // 自己評価点は常時表示（役職に関わらず評価者が参照できる）
+  const colSpan = 4;
   const halfLabel = isH1 ? '上半期' : '下半期';
   const bonusTarget = isH1 ? '冬季賞与B加算' : '翌年夏季賞与B加算';
 
@@ -2494,7 +2524,7 @@ async function openMgrModal2(recordId, staffId, half) {
     + '<thead><tr>'
     + '<th style="width:150px">評価項目</th>'
     + '<th>着眼点</th>'
-    + (isEncho ? '<th style="width:60px;text-align:center">自己評価</th>' : '')
+    + '<th style="width:60px;text-align:center;color:var(--clr-primary)">自己評価</th>'
     + '<th style="width:220px;text-align:center">園評価（1〜5点）</th>'
     + '</tr></thead>'
     + '<tbody id="mgrScoreBody"></tbody></table></div>'
@@ -2529,32 +2559,23 @@ async function openMgrModal2(recordId, staffId, half) {
     tbody2 += '<tr>'
       + '<td><div class="score-item-name">' + escHtml(item.item) + '</div></td>'
       + '<td><div class="score-item-hint" style="font-size:.76rem;color:var(--clr-text-s)">' + escHtml(item.hint) + '</div></td>'
-      + (isEncho ? '<td style="text-align:center;font-weight:700;font-size:1rem;color:var(--clr-primary)">' + sv + '</td>' : '')
+      + '<td style="text-align:center;font-weight:700;font-size:1rem;color:var(--clr-primary)">' + sv + '</td>'
       + '<td><div class="score-radio-group">' + radios + '</div></td>'
       + '</tr>';
   });
   document.getElementById('mgrScoreBody').innerHTML = tbody2;
   updateMgrTotal();
 
-  // 管理者評価済（提出済）の場合はスコア操作不可にしてボタン無効
-  var isSubmitted = (statusStr === '管理者評価済');
-  var mgrDl = SETTINGS['mgr_deadline'] || '';
-  var todayStr = new Date().toISOString().slice(0,10);
-  var overMgrDl = mgrDl && todayStr > mgrDl;
+  // 提出済み（一括提出後）はスコア操作不可にしてボタン無効
+  var isSubmitted = (statusStr === '管理者評価済') || (statusStr === '下半期管理者評価済');
   var draftBtn2  = document.getElementById('mgrDraftBtn');
-  var submitBtn2 = document.getElementById('mgrSubmitBtn');
   if (isSubmitted) {
-    if (draftBtn2)  { draftBtn2.disabled = true; draftBtn2.style.opacity = '.4'; }
-    if (submitBtn2) { submitBtn2.disabled = true; submitBtn2.textContent = '✅ 提出済み'; submitBtn2.style.opacity = '.6'; }
-    // スコアラジオを全部無効化
+    if (draftBtn2)  { draftBtn2.disabled = true; draftBtn2.style.opacity = '.4'; draftBtn2.textContent = '✅ 提出済み（変更不可）'; }
     document.querySelectorAll('#mgrScoreBody input[type=radio]').forEach(function(inp){ inp.disabled = true; });
     var mgrCommentEl = document.getElementById('mgrComment');
     if (mgrCommentEl) { mgrCommentEl.disabled = true; mgrCommentEl.style.background = 'var(--clr-bg2)'; }
-  } else if (overMgrDl) {
-    if (submitBtn2) {
-      submitBtn2.disabled = true;
-      submitBtn2.title = '管理者評価期限（' + mgrDl + '）を過ぎています';
-    }
+  } else {
+    if (draftBtn2)  { draftBtn2.disabled = false; draftBtn2.style.opacity = ''; draftBtn2.textContent = '💾 一時保存'; }
   }
 
   document.getElementById('mgrEvalModal').classList.add('open');
@@ -2656,52 +2677,41 @@ function updateMgrTotal() {
 
 function closeMgrModal() { document.getElementById('mgrEvalModal').classList.remove('open'); }
 
-async function saveMgrEval(isDraft) {
-  isDraft = (isDraft === true);
-  const unset = mgrScores.filter(s => !s).length;
+async function bulkSubmitEvals() {
+  var year = document.getElementById('mgrYearSel') ? document.getElementById('mgrYearSel').value : currentYear();
+  var half = document.getElementById('mgrHalfSel') ? document.getElementById('mgrHalfSel').value : 'h1';
+  var garden = document.getElementById('mgrGardenSel') ? document.getElementById('mgrGardenSel').value : '';
+  var halfLabel = half === 'h1' ? '上半期' : '下半期';
+  showConfirm(
+    '一括提出の確認',
+    year + '年度 ' + halfLabel + 'の一時保存中の園評価を、全員分まとめて理事長へ提出します。提出後は個別に変更できなくなります。よろしいですか？',
+    async function() {
+      var r = await api({ action: 'bulkSubmitManagerEvals', year, half, garden });
+      if (r.ok) { toast(r.msg, 'success'); loadEvalList(); }
+      else toast(r.msg, 'error');
+    }
+  );
+}
+
+async function saveMgrEval() {  const unset = mgrScores.filter(s => !s).length;
   if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
   const comment = document.getElementById('mgrComment').value.trim();
   const half    = (mgrEditRecord && mgrEditRecord.half) || 'h1';
-
-  if (!isDraft) {
-    // 提出前に確認
-    const halfLabel = half === 'h1' ? '上半期' : '下半期';
-    showConfirm('評価を提出します',
-      halfLabel + '評価を理事長へ提出します。提出後は変更できません。よろしいですか？',
-      async function() {
-        const r = await api({
-          action:         'saveManagerEval',
-          recordId:       mgrEditRecord.recordId,
-          staffId:        mgrEditRecord.staffId,
-          staffName:      mgrEditRecord.name,
-          jobType:        mgrEditRecord.jobType,
-          garden:         mgrEditRecord.garden,
-          year:           mgrEditRecord.year,
-          half:           half,
-          draft:          false,
-          gardenScores:   mgrScores,
-          managerComment: comment
-        });
-        if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
-        else toast(r.msg, 'error');
-      });
-  } else {
-    const r = await api({
-      action:         'saveManagerEval',
-      recordId:       mgrEditRecord.recordId,
-      staffId:        mgrEditRecord.staffId,
-      staffName:      mgrEditRecord.name,
-      jobType:        mgrEditRecord.jobType,
-      garden:         mgrEditRecord.garden,
-      year:           mgrEditRecord.year,
-      half:           half,
-      draft:          true,
-      gardenScores:   mgrScores,
-      managerComment: comment
-    });
-    if (r.ok) { toast(r.msg, 'success'); loadEvalList(); }
-    else toast(r.msg, 'error');
-  }
+  const r = await api({
+    action:         'saveManagerEval',
+    recordId:       mgrEditRecord.recordId,
+    staffId:        mgrEditRecord.staffId,
+    staffName:      mgrEditRecord.name,
+    jobType:        mgrEditRecord.jobType,
+    garden:         mgrEditRecord.garden,
+    year:           mgrEditRecord.year,
+    half:           half,
+    draft:          true,   // 常に一時保存（提出は一括ボタンで行う）
+    gardenScores:   mgrScores,
+    managerComment: comment
+  });
+  if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
+  else toast(r.msg, 'error');
 }
 
 // ============================================================
