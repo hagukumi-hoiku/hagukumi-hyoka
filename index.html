@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.25</title>
+<title>はぐくみ評価 Ver.1.27</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -165,7 +165,7 @@ body {
 }
 .header-logo span { color: var(--clr-accent-l); }
 .header-right { display: flex; align-items: center; gap: 12px; }
-.header-user { font-size: .82rem; opacity: .85; }
+.header-user { font-size: .82rem; opacity: .85; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .btn-logout {
   background: rgba(255,255,255,.15);
   border: 1px solid rgba(255,255,255,.3);
@@ -523,12 +523,18 @@ tr:hover td { background: rgba(74,124,111,.04); }
 @media(max-width:900px){
   .hamburger { display: block !important; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 4px 10px; line-height: 1; border-radius: 4px; transition: background .2s; -webkit-tap-highlight-color: transparent; }
   .hamburger:hover, .hamburger:active { background: rgba(255,255,255,.2); }
+  /* ヘッダーのユーザー名を短縮（スマホでのはみ出し防止） */
+  .header-user { max-width: 120px !important; font-size: .72rem !important; }
+  .header-logo { font-size: .88rem !important; letter-spacing: 0 !important; }
+  .btn-logout { padding: 4px 10px !important; font-size: .72rem !important; }
   /* モバイルはサイドバーをスライドイン */
   .sidebar { left: -240px; }
   .sidebar.open { left: 0 !important; box-shadow: 4px 0 20px rgba(0,0,0,.2); }
   .main-content { margin-left: 0; width: 100%; padding: 14px; }
+  /* フォーム: スマホでは1カラム + はみ出し防止 */
   .frow { flex-direction: column !important; gap: 10px; }
-  .fcol { min-width: 100% !important; }
+  .fcol { min-width: 100% !important; max-width: 100% !important; }
+  .finput, .fselect, .ftextarea { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
   .modal { max-width: 100%; margin: 0; border-radius: 12px 12px 0 0; max-height: 90vh; }
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal.wide { max-width: 100%; }
@@ -549,7 +555,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.25',
+    description: '育保の杜 職員評価システム Ver.1.27',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -587,7 +593,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.25</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.27</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1513,8 +1519,77 @@ function getEvalType(jobType) {
 let SESSION = null;
 let SETTINGS = {};
 
-function currentYear() {
-  var y = SETTINGS['current_year'];
+// フェーズバッジを最新の SETTINGS['eval_mode'] で更新する
+function updatePhaseLabel() {
+  var phaseInfo  = document.getElementById('nav-phaseInfo');
+  var phaseLabel = document.getElementById('navPhaseLabel');
+  if (!phaseLabel) return;
+
+  var mode = SETTINGS['eval_mode'] || 'goal';
+  var h1dl  = SETTINGS['h1_deadline']      || '';
+  var h2dl  = SETTINGS['h2_deadline']      || '';
+  var mgrDl = SETTINGS['mgr_deadline']     || '';
+  var h2evDl= SETTINGS['h2_eval_deadline'] || '';
+  var h2mgDl= SETTINGS['h2_mgr_deadline']  || '';
+
+  function fmtDl(dl) {
+    if (!dl) return '';
+    return dl.replace(/-/g, '/');
+  }
+
+  var phaseMap = {
+    goal:    { label:'📝 目標記入フェーズ',   bg:'#e8f4e8', color:'#2e6b3e', activeNav:['evalGoal'],    lockNav:['evalSelf','evalSelfH2'] },
+    eval:    { label:'✏️ 上半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelf'],    lockNav:['evalSelfH2'] },
+    mgr:     { label:'🔍 上半期 管理者評価',   bg:'#fff3e0', color:'#8a5c00', activeNav:['evalMgr'],     lockNav:[] },
+    eval_h2: { label:'✏️ 下半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelfH2'],  lockNav:['evalGoal','evalSelf'] },
+    mgr_h2:  { label:'🔍 下半期 管理者評価',   bg:'#fff3e0', color:'#8a5c00', activeNav:['evalMgr'],     lockNav:[] },
+    closed:  { label:'⏸ 評価期間外',          bg:'#f0f0f0', color:'#888',    activeNav:[],              lockNav:['evalGoal','evalSelf','evalSelfH2'] }
+  };
+  var ph = phaseMap[mode] || phaseMap['closed'];
+
+  if (phaseInfo) phaseInfo.style.display = '';
+  phaseLabel.textContent = ph.label;
+  phaseLabel.style.background = ph.bg;
+  phaseLabel.style.color = ph.color;
+
+  // フェーズ対応ナビ: アクティブ強調 / フェーズ外はグレーアウト
+  SECTIONS.forEach(function(s) {
+    var navEl = document.getElementById('nav-' + s);
+    if (!navEl) return;
+    var btn = navEl.querySelector('button');
+    if (!btn) return;
+    var isActive = ph.activeNav.indexOf(s) !== -1;
+    var isLocked = ph.lockNav.indexOf(s) !== -1;
+    if (isActive) {
+      btn.style.borderLeft   = '3px solid ' + ph.color;
+      btn.style.opacity      = '1';
+      btn.style.pointerEvents= '';
+    } else if (isLocked) {
+      btn.style.borderLeft   = '';
+      btn.style.opacity      = '0.38';
+      btn.style.pointerEvents= 'none';
+    } else {
+      btn.style.borderLeft   = '';
+      btn.style.opacity      = '1';
+      btn.style.pointerEvents= '';
+    }
+  });
+
+  // ホームの「今すること」テキストを分かりやすく更新
+  var now = SETTINGS['eval_mode'] || 'goal';
+  var actionMap = {
+    goal:    '📝 今すること: 上半期の個人目標を期限（' + fmtDl(h1dl) + '）までに提出してください。',
+    eval:    '✏️ 今すること: 上半期の振り返りと自己評価を期限（' + fmtDl(h2dl) + '）までに提出してください。',
+    mgr:     '🔍 管理者は期限（' + fmtDl(mgrDl) + '）までに職員の上半期園評価を完了してください。',
+    eval_h2: '✏️ 今すること: 下半期の振り返りと自己評価を期限（' + fmtDl(h2evDl) + '）までに提出してください。',
+    mgr_h2:  '🔍 管理者は期限（' + fmtDl(h2mgDl) + '）までに職員の下半期園評価を完了してください。',
+    closed:  '現在は評価期間外です。'
+  };
+  var sub = document.getElementById('homeSubText');
+  if (sub) sub.textContent = actionMap[now] || '';
+}
+
+function currentYear() {  var y = SETTINGS['current_year'];
   if (!y) return String(new Date().getFullYear());
   if (typeof y === 'object' && y.getFullYear) return String(y.getFullYear());
   var n = parseInt(y);
@@ -1639,36 +1714,6 @@ async function initApp() {
   _nav('nav-evalSelf',    canSelfEval);
   _nav('nav-evalSelfH2',  canSelfEval);
 
-  // フェーズバッジ（評価モードを視覚化）
-  var phaseInfo = document.getElementById('nav-phaseInfo');
-  var phaseLabel = document.getElementById('navPhaseLabel');
-  var mode = SETTINGS['eval_mode'] || 'goal';
-  var phaseMap = {
-    goal:    { label: '📝 目標記入フェーズ',      bg:'#e8f4e8', color:'#2e6b3e', nav: 'evalGoal'    },
-    eval:    { label: '✏️ 上半期評価フェーズ',    bg:'#e8f0fa', color:'#2a4fa8', nav: 'evalSelf'    },
-    mgr:     { label: '🔍 上半期 管理者評価',      bg:'#fff3e0', color:'#8a5c00', nav: 'evalMgr'     },
-    eval_h2: { label: '✏️ 下半期評価フェーズ',    bg:'#e8f0fa', color:'#2a4fa8', nav: 'evalSelfH2'  },
-    mgr_h2:  { label: '🔍 下半期 管理者評価',      bg:'#fff3e0', color:'#8a5c00', nav: 'evalMgr'     },
-    closed:  { label: '⏸ 評価期間外',             bg:'#f0f0f0', color:'#888',    nav: null          }
-  };
-  var ph = phaseMap[mode] || phaseMap['closed'];
-  if (canSelfEval || canEval) {
-    if (phaseInfo) phaseInfo.style.display = '';
-    if (phaseLabel) {
-      phaseLabel.textContent = ph.label;
-      phaseLabel.style.background = ph.bg;
-      phaseLabel.style.color = ph.color;
-    }
-    // 現在フェーズに対応するナビ項目を強調
-    SECTIONS.forEach(function(s) {
-      var navEl = document.getElementById('nav-' + s);
-      if (navEl) {
-        var btn = navEl.querySelector('button');
-        if (btn) btn.style.borderLeft = (ph.nav === s) ? '3px solid ' + ph.color : '';
-      }
-    });
-  }
-
   // 管理者評価メニュー: syunin/encho/admin
   _nav('navDiv-mgr',   canEval);
   _nav('navSec-mgr',   canEval);
@@ -1676,9 +1721,12 @@ async function initApp() {
   _nav('nav-history',  canViewList);
   _nav('nav-bonus',    canBonus);
 
-  // 設定取得
+  // 設定取得（← フェーズバッジはここで取得した最新設定を使って更新する）
   var sr = await api({ action: 'getSettings' });
   if (sr.ok) SETTINGS = sr.settings;
+
+  // 設定取得後にフェーズバッジを更新（SETTINGS が最新の状態で実行）
+  updatePhaseLabel();
 
   showSection('home');
 }
@@ -1765,19 +1813,8 @@ async function loadHome() {
     document.getElementById('announceBodyEl').textContent = ann;
   } else if (annBar) { annBar.style.display = 'none'; }
 
+  // フェーズ説明はupdatePhaseLabelが担当（loadHome末尾でも呼ぶ）
   var mode = SETTINGS['eval_mode'] || 'goal';
-
-  // フェーズ説明（ホームの案内文）
-  var modeDesc = {
-    goal:    '現在は【上半期目標記入フェーズ】です。「上半期目標記入」から提出してください。',
-    eval:    '現在は【上半期 振り返り・自己評価フェーズ】です。「上半期振り返り・自己評価」から提出してください。',
-    mgr:     '現在は【上半期 管理者評価フェーズ】です。（' + currentYear() + '年度）',
-    eval_h2: '現在は【下半期 振り返り・自己評価フェーズ】です（' + h2EvalYear() + '年度下半期）。「下半期振り返り・自己評価」から提出してください。',
-    mgr_h2:  '現在は【下半期 管理者評価フェーズ】です（' + h2EvalYear() + '年度下半期）。',
-    closed:  '現在の評価期間は終了しています。'
-  };
-  var sub = document.getElementById('homeSubText');
-  if (sub) sub.textContent = modeDesc[mode] || '';
 
   // 今年度レコード取得（理事長以外）
   // eval_h2 / mgr_h2 モード時は前年度（h2EvalYear）のレコードを参照
@@ -1891,6 +1928,7 @@ async function loadHome() {
     var tl2 = document.getElementById('taskList');
     if (tl2) tl2.innerHTML = '<li><span class="task-name" style="color:var(--clr-danger)">⚠️ 読み込みエラー: ' + e.message + '</span></li>';
   }
+  updatePhaseLabel();
 }
 
 
@@ -2899,6 +2937,7 @@ async function loadSettings() {
   document.getElementById('setMgrDeadline').value = normDate(SETTINGS['mgr_deadline']);
   document.getElementById('setH2EvalDeadline').value = normDate(SETTINGS['h2_eval_deadline']);
   document.getElementById('setH2MgrDeadline').value  = normDate(SETTINGS['h2_mgr_deadline']);
+  updatePhaseLabel();   // 設定画面を開いた時点でバッジを最新化
 }
 
 async function repairRecordIdsAction() {
@@ -2924,7 +2963,13 @@ async function saveSettings() {
     h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value
   };
   const r = await api({ action: 'saveSettings', settings });
-  if (r.ok) { SETTINGS = settings; toast(r.msg, 'success'); initNav(); } else toast(r.msg, 'error');
+  if (r.ok) {
+    SETTINGS = settings;
+    toast(r.msg, 'success');
+    updatePhaseLabel();   // フェーズバッジを即時更新（initNav再実行不要）
+  } else {
+    toast(r.msg, 'error');
+  }
 }
 
 // ============================================================
@@ -3614,8 +3659,19 @@ async function openBonusModal(staffId) {
   html += '</tr></thead><tbody id="bonusScoreBody"></tbody></table></div>';
   html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（70点満点）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
 
+  // B加算: 自動取得 or 手動入力
+  var bSource = bBonus > 0
+    ? 'システムから自動取得（' + (term==='夏季'?'前年度下半期':'当年度上半期') + 'の園評価ランクより）'
+    : '⚠️ データなし（前年度紙媒体・年度途中入職等 → 手動入力してください）';
   html += '<div class="frow" style="margin-top:16px">';
-  html += '<div class="fcol"><label class="flabel">B加算（自己評価から自動取得）</label><div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-weight:700;font-size:.95rem">' + bBonus + '点</div><input type="hidden" id="bonusBVal" value="' + bBonus + '"></div>';
+  html += '<div class="fcol">'
+    + '<label class="flabel">B加算</label>'
+    + '<div style="display:flex;gap:8px;align-items:center">'
+    + '<input type="number" class="finput" id="bonusBVal" min="0" max="30" step="5" value="' + bBonus + '" style="width:100px">'
+    + '<span style="font-size:.75rem;color:' + (bBonus>0?'var(--clr-success)':'var(--clr-warning)') + '">' + bSource + '</span>'
+    + '</div>'
+    + '<p class="fhelp">ランク表: SS=30 / S=25 / A=20 / B=15 / C=10 / D=5 / E=0　手動入力も可</p>'
+    + '</div>';
   // C加減は理事長(admin)のみ編集可
   var isAdminUser = SESSION.role === 'admin';
   if (isAdminUser) {
