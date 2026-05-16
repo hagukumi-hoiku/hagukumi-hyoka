@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.29</title>
+<title>はぐくみ評価 Ver.1.30</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.29',
+    description: '育保の杜 職員評価システム Ver.1.30',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.29</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.30</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1123,7 +1123,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr>
+              <thead id="bonusListThead"><tr>
                 <th>氏名</th><th>職種</th><th>所属園</th>
                 <th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>
                 <th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>
@@ -1734,8 +1734,8 @@ async function initApp() {
     el.style.display = canManage ? '' : 'none';
   });
 
-  // 自己評価メニュー: 正規全員 + admin/主任以外（主任は賞与のみ）
-  var canSelfEval = !isPartTime && !isAdmin && !isSyunin;
+  // 自己評価メニュー: 正規全員 + admin以外（主任も自己評価あり）
+  var canSelfEval = !isPartTime && !isAdmin;
   _nav('nav-profile',  !isPartTime);
   _nav('nav-evalGoal',    canSelfEval);
   _nav('nav-evalSelf',    canSelfEval);
@@ -3555,8 +3555,30 @@ async function loadBonusList() {
   var tbody = document.getElementById('bonusListBody');
   if (!tbody) return;
 
+  var isSyuninUser = SESSION.role === 'syunin';
+
+  // 主任はヘッダーを一次評価のみに切替
+  var theadEl = document.getElementById('bonusListThead');
+  if (theadEl) {
+    if (isSyuninUser) {
+      theadEl.innerHTML = '<tr><th>氏名</th><th>職種</th><th>所属園</th>'
+        + '<th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>'
+        + '<th>状況</th><th>操作</th></tr>';
+    } else {
+      theadEl.innerHTML = '<tr><th>氏名</th><th>職種</th><th>所属園</th>'
+        + '<th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>'
+        + '<th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>'
+        + '<th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem;font-weight:600">A合計<br><span style="font-size:.7rem;font-weight:400">70点満点換算</span></th>'
+        + '<th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">B加算</th>'
+        + '<th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減</th>'
+        + '<th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>'
+        + '<th style="text-align:center;font-size:.8rem">総合ランク</th>'
+        + '<th>状況</th><th>操作</th></tr>';
+    }
+  }
+
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="' + (isSyuninUser?6:10) + '" style="text-align:center;color:var(--clr-text-s);padding:20px">対象職員がいません</td></tr>';
     return;
   }
 
@@ -3594,6 +3616,20 @@ async function loadBonusList() {
     }
     function rkBadge(rank) {
       return rank ? '<span class="rank-badge rank-' + escHtml(rank) + '" style="width:26px;height:26px;font-size:.75rem">' + escHtml(rank) + '</span>' : '<span style="color:#ccc">-</span>';
+    }
+
+    // 主任は一次評価のみ表示（シンプル行）
+    if (isSyuninUser) {
+      return '<tr>'
+        + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
+        + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
+        + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
+          + (has1 ? raw1 + '点' : '<span style="color:#ccc">未入力</span>') + '</td>'
+        + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">'
+          + (b ? escHtml(b.status) : '未評価') + '</span></td>'
+        + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">一次評価入力</button></td>'
+        + '</tr>';
     }
 
     return '<tr>'
@@ -3676,43 +3712,58 @@ async function openBonusModal(staffId) {
     + '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>'
     + '</div></div>';
 
+  var isSyuninUser = SESSION.role === 'syunin';
+
   // 評価テーブル
   html += '<div class="table-wrap"><table class="score-table"><thead><tr>';
   html += '<th style="width:120px">評価項目</th>';
   html += '<th>着眼点</th>';
-  if (!isEncho) html += '<th style="width:130px;text-align:center">一次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
-  html += '<th style="width:130px;text-align:center">二次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
-  html += '<th style="width:60px;text-align:center">小計</th>';
+  if (!isEncho && !isSyuninUser) html += '<th style="width:130px;text-align:center">一次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
+  if (isSyuninUser) html += '<th style="width:160px;text-align:center">一次評価（入力）<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
+  if (!isSyuninUser) html += '<th style="width:130px;text-align:center">二次評価<br><span style="font-size:.72rem;opacity:.8">（×ウエイト）</span></th>';
+  if (!isSyuninUser) html += '<th style="width:60px;text-align:center">小計</th>';
   html += '</tr></thead><tbody id="bonusScoreBody"></tbody></table></div>';
-  html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（70点満点）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
 
-  // B加算: 自動取得 or 手動入力
-  var bSource = bBonus > 0
-    ? 'システムから自動取得（' + (term==='夏季'?'前年度下半期':'当年度上半期') + 'の園評価ランクより）'
-    : '⚠️ データなし（前年度紙媒体・年度途中入職等 → 手動入力してください）';
-  html += '<div class="frow" style="margin-top:16px">';
-  html += '<div class="fcol">'
-    + '<label class="flabel">B加算</label>'
-    + '<div style="display:flex;gap:8px;align-items:center">'
-    + '<input type="number" class="finput" id="bonusBVal" min="0" max="30" step="5" value="' + bBonus + '" style="width:100px">'
-    + '<span style="font-size:.75rem;color:' + (bBonus>0?'var(--clr-success)':'var(--clr-warning)') + '">' + bSource + '</span>'
-    + '</div>'
-    + '<p class="fhelp">ランク表: SS=30 / S=25 / A=20 / B=15 / C=10 / D=5 / E=0　手動入力も可</p>'
-    + '</div>';
-  // C加減は理事長(admin)のみ編集可
-  var isAdminUser = SESSION.role === 'admin';
-  if (isAdminUser) {
-    html += '<div class="fcol"><label class="flabel">C調整加減（±5）<span style="font-size:.75rem;color:var(--clr-primary);margin-left:6px">理事長のみ</span></label><input type="number" class="finput" id="bonusCVal" min="-5" max="5" value="' + (currentBonusRecord ? currentBonusRecord.cAdj : 0) + '"></div>';
+  if (!isSyuninUser) {
+    html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（70点満点）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
   } else {
-    var cVal = currentBonusRecord ? (currentBonusRecord.cAdj || 0) : 0;
-    html += '<div class="fcol"><label class="flabel">C調整加減</label><div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-weight:700;font-size:.95rem;color:var(--clr-text-s)">' + cVal + '点 <span style="font-size:.72rem">（理事長が設定）</span></div><input type="hidden" id="bonusCVal" value="' + cVal + '"></div>';
+    html += '<div style="margin-top:10px;text-align:right;font-weight:600;font-size:.88rem;color:var(--clr-text-s)">一次評価 合計: <span id="bonusATotal" style="color:var(--clr-primary-d);font-size:1rem;font-weight:700">0</span>点</div>';
   }
-  html += '</div>';
 
-  if (!isEncho) {
-    html += '<div class="frow"><div class="fcol"><label class="flabel">1次評価者コメント</label><textarea class="ftextarea" id="bonusComment1" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment1||'') : '') + '</textarea></div></div>';
+  // B加算・C加減・確定合計は主任に不要
+  if (!isSyuninUser) {
+    // B加算: 自動取得 or 手動入力
+    var bSource = bBonus > 0
+      ? 'システムから自動取得（' + (term==='夏季'?'前年度下半期':'当年度上半期') + 'の園評価ランクより）'
+      : '⚠️ データなし（前年度紙媒体・年度途中入職等 → 手動入力してください）';
+    html += '<div class="frow" style="margin-top:16px">';
+    html += '<div class="fcol">'
+      + '<label class="flabel">B加算</label>'
+      + '<div style="display:flex;gap:8px;align-items:center">'
+      + '<input type="number" class="finput" id="bonusBVal" min="0" max="30" step="5" value="' + bBonus + '" style="width:100px">'
+      + '<span style="font-size:.75rem;color:' + (bBonus>0?'var(--clr-success)':'var(--clr-warning)') + '">' + bSource + '</span>'
+      + '</div>'
+      + '<p class="fhelp">ランク表: SS=30 / S=25 / A=20 / B=15 / C=10 / D=5 / E=0　手動入力も可</p>'
+      + '</div>';
+    // C加減は理事長(admin)のみ編集可
+    var isAdminUser = SESSION.role === 'admin';
+    if (isAdminUser) {
+      html += '<div class="fcol"><label class="flabel">C調整加減（±5）<span style="font-size:.75rem;color:var(--clr-primary);margin-left:6px">理事長のみ</span></label><input type="number" class="finput" id="bonusCVal" min="-5" max="5" value="' + (currentBonusRecord ? currentBonusRecord.cAdj : 0) + '"></div>';
+    } else {
+      var cVal = currentBonusRecord ? (currentBonusRecord.cAdj || 0) : 0;
+      html += '<div class="fcol"><label class="flabel">C調整加減</label><div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-weight:700;font-size:.95rem;color:var(--clr-text-s)">' + cVal + '点 <span style="font-size:.72rem">（理事長が設定）</span></div><input type="hidden" id="bonusCVal" value="' + cVal + '"></div>';
+    }
+    html += '</div>';
+    if (!isEncho) {
+      html += '<div class="frow"><div class="fcol"><label class="flabel">1次評価者コメント</label><textarea class="ftextarea" id="bonusComment1" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment1||'') : '') + '</textarea></div></div>';
+    }
+    html += '<div class="frow"><div class="fcol"><label class="flabel">2次評価者コメント</label><textarea class="ftextarea" id="bonusComment2" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment2||'') : '') + '</textarea></div></div>';
+  } else {
+    // 主任用: 隠しフィールドのみ（B・C不要）
+    html += '<input type="hidden" id="bonusBVal" value="0"><input type="hidden" id="bonusCVal" value="0">';
+    html += '<div class="frow"><div class="fcol"><label class="flabel">コメント（任意）</label><textarea class="ftextarea" id="bonusComment1" rows="3" placeholder="評価コメント（任意）">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment1||'') : '') + '</textarea></div></div>';
+    html += '<input type="hidden" id="bonusComment2" value="">';
   }
-  html += '<div class="frow"><div class="fcol"><label class="flabel">2次評価者コメント</label><textarea class="ftextarea" id="bonusComment2" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment2||'') : '') + '</textarea></div></div>';
 
   document.getElementById('bonusModalBody').innerHTML = html;
   renderBonusScoreTable(evalType);
@@ -3725,8 +3776,10 @@ async function openBonusModal(staffId) {
   }
 }
 function renderBonusScoreTable(evalType) {
-  var isEncho = evalType === 'encho';
-  var colCount = isEncho ? 4 : 5; // 項目・着眼点・(1次)・2次・小計
+  var isEncho     = evalType === 'encho';
+  var isSyuninUser = SESSION.role === 'syunin';
+  // 主任: 項目・着眼点・一次評価の3列、小計なし
+  var colCount = isEncho ? 4 : (isSyuninUser ? 3 : 5);
   var tbody = document.getElementById('bonusScoreBody');
   var html = ''; var lastCat = '';
   BONUS_WEIGHTS.forEach(function(w, i) {
@@ -3745,19 +3798,21 @@ function renderBonusScoreTable(evalType) {
       r1 = '<div class="score-radio-group bscore1" data-idx="' + i + '">' + radios1 + '</div>'
         + '<div style="font-size:.7rem;color:var(--clr-text-s);text-align:center;margin-top:2px">×' + w.w1 + '（最大' + w.max1 + '点）</div>';
     }
-    var radios2 = [1,2,3,4,5].map(function(v){
-      var chk = bonusScores2[i]===v ? ' checked' : '';
-      return '<input type="radio" name="b2_' + i + '" id="b2_' + i + '_' + v + '" value="' + v + '"' + chk + '>'
-        + '<label for="b2_' + i + '_' + v + '">' + v + '</label>';
-    }).join('');
-    r2 = '<div class="score-radio-group bscore2" data-idx="' + i + '">' + radios2 + '</div>'
-      + '<div style="font-size:.7rem;color:var(--clr-text-s);text-align:center;margin-top:2px">×' + w.w2 + '（最大' + w.max2 + '点）</div>';
+    if (!isSyuninUser) {
+      var radios2 = [1,2,3,4,5].map(function(v){
+        var chk = bonusScores2[i]===v ? ' checked' : '';
+        return '<input type="radio" name="b2_' + i + '" id="b2_' + i + '_' + v + '" value="' + v + '"' + chk + '>'
+          + '<label for="b2_' + i + '_' + v + '">' + v + '</label>';
+      }).join('');
+      r2 = '<div class="score-radio-group bscore2" data-idx="' + i + '">' + radios2 + '</div>'
+        + '<div style="font-size:.7rem;color:var(--clr-text-s);text-align:center;margin-top:2px">×' + w.w2 + '（最大' + w.max2 + '点）</div>';
+    }
     html += '<tr>'
       + '<td><div class="score-item-name">' + w.item + '</div></td>'
       + '<td><div class="score-item-hint" style="font-size:.76rem;color:var(--clr-text-s)">' + (w.hint||'') + '</div></td>'
       + (isEncho ? '' : '<td>' + r1 + '</td>')
-      + '<td>' + r2 + '</td>'
-      + '<td style="text-align:center;font-weight:700;color:var(--clr-primary)" id="bsub_' + i + '">' + sub + '</td>'
+      + (isSyuninUser ? '' : '<td>' + r2 + '</td>')
+      + (isSyuninUser ? '' : '<td style="text-align:center;font-weight:700;color:var(--clr-primary)" id="bsub_' + i + '">' + sub + '</td>')
       + '</tr>';
   });
   tbody.innerHTML = html;
