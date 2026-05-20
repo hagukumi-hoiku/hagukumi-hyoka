@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.35</title>
+<title>はぐくみ評価 Ver.1.36</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.35',
+    description: '育保の杜 職員評価システム Ver.1.36',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.35</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.36</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1000,7 +1000,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div class="fcol">
               <label class="flabel">対象年度（current_year）</label>
               <input type="number" class="finput" id="setYear" placeholder="例: 2026">
-              <p class="fhelp">現在進行中の年度。4月に翌年度へ更新。</p>
+              <p class="fhelp">現在進行中の年度。4月に翌年度へ更新。<br>
+                <strong>📋 過去データ入力方法：</strong>紙ベースの評価実績を遡って入力する場合は、ここを過去の年度（例: 2024）に変更して入力後、現在年度に戻してください。過去2〜3年分の入力が可能です。</p>
             </div>
             <div class="fcol">
               <label class="flabel">下半期評価 対象年度（h2_eval_year）</label>
@@ -1246,6 +1247,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <label class="flabel">在籍状況</label>
           <select class="fselect" id="fm_status">
             <option value="在籍">在籍</option>
+            <option value="休職">休職中</option>
             <option value="退職">退職</option>
           </select>
         </div>
@@ -1254,6 +1256,14 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <option value="">選択してください</option>
           </select>
           <p class="fhelp">正規職員のみ。所属園を選ぶと候補が表示されます</p>
+        </div>
+      </div>
+      <!-- 評価除外年度（admin/encho のみ表示） -->
+      <div class="frow" id="leaveYearsRow" style="display:none">
+        <div class="fcol" style="flex:1">
+          <label class="flabel">📅 評価除外年度</label>
+          <input type="text" class="finput" id="fm_leaveYears" placeholder="例: 2026,2027（カンマ区切り）">
+          <p class="fhelp">育児休業・長期休職等で評価対象外にする年度を入力。当該年度の賞与評価・職員評価一覧に表示されなくなります。退職者は自動除外されるため不要。</p>
         </div>
       </div>
     </div>
@@ -2447,10 +2457,10 @@ async function loadEvalList() {
 
   // admin（理事長）は全園・全職員を取得できるようgarden指定なし
   var apiGarden = SESSION.role === 'admin' ? '' : SESSION.garden;
-  var sr = await api({ action: 'getStaffList', role: SESSION.role, garden: apiGarden });
+  var sr = await api({ action: 'getStaffList', role: SESSION.role, garden: apiGarden, evalYear: year });
   if (!sr.ok) return;
   var allStaff = sr.list.filter(function(s) {
-    return s.status === '在籍' && s.employment === '正規' && s.jobType !== '理事長';
+    return s.status !== '退職' && s.employment === '正規' && s.jobType !== '理事長';
   });
 
   // 権限別フィルター
@@ -2896,6 +2906,11 @@ async function openStaffModal(staffId = null) {
   document.getElementById('fm_role').value = 'staff';
   updateClassOptions('');
   document.getElementById('fm_status').value = '在籍';
+  document.getElementById('fm_leaveYears').value = '';
+
+  // 評価除外年度フィールドは admin/encho のみ表示
+  var leaveRow = document.getElementById('leaveYearsRow');
+  if (leaveRow) leaveRow.style.display = (SESSION.role === 'admin' || SESSION.role === 'encho') ? '' : 'none';
 
   if (staffId) {
     const r = await api({ action: 'getStaffList', role: SESSION.role, garden: '' });
@@ -2915,6 +2930,9 @@ async function openStaffModal(staffId = null) {
       document.getElementById('fm_status').value = staff.status;
       document.getElementById('fm_class').value = staff.className || '';
       loadQualFields(staff.quals || {});
+      // 評価除外年度
+      var ly = staff.leaveYears || [];
+      document.getElementById('fm_leaveYears').value = ly.map(String).join(',');
     }
   }
   switchStaffTab('basic');
@@ -2933,8 +2951,11 @@ async function saveStaff() {
   if (!id || !name || !job || !loginId) { toast('必須項目を入力してください', 'error'); return; }
   if (!editingStaffId && !pw) { toast('新規登録時はパスワードが必要です', 'error'); return; }
 
-  // 新規登録時: editingStaffIdはnullなのでGASに isNew フラグを渡す
-  const isNew = !editingStaffId;
+  // 評価除外年度をJSON配列に変換（例: "2026,2027" → [2026,2027]）
+  var lyRaw = (document.getElementById('fm_leaveYears').value || '').trim();
+  var leaveYears = lyRaw
+    ? lyRaw.split(',').map(function(y){ return parseInt(y.trim()); }).filter(function(y){ return !isNaN(y); })
+    : [];
 
   const r = await api({
     action: 'saveStaff', staffId: id, name,
@@ -2948,7 +2969,9 @@ async function saveStaff() {
     loginId, password: pw,
     role:        document.getElementById('fm_role').value,
     staffStatus: document.getElementById('fm_status').value,
-    className:   document.getElementById('fm_class').value || ''
+    className:   document.getElementById('fm_class').value || '',
+    leaveYears:  leaveYears,
+    isNew
   });
   if (r.ok) { toast(r.msg, 'success'); closeStaffModal(); loadStaffList(); }
   else toast(r.msg, 'error');
@@ -3558,16 +3581,17 @@ async function loadAdminBonusSummary() {
 }
 
 async function loadBonusList() {
-  var year   = document.getElementById('bonusYearSel').value;
+  var year   = document.getElementById('bonusYearSel').value || currentYear();
   var term   = document.getElementById('bonusTermSel').value;
   var garden = document.getElementById('bonusGardenSel').value;
 
-  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden });
+  // evalYear を渡してサーバー側で評価除外年度・退職者を除外
+  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden, evalYear: year });
   if (!sr.ok) return;
 
-  // ① 正規のみ・理事長除外
+  // ① 在籍中・正規のみ・理事長除外（退職者はサーバー側でも除外済み、ここで追加フィルター）
   var list = sr.list.filter(function(s) {
-    return s.status === '在籍'
+    return s.status !== '退職'
         && s.employment === '正規'
         && s.jobType !== '理事長';
   });
@@ -3633,8 +3657,8 @@ async function loadBonusList() {
     var evalType = getBonusEvalType(s.jobType);
     var useMax = evalType === 'encho' ? max2 : maxAll;
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
-    // A: 70点満点換算
-    var aTotal70 = (has1||has2) ? Math.round((rawTotal / useMax) * 70 * 10) / 10 : null;
+    // A: 70点満点換算（四捨五入）
+    var aTotal70 = (has1||has2) ? Math.round((rawTotal / useMax) * 70) : null;
     var bVal  = b ? (b.bBonus||0) : null;
     var cVal  = b ? (b.cAdj||0)  : null;
     // 確定合計 = A（70点）+ B加算 + C加減 → 100点満点
@@ -3954,6 +3978,27 @@ async function saveBonusEval() {
   var bBonus = parseInt(document.getElementById('bonusBVal').value) || 0;
   var cAdj   = parseInt(document.getElementById('bonusCVal').value) || 0;
   if (cAdj < -5 || cAdj > 5) { toast('C加減は±5の範囲で入力してください', 'error'); return; }
+
+  // 評価漏れチェック（役割に応じて対象スコアを検証）
+  var unselected = [];
+  BONUS_WEIGHTS.forEach(function(w, i) {
+    if (SESSION.role === 'syunin') {
+      // 主任: 一次評価
+      if (!bonusScores1[i]) unselected.push(w.item + '（一次）');
+    } else if (SESSION.role === 'encho') {
+      // 園長: 二次評価
+      if (!bonusScores2[i]) unselected.push(w.item + '（二次）');
+    } else if (SESSION.role === 'admin') {
+      // 理事長: 一次・二次両方（対象がenchoタイプは二次のみ）
+      if (!isEncho && !bonusScores1[i]) unselected.push(w.item + '（一次）');
+      if (!bonusScores2[i]) unselected.push(w.item + '（二次）');
+    }
+  });
+  if (unselected.length > 0) {
+    toast('以下の評価項目が未選択です：\n' + unselected.join('、'), 'error');
+    return;
+  }
+
   var c1El = document.getElementById('bonusComment1');
   var c2El = document.getElementById('bonusComment2');
   // 評価者ロール別の保存モード
