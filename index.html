@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.36</title>
+<title>はぐくみ評価 Ver.1.39</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.36',
+    description: '育保の杜 職員評価システム Ver.1.39',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.36</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.39</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1261,9 +1261,16 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <!-- 評価除外年度（admin/encho のみ表示） -->
       <div class="frow" id="leaveYearsRow" style="display:none">
         <div class="fcol" style="flex:1">
-          <label class="flabel">📅 評価除外年度</label>
-          <input type="text" class="finput" id="fm_leaveYears" placeholder="例: 2026,2027（カンマ区切り）">
-          <p class="fhelp">育児休業・長期休職等で評価対象外にする年度を入力。当該年度の賞与評価・職員評価一覧に表示されなくなります。退職者は自動除外されるため不要。</p>
+          <label class="flabel">📅 評価除外年度・賞与期</label>
+          <input type="text" class="finput" id="fm_leaveYears" placeholder="例: 2026 または 2026-冬季（カンマ区切りで複数可）">
+          <p class="fhelp">
+            育児休業・長期休職等で賞与評価対象外にする年度・賞与期を入力します。<br>
+            <strong>2026</strong> → 2026年度の夏季・冬季賞与両方を除外<br>
+            <strong>2026-夏季</strong> → 2026年度の夏季のみ除外（冬季は対象）<br>
+            <strong>2026-冬季</strong> → 2026年度の冬季のみ除外（夏季は対象）<br>
+            複数の場合はカンマで区切り: <em>2026-冬季, 2027</em><br>
+            退職者は自動除外されるため設定不要。
+          </p>
         </div>
       </div>
     </div>
@@ -2932,7 +2939,7 @@ async function openStaffModal(staffId = null) {
       loadQualFields(staff.quals || {});
       // 評価除外年度
       var ly = staff.leaveYears || [];
-      document.getElementById('fm_leaveYears').value = ly.map(String).join(',');
+      document.getElementById('fm_leaveYears').value = ly.join(', ');
     }
   }
   switchStaffTab('basic');
@@ -2951,10 +2958,11 @@ async function saveStaff() {
   if (!id || !name || !job || !loginId) { toast('必須項目を入力してください', 'error'); return; }
   if (!editingStaffId && !pw) { toast('新規登録時はパスワードが必要です', 'error'); return; }
 
-  // 評価除外年度をJSON配列に変換（例: "2026,2027" → [2026,2027]）
+  // 評価除外年度・賞与期をJSON配列に変換
+  // 例: "2026, 2026-冬季, 2027-夏季" → ["2026","2026-冬季","2027-夏季"]
   var lyRaw = (document.getElementById('fm_leaveYears').value || '').trim();
   var leaveYears = lyRaw
-    ? lyRaw.split(',').map(function(y){ return parseInt(y.trim()); }).filter(function(y){ return !isNaN(y); })
+    ? lyRaw.split(',').map(function(e) { return e.trim(); }).filter(function(e) { return e.length > 0; })
     : [];
 
   const r = await api({
@@ -3585,8 +3593,8 @@ async function loadBonusList() {
   var term   = document.getElementById('bonusTermSel').value;
   var garden = document.getElementById('bonusGardenSel').value;
 
-  // evalYear を渡してサーバー側で評価除外年度・退職者を除外
-  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden, evalYear: year });
+  // evalYear と evalTerm を渡してサーバー側で評価除外・退職者を除外
+  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden, evalYear: year, evalTerm: term });
   if (!sr.ok) return;
 
   // ① 在籍中・正規のみ・理事長除外（退職者はサーバー側でも除外済み、ここで追加フィルター）
@@ -3804,8 +3812,9 @@ async function openBonusModal(staffId) {
       + '二次評価 合計: <span id="bonusATotal" style="color:var(--clr-primary-d);font-size:1.1rem;font-weight:700">0</span>'
       + '<span style="color:var(--clr-text-s);font-size:.8rem"> / ' + max2total + '点満点</span></div>';
   } else {
-    // 管理者: A合計 70点満点換算
-    html += '<div style="margin-top:10px;text-align:right;font-weight:700">A合計（70点満点換算）: <span id="bonusATotal" style="color:var(--clr-primary);font-size:1.1rem">0</span></div>';
+    // admin: 一次・二次の生点のみ表示（換算なし）
+    html += '<div style="margin-top:10px;text-align:right;font-weight:600;font-size:.88rem" id="bonusATotal">'
+      + '一次: <strong>-/85点</strong>　二次: <strong>-/135点</strong></div>';
   }
 
   // B加算・C加減・確定合計は主任に不要
@@ -3833,7 +3842,24 @@ async function openBonusModal(staffId) {
     }
     html += '</div>';
     if (!isEncho) {
-      html += '<div class="frow"><div class="fcol"><label class="flabel">1次評価者コメント</label><textarea class="ftextarea" id="bonusComment1" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment1||'') : '') + '</textarea></div></div>';
+      var c1val = escHtml(currentBonusRecord ? (currentBonusRecord.comment1||'') : '');
+      if (isEnchoUser) {
+        // 園長: 一次コメントは読み取り専用
+        html += '<div class="frow"><div class="fcol">'
+          + '<label class="flabel">1次評価者コメント <span style="font-size:.72rem;color:var(--clr-warning)">（参照のみ・変更不可）</span></label>'
+          + '<div style="padding:8px 12px;background:var(--clr-bg2);border-radius:var(--radius-s);font-size:.88rem;min-height:40px;line-height:1.6;white-space:pre-wrap">'
+          + (c1val || '<span style="color:#bbb">（コメントなし）</span>') + '</div>'
+          + '<input type="hidden" id="bonusComment1" value="' + c1val + '">'
+          + '</div></div>';
+      } else {
+        // admin: 一次コメント編集可
+        html += '<div class="frow"><div class="fcol"><label class="flabel">1次評価者コメント</label>'
+          + '<textarea class="ftextarea" id="bonusComment1" rows="3" placeholder="150文字程度">' + c1val + '</textarea>'
+          + '</div></div>';
+      }
+    } else {
+      // 評価対象が管理者タイプ（理事長が評価）: 一次コメント不要
+      html += '<input type="hidden" id="bonusComment1" value="">';
     }
     html += '<div class="frow"><div class="fcol"><label class="flabel">2次評価者コメント</label><textarea class="ftextarea" id="bonusComment2" rows="3" placeholder="150文字程度">' + escHtml(currentBonusRecord ? (currentBonusRecord.comment2||'') : '') + '</textarea></div></div>';
   } else {
@@ -3958,12 +3984,33 @@ function calcBonusA70(evalType) {
   return Math.round((raw / maxRaw) * 70 * 10) / 10;
 }
 function updateBonusTotal(evalType) {
-  var raw  = calcBonusRaw(evalType);
-  var maxR = (evalType === 'encho') ? 135 : 220;
-  // A合計: 70点満点換算
-  var a70 = Math.round((raw / maxR) * 70 * 10) / 10;
   var el = document.getElementById('bonusATotal');
-  if (el) el.textContent = a70 + '点（生点: ' + raw + '/' + maxR + '）';
+  if (!el) return;
+  var isSyuninUser = SESSION.role === 'syunin';
+  var isEnchoUser  = SESSION.role === 'encho';
+  var isSubjectEncho = evalType === 'encho'; // 評価対象が管理者タイプ
+
+  var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max1; }, 0); // 85
+  var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max2; }, 0); // 135
+  var raw1 = isSubjectEncho ? 0 : BONUS_WEIGHTS.reduce(function(a,w,i){ return a + (bonusScores1[i]||0)*w.w1; }, 0);
+  var raw2 = BONUS_WEIGHTS.reduce(function(a,w,i){ return a + (bonusScores2[i]||0)*w.w2; }, 0);
+
+  if (isSyuninUser) {
+    // 主任: 一次の生点のみ（換算不要）
+    el.innerHTML = '<strong style="font-size:1.1rem;color:var(--clr-primary-d)">' + raw1 + '</strong>'
+      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + max1 + '点満点</span>';
+  } else if (isEnchoUser) {
+    // 園長: 二次の生点のみ（換算不要）
+    el.innerHTML = '<strong style="font-size:1.1rem;color:var(--clr-primary-d)">' + raw2 + '</strong>'
+      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + max2 + '点満点</span>';
+  } else {
+    // admin: 一次・二次を生点で個別表示（換算は一覧でのみ確認）
+    if (isSubjectEncho) {
+      el.innerHTML = '二次: <strong>' + raw2 + '/' + max2 + '点</strong>';
+    } else {
+      el.innerHTML = '一次: <strong>' + raw1 + '/' + max1 + '点</strong>　二次: <strong>' + raw2 + '/' + max2 + '点</strong>';
+    }
+  }
 }
 
 async function saveBonusEval() {
