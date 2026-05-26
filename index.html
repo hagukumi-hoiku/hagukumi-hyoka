@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.40</title>
+<title>はぐくみ評価 Ver.1.44</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.40',
+    description: '育保の杜 職員評価システム Ver.1.44',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.40</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.44</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -3389,28 +3389,37 @@ function buildHistoryTable(list, isAdmin) {
     }
     years.forEach(function(y) {
       var e = st.records[y];
-      var selfT  = e ? (e.selfTotal  || '-') : '-';
-      var selfR  = e ? (e.selfRank   || '') : '';
-      var grdT   = e ? (e.gardenTotal || '-') : '-';
-      var grdR   = e ? (e.gardenRank  || '') : '';
-      var bonus  = e ? (e.bonus || '-') : '-';
-      var bVal   = e ? (e.bonusH1 || e.bonus || '') : '';
-      var cVal   = e ? (e.cAdj !== undefined ? e.cAdj : '') : '';
-      var aTotal = e ? (e.aTotal100 || '') : '';  // 賞与評価の100点換算A合計
+      // 職員評価（H1上半期）スコア
+      var selfT = e ? (e.selfTotal   || 0) : 0;
+      var selfR = e ? (e.selfRank    || '') : '';
+      var grdT  = e ? (e.gardenTotal || 0) : 0;
+      var grdR  = e ? (e.gardenRank  || '') : '';
+      // 賞与評価（DB_賞与評価より結合。冬季優先）
+      var aTotal = e ? (e.bonusATotal || 0) : 0;   // A合計 70点換算
+      var bVal   = e ? (e.bonusBBonus || e.bonus || 0) : 0;  // B加算（賞与DBまたは評価DBから）
+      var cVal   = e ? (e.bonusCAdj  || 0) : 0;   // C加減（理事長設定）
+      var bTerm  = e ? (e.bonusTerm  || '') : '';  // 賞与期（冬季/夏季）
       html += '<td style="text-align:center;padding:6px 8px;border-left:1px solid var(--clr-bg2)">'
-            + (selfT !== '-' ? '<span style="font-weight:600">' + selfT + '</span><br>' + rk(selfR) : '<span style="color:#bbb">-</span>')
+            + (selfT > 0 ? '<span style="font-weight:600">' + selfT + '点</span><br>' + rk(selfR)
+                         : '<span style="color:#bbb">-</span>')
             + '</td>';
       html += '<td style="text-align:center;padding:6px 8px">'
-            + (grdT !== '-' ? '<span style="font-weight:600">' + grdT + '</span><br>' + rk(grdR) : '<span style="color:#bbb">-</span>')
+            + (grdT > 0 ? '<span style="font-weight:600">' + grdT + '点</span><br>' + rk(grdR)
+                        : '<span style="color:#bbb">-</span>')
             + '</td>';
       html += '<td style="text-align:center;padding:6px 8px;background:#fffef8">'
-            + (aTotal ? '<span style="font-weight:700;color:var(--clr-primary-d)">' + aTotal + '点</span>' : '<span style="color:#bbb">-</span>')
+            + (aTotal > 0
+                ? '<span style="font-weight:700;color:var(--clr-primary-d)">' + aTotal + '点</span>'
+                  + (bTerm ? '<br><span style="font-size:.68rem;color:#aaa">' + bTerm + '</span>' : '')
+                : '<span style="color:#bbb">-</span>')
             + '</td>';
       html += '<td style="text-align:center;padding:6px 8px;background:#fffef8">'
-            + (bVal && bVal !== '-' && bVal > 0 ? '<span style="font-weight:600">' + bVal + '点</span>' : '<span style="color:#bbb">-</span>')
+            + (bVal > 0 ? '<span style="font-weight:600">' + bVal + '点</span>'
+                        : '<span style="color:#bbb">-</span>')
             + '</td>';
       html += '<td style="text-align:center;padding:6px 8px;background:#fffef8;border-right:2px solid var(--clr-border)">'
-            + (cVal !== '' && cVal !== 0 ? '<span style="font-weight:600">' + (cVal > 0 ? '+' : '') + cVal + '</span>' : '<span style="color:#bbb">-</span>')
+            + (cVal !== 0 ? '<span style="font-weight:600">' + (cVal > 0 ? '+' : '') + cVal + '</span>'
+                          : '<span style="color:#bbb">-</span>')
             + '</td>';
     });
     html += '</tr>';
@@ -3426,7 +3435,7 @@ function buildHistoryTable(list, isAdmin) {
 // 評価履歴印刷プレビュー
 function openHistoryPrint(year) {
   // loadHistory と同じロジックで targetStaffId を決定
-  var isAdminUser = ['admin','encho','syunin'].includes(SESSION.role);
+  var isAdminUser = SESSION.role === 'admin' || SESSION.role === 'encho';
   var sel = document.getElementById('historyStaffSel');
   var targetId;
   if (sel && sel.value) {
@@ -3472,7 +3481,8 @@ function openHistoryPrint(year) {
         + (e.goalH2 ? '<h2>下半期目標</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.goalH2) + '</div>' : '')
         + (e.reflectH2 ? '<h2>下半期振り返り</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.reflectH2) + '</div>' : '');
 
-      if (isAdminUser && (e.selfTotal || e.gardenTotal)) {
+      // スコアは全ロールで表示（GAS が全員分返すようになったため）
+      if (e.selfTotal || e.gardenTotal) {
         body += '<h2>評価結果（上半期）</h2>'
           + '<table>'
           + '<tr><th>自己評価合計</th><td>' + (e.selfTotal||'-') + '</td><th>自己ランク</th><td>' + (e.selfRank ? '<span class="rk">'+escHtml(e.selfRank)+'</span>' : '-') + '</td></tr>'
@@ -3487,8 +3497,17 @@ function openHistoryPrint(year) {
             + '<tr><th>翌年夏季賞与B加算</th><td>' + (e.bonusH2 > 0 ? e.bonusH2 + '点' : '-') + '</td><th></th><td></td></tr>'
             + '</table>';
         }
-        if (e.managerComment) body += '<h2>評価コメント（上半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerComment) + '</div>';
-        if (e.managerCommentH2) body += '<h2>評価コメント（下半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerCommentH2) + '</div>';
+        if (e.bonusATotal > 0) {
+          body += '<h2>賞与評価結果' + (e.bonusTerm ? '（' + e.bonusTerm + '）' : '') + '</h2>'
+            + '<table>'
+            + '<tr><th>A合計（70点換算）</th><td>' + e.bonusATotal + '点</td><th>B加算</th><td>' + (e.bonusBBonus||0) + '点</td></tr>'
+            + '<tr><th>C加減</th><td>' + (e.bonusCAdj > 0 ? '+' : '') + (e.bonusCAdj||0) + '</td><th>確定合計</th><td><strong>' + (e.bonusGrand||0) + '点（' + (e.bonusGrandRank||'-') + '）</strong></td></tr>'
+            + '</table>';
+        }
+        if (isAdminUser) {
+          if (e.managerComment) body += '<h2>評価コメント（上半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerComment) + '</div>';
+          if (e.managerCommentH2) body += '<h2>評価コメント（下半期）</h2><div style="white-space:pre-wrap;padding:8px;background:#f8f8f6;border-radius:4px">' + escHtml(e.managerCommentH2) + '</div>';
+        }
       }
       body += '<div style="margin-top:16px;display:flex;gap:32px;font-size:.75rem;color:#888"><span>本人確認：_______________</span><span>管理者確認：_______________</span><span>印刷日：' + new Date().toLocaleDateString('ja-JP') + '</span></div>';
     });
@@ -3541,6 +3560,21 @@ function getBonusEvalType(jobType) {
   if (jobType === '主任') return 'syunin';
   if (['統括リーダー','幼児リーダー','乳児リーダー'].includes(jobType)) return 'leader';
   return 'general';
+}
+
+// ── 評価タイプ別 賞与評価 生点満点 ───────────────────────────────────────
+// 満点を変更する場合はこのオブジェクトのみ修正する。
+// first  = 1次評価の満点（主任ユーザー or 園長→主任評価）
+// second = 2次評価の満点（園長 or 理事長評価）
+// total  = 1次+2次 の合計満点（100点換算の分母）
+var BONUS_RAW_MAX = {
+  general: { first: 85, second: 135, total: 220 }, // 保育補助・保育士・調理員・栄養士
+  leader:  { first: 85, second: 135, total: 220 }, // 統括・幼児・乳児リーダー
+  syunin:  { first: 85, second: 135, total: 220 }, // 主任（1次=園長、2次=理事長）
+  encho:   { first:  0, second: 135, total: 135 }  // 園長（1次なし、2次=理事長のみ）
+};
+function getBonusRawMax(evalType) {
+  return BONUS_RAW_MAX[evalType] || BONUS_RAW_MAX.general;
 }
 
 // 1次評価者かどうか
@@ -3622,13 +3656,49 @@ async function loadBonusList() {
 
   var isSyuninUser = SESSION.role === 'syunin';
 
+  // ── 評価者別ステータスセル ───────────────────────────────────────────────
+  // 対象の職種に応じた評価者名 + date1/date2 の有無で 済/未 を2行表示
+  // syunin視点では1次のみ表示
+  function evalStatusCell(staffJobType, bonusRec) {
+    var has1 = bonusRec && bonusRec.date1 && bonusRec.date1 !== '-' && bonusRec.date1 !== '';
+    var has2 = bonusRec && bonusRec.date2 && bonusRec.date2 !== '-' && bonusRec.date2 !== '';
+    var lbl1, lbl2;
+    if (staffJobType === '園長') {
+      lbl1 = null;       // 園長評価に1次なし
+      lbl2 = '理事長';
+    } else if (staffJobType === '主任') {
+      lbl1 = '園長';     // 主任の1次評価者＝園長
+      lbl2 = '理事長';   // 主任の2次評価者＝理事長
+    } else {
+      lbl1 = '主任';     // 一般職・リーダーの1次評価者＝主任
+      lbl2 = '園長';     // 一般職・リーダーの2次評価者＝園長
+    }
+    function dot(done) {
+      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;background:' + (done ? '#28a745' : '#d0d0d0') + '"></span>';
+    }
+    function lbl(label, done) {
+      return '<div style="white-space:nowrap">' + dot(done)
+        + '<span style="font-size:.72rem;color:#666">' + label + ':&thinsp;</span>'
+        + '<span style="font-size:.75rem;font-weight:700;color:' + (done ? '#28a745' : '#aaa') + '">' + (done ? '済' : '未') + '</span></div>';
+    }
+    if (isSyuninUser) {
+      // 主任ユーザーは自分の担当（1次）のみ表示
+      return '<td style="padding:4px 8px">' + lbl(lbl1 || '1次', has1) + '</td>';
+    }
+    var html = '<td style="padding:4px 8px">';
+    if (lbl1) html += lbl(lbl1 + '(1次)', has1);
+    html += lbl(lbl2 + '(2次)', has2);
+    html += '</td>';
+    return html;
+  }
+
   // 主任はヘッダーを一次評価のみに切替
   var theadEl = document.getElementById('bonusListThead');
   if (theadEl) {
     if (isSyuninUser) {
       theadEl.innerHTML = '<tr><th>氏名</th><th>職種</th><th>所属園</th>'
         + '<th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>'
-        + '<th>状況</th><th>操作</th></tr>';
+        + '<th style="font-size:.78rem">評価状況</th><th>操作</th></tr>';
     } else {
       theadEl.innerHTML = '<tr><th>氏名</th><th>職種</th><th>所属園</th>'
         + '<th style="text-align:center;background:#f0f8fd;color:#3a7a9a;font-size:.78rem">一次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>'
@@ -3638,7 +3708,7 @@ async function loadBonusList() {
         + '<th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減</th>'
         + '<th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>'
         + '<th style="text-align:center;font-size:.8rem">総合ランク</th>'
-        + '<th>状況</th><th>操作</th></tr>';
+        + '<th style="font-size:.78rem">評価状況</th><th>操作</th></tr>';
     }
   }
 
@@ -3663,7 +3733,7 @@ async function loadBonusList() {
     var has1 = b && b.scores1 && b.scores1.some(Boolean);
     var has2 = b && b.scores2 && b.scores2.some(Boolean);
     var evalType = getBonusEvalType(s.jobType);
-    var useMax = evalType === 'encho' ? max2 : maxAll;
+    var useMax = getBonusRawMax(evalType).total;
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
     // A: 70点満点換算（四捨五入）
     var aTotal70 = (has1||has2) ? Math.round((rawTotal / useMax) * 70) : null;
@@ -3691,8 +3761,7 @@ async function loadBonusList() {
         + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
         + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
           + (has1 ? raw1 + '点' : '<span style="color:#ccc">未入力</span>') + '</td>'
-        + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">'
-          + (b ? escHtml(b.status) : '未評価') + '</span></td>'
+        + evalStatusCell(s.jobType, b)
         + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">一次評価入力</button></td>'
         + '</tr>';
     }
@@ -3721,8 +3790,7 @@ async function loadBonusList() {
         + (grand !== null ? grand + '点' : '<span style="color:#ccc">-</span>') + '</td>'
       // 総合ランク
       + '<td style="text-align:center">' + rkBadge(gRank) + '</td>'
-      + '<td><span class="badge ' + (b ? statusBadge(b.status) : 'badge-muted') + '">'
-        + (b ? escHtml(b.status) : '未評価') + '</span></td>'
+      + evalStatusCell(s.jobType, b)
       + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">' + (SESSION.role==='encho' && s.jobType==='主任' ? '一次評価入力' : '評価入力') + '</button></td>'
       + '</tr>';
   }).join('');
@@ -3761,7 +3829,7 @@ async function openBonusModal(staffId) {
   }
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
-  var maxRaw   = isEncho ? 135 : 220;   // 生の満点（計算用）
+  var maxRaw   = getBonusRawMax(evalType).total;   // タイプ別生の満点
   bonusScores1 = BONUS_WEIGHTS.map(function(_,i){ return (currentBonusRecord && currentBonusRecord.scores1[i]) || 0; });
   bonusScores2 = BONUS_WEIGHTS.map(function(_,i){ return (currentBonusRecord && currentBonusRecord.scores2[i]) || 0; });
 
@@ -3809,22 +3877,23 @@ async function openBonusModal(staffId) {
   html += '</tr></thead><tbody id="bonusScoreBody"></tbody></table></div>';
 
   if (isFirstOnly) {
-    // 一次評価合計のみ（満点85点）
-    var max1total = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max1; }, 0);
+    // 一次評価合計のみ
+    var maxFirst = getBonusRawMax(evalType).first;
     var firstTotalLabel = isEnchoFirstMode ? '一次評価（園長→主任）合計' : '一次評価 合計';
     html += '<div style="margin-top:10px;text-align:right;font-weight:600;font-size:.88rem">'
       + firstTotalLabel + ': <span id="bonusATotal" style="color:var(--clr-primary-d);font-size:1.1rem;font-weight:700">0</span>'
-      + '<span style="color:var(--clr-text-s);font-size:.8rem"> / ' + max1total + '点満点</span></div>';
+      + '<span style="color:var(--clr-text-s);font-size:.8rem"> / ' + maxFirst + '点満点</span></div>';
   } else if (isEnchoUser) {
-    // 園長が一般職を評価: 二次評価合計のみ（満点135点）
-    var max2total = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max2; }, 0);
+    // 園長が一般職・リーダーを評価: 二次評価合計のみ
+    var maxSecond = getBonusRawMax(evalType).second;
     html += '<div style="margin-top:10px;text-align:right;font-weight:600;font-size:.88rem">'
       + '二次評価 合計: <span id="bonusATotal" style="color:var(--clr-primary-d);font-size:1.1rem;font-weight:700">0</span>'
-      + '<span style="color:var(--clr-text-s);font-size:.8rem"> / ' + max2total + '点満点</span></div>';
+      + '<span style="color:var(--clr-text-s);font-size:.8rem"> / ' + maxSecond + '点満点</span></div>';
   } else {
-    // admin: 一次・二次の生点のみ表示（換算は一覧でのみ確認）
+    // admin: 一次・二次の生点をタイプ別満点で表示
+    var rmx = getBonusRawMax(evalType);
     html += '<div style="margin-top:10px;text-align:right;font-weight:600;font-size:.88rem" id="bonusATotal">'
-      + '一次: <strong>-/85点</strong>　二次: <strong>-/135点</strong></div>';
+      + '一次: <strong>-/' + rmx.first + '点</strong>　二次: <strong>-/' + rmx.second + '点</strong></div>';
   }
 
   // B加算・C加減・確定合計は「一次評価のみ」モードには不要
@@ -3994,7 +4063,7 @@ function calcBonusRaw(evalType) {
 function calcBonusA70(evalType) {
   // 70点満点に換算
   var raw = calcBonusRaw(evalType);
-  var maxRaw = (evalType === 'encho') ? 135 : 220;
+  var maxRaw = getBonusRawMax(evalType).total;
   return Math.round((raw / maxRaw) * 70 * 10) / 10;
 }
 function updateBonusTotal(evalType) {
@@ -4002,30 +4071,30 @@ function updateBonusTotal(evalType) {
   if (!el) return;
   var isSyuninUser = SESSION.role === 'syunin';
   var isEnchoUser  = SESSION.role === 'encho';
-  var isSubjectEncho = evalType === 'encho'; // 評価対象が管理者タイプ
+  var isSubjectEncho = evalType === 'encho'; // 評価対象が管理者タイプ（園長）
   // 園長が主任を評価する場合は一次入力モード
   var isEnchoFirstMode = isEnchoUser && currentBonusStaff && isBonusFirstEvaluator(currentBonusStaff.jobType);
   var isFirstOnly = isSyuninUser || isEnchoFirstMode;
 
-  var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max1; }, 0); // 85
-  var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a + w.max2; }, 0); // 135
+  // タイプ別満点を取得
+  var rmx  = getBonusRawMax(evalType);
   var raw1 = isSubjectEncho ? 0 : BONUS_WEIGHTS.reduce(function(a,w,i){ return a + (bonusScores1[i]||0)*w.w1; }, 0);
   var raw2 = BONUS_WEIGHTS.reduce(function(a,w,i){ return a + (bonusScores2[i]||0)*w.w2; }, 0);
 
   if (isFirstOnly) {
-    // 一次入力モード（主任ユーザー or 園長→主任評価）: 一次の生点のみ表示
+    // 一次入力モード: 一次の生点のみ表示
     el.innerHTML = '<strong style="font-size:1.1rem;color:var(--clr-primary-d)">' + raw1 + '</strong>'
-      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + max1 + '点満点</span>';
+      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + rmx.first + '点満点</span>';
   } else if (isEnchoUser) {
     // 園長が一般職を評価: 二次の生点のみ
     el.innerHTML = '<strong style="font-size:1.1rem;color:var(--clr-primary-d)">' + raw2 + '</strong>'
-      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + max2 + '点満点</span>';
+      + '<span style="color:var(--clr-text-s);font-size:.82rem"> / ' + rmx.second + '点満点</span>';
   } else {
-    // admin: 一次・二次を生点で個別表示（換算は一覧でのみ確認）
+    // admin: 一次・二次を生点で個別表示（タイプ別満点）
     if (isSubjectEncho) {
-      el.innerHTML = '二次: <strong>' + raw2 + '/' + max2 + '点</strong>';
+      el.innerHTML = '二次: <strong>' + raw2 + '/' + rmx.second + '点</strong>';
     } else {
-      el.innerHTML = '一次: <strong>' + raw1 + '/' + max1 + '点</strong>　二次: <strong>' + raw2 + '/' + max2 + '点</strong>';
+      el.innerHTML = '一次: <strong>' + raw1 + '/' + rmx.first + '点</strong>　二次: <strong>' + raw2 + '/' + rmx.second + '点</strong>';
     }
   }
 }
@@ -4109,7 +4178,7 @@ function openBonusPrint() {
   if (!currentBonusStaff) return;
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
-  var maxScore = isEncho ? 135 : 220;
+  var maxScore = getBonusRawMax(evalType).total;
   var total = 0;
   BONUS_WEIGHTS.forEach(function(w,i){
     total += (!isEncho?(bonusScores1[i]||0)*w.w1:0) + (bonusScores2[i]||0)*w.w2;
