@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.50</title>
+<title>はぐくみ評価 Ver.1.51</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.50',
+    description: '育保の杜 職員評価システム Ver.1.51',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.50</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.51</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1203,7 +1203,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
         </div>
         <div class="fcol">
           <label class="flabel">所属園<span class="req">*</span></label>
-          <select class="fselect" id="fm_garden">
+          <select class="fselect" id="fm_garden" onchange="updateClassOptions('')">
             <option value="はぐくみ保育園">はぐくみ保育園</option>
             <option value="第2はぐくみ保育園">第2はぐくみ保育園</option>
           </select>
@@ -2912,8 +2912,8 @@ async function openStaffModal(staffId = null) {
   document.getElementById('fm_emp').value = '正規';
   document.getElementById('fm_garden').value = SESSION.garden;
   document.getElementById('fm_role').value = 'staff';
-  updateClassOptions('');
   document.getElementById('fm_status').value = '在籍';
+  updateClassOptions('');   // 新規時: 所属園設定後にクラス一覧を初期化
   document.getElementById('fm_leaveYears').value = '';
 
   // 評価除外年度フィールドは admin/encho のみ表示
@@ -2936,7 +2936,8 @@ async function openStaffModal(staffId = null) {
       document.getElementById('fm_loginId').value = staff.loginId;
       document.getElementById('fm_role').value = staff.role;
       document.getElementById('fm_status').value = staff.status;
-      document.getElementById('fm_class').value = staff.className || '';
+      // 所属園に合わせてクラス一覧を更新してから選択値をセット
+      updateClassOptions(staff.className || '');
       loadQualFields(staff.quals || {});
       // 評価除外年度
       var ly = staff.leaveYears || [];
