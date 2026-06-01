@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.51</title>
+<title>はぐくみ評価 Ver.1.53</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.51',
+    description: '育保の杜 職員評価システム Ver.1.53',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.51</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.53</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -948,7 +948,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
                 <th style="text-align:center">自己ランク</th>
                 <th style="text-align:center">園評価合計</th>
                 <th style="text-align:center">園ランク</th>
-                <th style="text-align:center">B加算</th>
+                <th style="text-align:center" id="evalMgrBBonusTh">B加算</th>
                 <th>状況</th><th>操作</th>
               </tr></thead>
               <tbody id="evalListBody-self"></tbody>
@@ -1764,6 +1764,9 @@ async function initApp() {
   _nav('nav-profile',  !isPartTime);
   _nav('nav-evalGoal',    canSelfEval);
   _nav('nav-evalSelf',    canSelfEval);
+  // B加算列は理事長のみ表示
+  var bBonusTh = document.getElementById('evalMgrBBonusTh');
+  if (bBonusTh) bBonusTh.style.display = SESSION.role === 'admin' ? '' : 'none';
   _nav('nav-evalSelfH2',  canSelfEval);
 
   // 管理者評価メニュー: encho/admin のみ（主任は不要）
@@ -2516,7 +2519,7 @@ async function loadEvalList() {
       + '<td style="text-align:center">' + rkBadge(selfRank) + '</td>'
       + '<td style="text-align:center;font-weight:600">' + (gardenTotal !== '-' && gardenTotal ? gardenTotal : '-') + '</td>'
       + '<td style="text-align:center">' + rkBadge(gardenRank) + '</td>'
-      + '<td style="text-align:center;font-weight:600;color:var(--clr-primary-d)">' + (bonusVal > 0 ? bonusVal + '点' : '-') + '</td>'
+      + (SESSION.role === 'admin' ? '<td style="text-align:center;font-weight:600;color:var(--clr-primary-d)">' + (bonusVal > 0 ? bonusVal + '点' : '-') + '</td>' : '<td style="display:none"></td>')
       + '<td><span class="badge ' + statusBadge(statusVal) + '">' + escHtml(statusVal) + '</span></td>'
       + '<td><button class="btn btn-outline btn-sm" data-rid="' + escHtml(rid) + '" data-sid="' + escHtml(s.staffId) + '" data-half="' + half + '" onclick="openMgrModal2(this.dataset.rid,this.dataset.sid,this.dataset.half)">評価入力</button></td>'
       + '</tr>';
@@ -2635,7 +2638,7 @@ async function openMgrModal2(recordId, staffId, half) {
   let html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.84rem;line-height:1.9">'
     + '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;align-items:center">'
     + '<span style="font-weight:700;color:var(--clr-primary)">' + halfLabel + '評価</span>'
-    + '<span style="font-size:.78rem;color:var(--clr-text-s)">→ ' + bonusTarget + '</span>'
+    + (SESSION.role === 'admin' ? '<span style="font-size:.78rem;color:var(--clr-text-s)">→ ' + bonusTarget + '</span>' : '')
     + '<span>提出日：<strong style="color:' + (submitDate ? 'var(--clr-success)' : 'var(--clr-warning)') + '">' + (submitDate ? escHtml(String(submitDate)) : '未提出') + '</strong></span>'
     + '<span class="badge ' + statusBadge(statusStr) + '">' + escHtml(statusStr) + '</span>'
     + '</div>';
@@ -2675,7 +2678,7 @@ async function openMgrModal2(recordId, staffId, half) {
     + '<div style="margin-top:10px;text-align:right;font-weight:700;font-size:.9rem">'
     + '園評価合計: <span id="mgrTotal" style="color:var(--clr-primary);font-size:1.1rem">0</span> 点'
     + '　→　予想ランク: <span id="mgrRankPreview" style="color:var(--clr-primary-d);font-weight:700">-</span>'
-    + '　B加算予想: <span id="mgrBonusPreview" style="color:var(--clr-primary-d);font-weight:700">-</span>'
+    + (SESSION.role === 'admin' ? '　B加算予想: <span id="mgrBonusPreview" style="color:var(--clr-primary-d);font-weight:700">-</span>' : '<span id="mgrBonusPreview" style="display:none">-</span>')
     + '</div>'
     + '<div style="margin-top:14px"><label class="flabel">評価コメント（' + halfLabel + '・職員へのフィードバック）</label>'
     + '<textarea class="ftextarea" id="mgrComment" rows="3" placeholder="コメントを入力">'
@@ -2936,8 +2939,8 @@ async function openStaffModal(staffId = null) {
       document.getElementById('fm_loginId').value = staff.loginId;
       document.getElementById('fm_role').value = staff.role;
       document.getElementById('fm_status').value = staff.status;
-      // 所属園に合わせてクラス一覧を更新してから選択値をセット
-      updateClassOptions(staff.className || '');
+      // 所属園に合わせてクラス一覧を更新してから選択値をセット（gardenVal設定後に呼ぶ）
+      updateClassOptions(String(staff.className || '').trim());
       loadQualFields(staff.quals || {});
       // 評価除外年度
       var ly = staff.leaveYears || [];
@@ -2968,7 +2971,7 @@ async function saveStaff() {
     : [];
 
   const r = await api({
-    action: 'saveStaff', staffId: id, name,
+    action: 'saveStaff', targetStaffId: id, name,
     birthdate: document.getElementById('fm_birth').value,
     jobType: job,
     employment: document.getElementById('fm_emp').value,
@@ -3925,7 +3928,7 @@ async function openBonusModal(staffId) {
     + '<div style="display:flex;gap:20px;flex-wrap:wrap">'
     + '<span><span style="color:var(--clr-text-s)">評価タイプ：</span><strong>' + escHtml(evalType==='encho'?'園長用':evalType==='syunin'?'主任用':evalType==='leader'?'リーダー用':'一般職用') + '</strong></span>'
     + '<span><span style="color:var(--clr-text-s)">A合計: 生点÷満点×70：</span><strong>' + maxRaw + '点生点 → 70点満点換算</strong></span>'
-    + '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>'
+    + (SESSION.role === 'admin' ? '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>' : '')
     + '</div></div>';
 
   var isSyuninUser = SESSION.role === 'syunin';
@@ -3981,19 +3984,24 @@ async function openBonusModal(staffId) {
 
   // B加算・C加減・確定合計は「一次評価のみ」モードには不要
   if (!isFirstOnly) {
-    // B加算: 自動取得 or 手動入力
-    var bSource = bBonus > 0
-      ? 'システムから自動取得（' + (term==='夏季'?'前年度下半期':'当年度上半期') + 'の園評価ランクより）'
-      : '⚠️ データなし（前年度紙媒体・年度途中入職等 → 手動入力してください）';
     html += '<div class="frow" style="margin-top:16px">';
-    html += '<div class="fcol">'
-      + '<label class="flabel">B加算</label>'
-      + '<div style="display:flex;gap:8px;align-items:center">'
-      + '<input type="number" class="finput" id="bonusBVal" min="0" max="30" step="5" value="' + bBonus + '" style="width:100px">'
-      + '<span style="font-size:.75rem;color:' + (bBonus>0?'var(--clr-success)':'var(--clr-warning)') + '">' + bSource + '</span>'
-      + '</div>'
-      + '<p class="fhelp">ランク表: SS=30 / S=25 / A=20 / B=15 / C=10 / D=5 / E=0　手動入力も可</p>'
-      + '</div>';
+    if (SESSION.role === 'admin') {
+      // 理事長のみ: B加算を手動入力可
+      var bSource = bBonus > 0
+        ? 'システムから自動取得（' + (term==='夏季'?'前年度下半期':'当年度上半期') + 'の園評価ランクより）'
+        : '⚠️ データなし（手動入力してください）';
+      html += '<div class="fcol">'
+        + '<label class="flabel">B加算</label>'
+        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<input type="number" class="finput" id="bonusBVal" min="0" max="30" step="5" value="' + bBonus + '" style="width:100px">'
+        + '<span style="font-size:.75rem;color:' + (bBonus>0?'var(--clr-success)':'var(--clr-warning)') + '">' + bSource + '</span>'
+        + '</div>'
+        + '<p class="fhelp">ランク表: SS=30 / S=25 / A=20 / B=15 / C=10 / D=5 / E=0</p>'
+        + '</div>';
+    } else {
+      // admin以外: B加算は自動設定（非表示、hidden入力で値を保持）
+      html += '<input type="hidden" id="bonusBVal" value="' + bBonus + '">';
+    }
     // C加減は理事長(admin)のみ編集可
     var isAdminUser = SESSION.role === 'admin';
     if (isAdminUser) {
@@ -4354,14 +4362,18 @@ function updateClassOptions(selectedClass) {
   var garden = document.getElementById('fm_garden');
   var cls    = document.getElementById('fm_class');
   if (!garden || !cls) return;
-  var list = CLASS_MAP[garden.value] || [];
+  var gardenKey = String(garden.value || '').trim();
+  var list = CLASS_MAP[gardenKey] || [];
+  var selTrim = String(selectedClass || '').trim();
   cls.innerHTML = '<option value="">（クラスなし）</option>';
   list.forEach(function(name) {
     var o = document.createElement('option');
     o.value = name; o.textContent = name;
-    if (name === selectedClass) o.selected = true;
+    if (name === selTrim) o.selected = true;
     cls.appendChild(o);
   });
+  // 選択クラスが一覧にない場合は value で再設定
+  if (selTrim && cls.value !== selTrim) cls.value = selTrim;
 }
 
 // ============================================================
