@@ -2873,6 +2873,36 @@ async function loadStaffList() {
   if (garden) list = list.filter(s => s.garden === garden);
   if (statusFilter) list = list.filter(s => s.status === statusFilter);
 
+  // 全園表示: 園別→役職グループ（園長>主任>統括>正規>非常勤）→クラス順→氏名
+  var CLS_ORD = [
+    'ひよこクラス','りすクラス','うさぎクラス','こぐまクラス','ぱんだクラス','とらクラス',
+    'いちごクラス','ももクラス','ぶどうクラス','みかんクラス','りんごクラス','めろんクラス'
+  ];
+  function gardenPri(s) {
+    var g = String(s.garden || '').trim().replace(/[２]/g,'2');
+    if (g === 'はぐくみ保育園') return 1;
+    if (g.includes('第2')) return 2;
+    return 9;
+  }
+  function rolePri(s) {
+    var jt  = String(s.jobType    || '').trim();
+    var emp = String(s.employment || '').trim();
+    if (jt  === '園長')         return 1;
+    if (jt  === '主任')         return 2;
+    if (jt  === '統括リーダー') return 3;
+    if (emp === '正規')         return 4;
+    return 5; // パート（非常勤）
+  }
+  list.sort(function(a, b) {
+    var gd = gardenPri(a) - gardenPri(b);  if (gd) return gd;
+    var rd = rolePri(a)   - rolePri(b);    if (rd) return rd;
+    var ca = CLS_ORD.indexOf(String(a.className||'').trim());
+    var cb = CLS_ORD.indexOf(String(b.className||'').trim());
+    if (ca === -1) ca = 99; if (cb === -1) cb = 99;
+    if (ca !== cb) return ca - cb;
+    return String(a.name||'').localeCompare(String(b.name||''), 'ja');
+  });
+
   const tbody = document.getElementById('staffListBody');
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">職員がいません</td></tr>'; return; }
   tbody.innerHTML = list.map(s => `
@@ -3697,15 +3727,31 @@ async function loadBonusSection() {
 
 async function loadAdminBonusSummary() {
   var year = document.getElementById('bonusYearSel') ? document.getElementById('bonusYearSel').value : currentYear();
-  var r = await api({action:'calcAdminBonus', year});
+  var term = document.getElementById('bonusTermSel') ? document.getElementById('bonusTermSel').value : '';
+  var r = await api({ action:'calcAdminBonus', year, term });
   if (!r.ok) return;
-  document.getElementById('adminBonusContent').innerHTML =
-    '<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.88rem">' +
-    '<span>対象職員: <strong>' + r.count + '名</strong></span>' +
-    '<span>園評価点平均: <strong>' + r.avg + '点</strong></span>' +
-    '<span>Aランク: <strong><span class="rank-badge rank-' + r.rank + '" style="width:28px;height:28px;font-size:.78rem">' + r.rank + '</span></strong></span>' +
-    '<span>A・B加算: <strong>' + r.bonus + '点</strong></span>' +
-    '</div>';
+  var html = '<div style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:6px">はぐくみ保育園 ／ 園長・主任・統括リーダー ' + r.count + '名の平均から算出</div>';
+  if (r.details && r.details.length) {
+    html += '<table style="font-size:.8rem;border-collapse:collapse;width:100%;margin-bottom:8px">'
+      + '<thead><tr style="background:var(--clr-bg2)">'
+      + '<th style="padding:4px 8px;text-align:left">職種</th><th style="padding:4px 8px;text-align:left">氏名</th>'
+      + '<th style="padding:4px 8px;text-align:center">A合計</th><th style="padding:4px 8px;text-align:center">B加算</th>'
+      + '</tr></thead><tbody>';
+    r.details.forEach(function(d) {
+      html += '<tr><td style="padding:3px 8px">' + escHtml(d.jobType) + '</td>'
+        + '<td style="padding:3px 8px">' + escHtml(d.name) + '</td>'
+        + '<td style="text-align:center;padding:3px 8px">' + d.aTotal + '点</td>'
+        + '<td style="text-align:center;padding:3px 8px">' + d.bBonus + '点</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;font-size:.9rem;font-weight:600">'
+    + '<span>A平均: <span style="color:var(--clr-primary-d);font-size:1.1rem">' + r.aAvg + '点</span></span>'
+    + '<span>B平均: <span style="color:var(--clr-primary-d);font-size:1.1rem">' + r.bAvg + '点</span></span>'
+    + '<span style="border-left:2px solid var(--clr-border);padding-left:16px">A+B合計: <span style="color:var(--clr-primary-d);font-size:1.2rem;font-weight:700">' + r.grandAvg + '点</span></span>'
+    + '</div>';
+  document.getElementById('adminBonusContent').innerHTML = html;
 }
 
 async function loadBonusList() {
