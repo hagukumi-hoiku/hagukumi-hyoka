@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.56</title>
+<title>はぐくみ評価 Ver.1.57</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.56',
+    description: '育保の杜 職員評価システム Ver.1.57',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.56</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.57</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -2887,7 +2887,9 @@ async function loadStaffList() {
     if (jt === '園長')         return 1;
     if (jt === '主任')         return 2;
     if (jt === '統括リーダー') return 3;
-    return 4; // それ以降は職員ID順
+    if (jt === '乳児リーダー') return 4;
+    if (jt === '幼児リーダー') return 5;
+    return 6; // それ以降は職員ID順
   }
   list.sort(function(a, b) {
     var gd = gardenPri(a)  - gardenPri(b);  if (gd) return gd;
@@ -2947,8 +2949,9 @@ async function openStaffModal(staffId = null) {
   if (leaveRow) leaveRow.style.display = (SESSION.role === 'admin' || SESSION.role === 'encho') ? '' : 'none';
 
   if (staffId) {
-    const r = await api({ action: 'getStaffList', role: SESSION.role, garden: '' });
-    const staff = r.list && r.list.find(s => s.staffId === staffId);
+    // getStaffList+find ではなく getStaffDetail を使うことで確実に1名のデータを取得
+    const r = await api({ action: 'getStaffDetail', targetStaffId: staffId });
+    const staff = r.ok && r.data;
     if (staff) {
       document.getElementById('fm_id').value = staff.staffId;
       document.getElementById('fm_name').value = staff.name;
