@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.57</title>
+<title>はぐくみ評価 Ver.1.58</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.57',
+    description: '育保の杜 職員評価システム Ver.1.58',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.57</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.58</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -963,7 +963,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <p class="page-sub">職員情報の登録・編集・確認を行います。</p>
         <div class="card">
           <div class="card-title" style="justify-content:space-between;">
-            <span>職員一覧</span>
+            <span>職員一覧</span><span id="staffCountInfo" style="font-size:.76rem;color:var(--clr-text-s);font-weight:400;margin-left:10px"></span>
             <div style="display:flex;gap:8px;align-items:center;">
               <select class="fselect" id="staffGardenFilter" style="width:140px;" onchange="loadStaffList()">
                 <option value="">全園</option>
@@ -2864,6 +2864,30 @@ async function saveMgrEval() {  const unset = mgrScores.filter(s => !s).length;
 // ============================================================
 //  職員マスタ
 // ============================================================
+// ── 職員マスタ共通ソート関数（loadStaffList・loadHistory で共用） ─────────
+function staffGardenPri(s) {
+  var g = String(s.garden || '').trim().replace(/[２]/g, '2');
+  if (g === 'はぐくみ保育園') return 1;
+  if (g.includes('第2'))     return 2;
+  return 9;
+}
+function staffRolePri(s) {
+  var jt = String(s.jobType || '').trim();
+  var rl = String(s.role    || '').trim();
+  if (rl === 'admin')         return 0;
+  if (jt === '園長')         return 1;
+  if (jt === '主任')         return 2;
+  if (jt === '統括リーダー') return 3;
+  if (jt === '乳児リーダー') return 4;
+  if (jt === '幼児リーダー') return 5;
+  return 6;
+}
+function staffSortFn(a, b) {
+  var gd = staffGardenPri(a) - staffGardenPri(b); if (gd) return gd;
+  var rd = staffRolePri(a)   - staffRolePri(b);   if (rd) return rd;
+  return (Number(a.staffId) || 0) - (Number(b.staffId) || 0);
+}
+
 async function loadStaffList() {
   const garden = document.getElementById('staffGardenFilter').value;
   const statusFilter = document.getElementById('staffStatusFilter').value;
@@ -2873,30 +2897,35 @@ async function loadStaffList() {
   if (garden) list = list.filter(s => s.garden === garden);
   if (statusFilter) list = list.filter(s => s.status === statusFilter);
 
-  // 全園表示ソート: admin最上位 → 園別 → 役職（園長>主任>統括） → 職員ID順
-  function gardenPri(s) {
-    var g = String(s.garden || '').trim().replace(/[２]/g, '2');
-    if (g === 'はぐくみ保育園') return 1;
-    if (g.includes('第2'))     return 2;
-    return 9;
+  // 共通ソート関数で整列
+  list.sort(staffSortFn);
+
+  // ── 在籍職員数を園別に集計して表示 ──────────────────────────────────────
+  var activeAll = r.list.filter(function(s){ return String(s.status||'').trim() === '在籍'; });
+  function countEmp(arr, g) {
+    var sub = g ? arr.filter(function(s){ return String(s.garden||'').trim() === g; }) : arr;
+    return {
+      full: sub.filter(function(s){ return String(s.employment||'').trim() === '正規'; }).length,
+      part: sub.filter(function(s){ return String(s.employment||'').trim() === 'パート'; }).length
+    };
   }
-  function rolePri(s) {
-    var jt = String(s.jobType || '').trim();
-    var rl = String(s.role    || '').trim();
-    if (rl === 'admin')         return 0;  // 理事長: 常に最上位
-    if (jt === '園長')         return 1;
-    if (jt === '主任')         return 2;
-    if (jt === '統括リーダー') return 3;
-    if (jt === '乳児リーダー') return 4;
-    if (jt === '幼児リーダー') return 5;
-    return 6; // それ以降は職員ID順
+  var countEl = document.getElementById('staffCountInfo');
+  if (countEl) {
+    var sel = document.getElementById('staffGardenFilter').value;
+    if (sel) {
+      // 特定園
+      var c = countEmp(activeAll, sel);
+      countEl.textContent = '正規 ' + c.full + '名・非常勤 ' + c.part + '名';
+    } else {
+      // 全園
+      var g1 = 'はぐくみ保育園', g2 = '第2はぐくみ保育園';
+      var c1 = countEmp(activeAll, g1), c2 = countEmp(activeAll, g2);
+      countEl.innerHTML =
+        escHtml(g1) + '：正規 ' + c1.full + '名・非常勤 ' + c1.part + '名'
+        + ' <span style="color:var(--clr-border)">／</span> '
+        + escHtml(g2) + '：正規 ' + c2.full + '名・非常勤 ' + c2.part + '名';
+    }
   }
-  list.sort(function(a, b) {
-    var gd = gardenPri(a)  - gardenPri(b);  if (gd) return gd;
-    var rd = rolePri(a)    - rolePri(b);    if (rd) return rd;
-    // 役職グループ 4（統括以降）: 職員ID 昇順
-    return (Number(a.staffId) || 0) - (Number(b.staffId) || 0);
-  });
 
   const tbody = document.getElementById('staffListBody');
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--clr-text-s);padding:20px">職員がいません</td></tr>'; return; }
@@ -3325,7 +3354,9 @@ async function loadHistory() {
     if (sr.ok) {
       // encho: 理事長(admin)と園長(encho)は選択肢から除外
       var skipRoles = SESSION.role === 'encho' ? ['admin', 'encho'] : [];
-      sr.list.forEach(function(s) {
+      // 職員マスタと同じ順番でソート
+      var sortedList = sr.list.slice().sort(staffSortFn);
+      sortedList.forEach(function(s) {
         if (s.status !== '退職' && !skipRoles.includes(s.role)) {
           var o = document.createElement('option');
           o.value = s.staffId; o.textContent = s.name + '（' + s.jobType + '）';
