@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.58</title>
+<title>はぐくみ評価 Ver.1.61</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.58',
+    description: '育保の杜 職員評価システム Ver.1.61',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.58</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.61</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -2951,11 +2951,18 @@ async function loadStaffList() {
 function calcHireYears(hireDate) {
   if (!hireDate) return '-';
   try {
-    const h = new Date(hireDate); const n = new Date();
-    let y = n.getFullYear() - h.getFullYear();
-    let m = n.getMonth() - h.getMonth();
-    if (m < 0) { y--; m += 12; }
-    return y + '年' + m + 'ヶ月';
+    const h = new Date(hireDate);
+    const n = new Date();
+    // 総月数で計算（未来日対応）
+    let total = (n.getFullYear() - h.getFullYear()) * 12 + (n.getMonth() - h.getMonth());
+    if (n.getDate() < h.getDate()) total--; // 日付補正
+    const sign = total < 0 ? '-' : '';
+    const abs  = Math.abs(total);
+    const y    = Math.floor(abs / 12);
+    const m    = abs % 12;
+    if (y > 0 && m > 0) return sign + y + '年' + m + 'ヶ月';
+    if (y > 0)          return sign + y + '年';
+    return sign + m + 'ヶ月';
   } catch(e) { return '-'; }
 }
 
@@ -3978,13 +3985,17 @@ async function openBonusModal(staffId) {
   // ・夏季賞与 → 前年度下半期の園評価ランク加算（bonusH2）
   var evalYear = term === '夏季' ? String(parseInt(year)-1) : year;
   var er = await api({action:'getSelfEval', year:evalYear, targetStaffId: staffId});
+  // B加算: 自己評価シートから自動転記（優先）、データなし時は既存レコードの手入力値を保持
   var bBonus = 0;
   if (er.ok && er.data) {
-    if (term === '夏季') {
-      bBonus = er.data.bonusH2 || 0;  // 前年度下半期の園評価ランク → 夏季B加算
-    } else {
-      bBonus = er.data.bonusH1 || er.data.bonus || 0;  // 当年度上半期の園評価ランク → 冬季B加算
-    }
+    // 自動転記: 夏季→前年度下半期(bonusH2)、冬季→当年度上半期(bonusH1)
+    bBonus = term === '夏季'
+      ? (er.data.bonusH2 || 0)
+      : (er.data.bonusH1 || er.data.bonus || 0);
+  }
+  // 自動取得できなかった場合（評価未実施等）: 既存レコードに手入力値があれば保持
+  if (!bBonus && currentBonusRecord && currentBonusRecord.bBonus) {
+    bBonus = currentBonusRecord.bBonus;
   }
   var evalType = getBonusEvalType(currentBonusStaff.jobType);
   var isEncho  = evalType === 'encho';
@@ -4003,6 +4014,48 @@ async function openBonusModal(staffId) {
     + '<span><span style="color:var(--clr-text-s)">A合計: 生点÷満点×70：</span><strong>' + maxRaw + '点生点 → 70点満点換算</strong></span>'
     + (SESSION.role === 'admin' ? '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>' : '')
     + '</div></div>';
+
+  // ── 参照情報パネル（職員評価の目標・振り返り・園長コメント） ─────────────
+  var refHalf = term === '夏季' ? '下半期' : '上半期';
+  var refYearLabel = term === '夏季'
+    ? evalYear + '年度 下半期（前年度）'
+    : evalYear + '年度 上半期（当年度）';
+  var refGoal    = er.ok && er.data ? (term === '夏季' ? er.data.goalH2    : er.data.goalH1)    || '' : '';
+  var refReflect = er.ok && er.data ? (term === '夏季' ? er.data.reflectH2 : er.data.reflectH1) || '' : '';
+  var refComment = er.ok && er.data ? (term === '夏季' ? er.data.managerCommentH2 : er.data.managerCommentH1 || er.data.managerComment) || '' : '';
+  var hasRef = refGoal || refReflect || refComment;
+
+  html += '<details style="margin-bottom:14px;border:1px solid var(--clr-border);border-radius:var(--radius-s)">'
+    + '<summary style="cursor:pointer;padding:8px 12px;font-size:.82rem;font-weight:600;background:var(--clr-bg);border-radius:var(--radius-s);user-select:none">'
+    + '📋 参照：' + refYearLabel + ' 評価情報'
+    + (hasRef ? '' : ' <span style="font-size:.75rem;color:var(--clr-warning);font-weight:400">（データなし）</span>')
+    + '</summary>';
+  if (hasRef) {
+    html += '<div style="padding:10px 14px 12px;font-size:.82rem;display:flex;flex-direction:column;gap:8px">';
+    if (refGoal) {
+      html += '<div><div style="font-size:.72rem;font-weight:600;color:var(--clr-text-s);margin-bottom:2px">'
+        + refHalf + '目標</div>'
+        + '<div style="white-space:pre-wrap;background:#f9f9f7;padding:6px 8px;border-radius:4px;line-height:1.55">'
+        + escHtml(refGoal) + '</div></div>';
+    }
+    if (refReflect) {
+      html += '<div><div style="font-size:.72rem;font-weight:600;color:var(--clr-text-s);margin-bottom:2px">'
+        + refHalf + '振り返り</div>'
+        + '<div style="white-space:pre-wrap;background:#f9f9f7;padding:6px 8px;border-radius:4px;line-height:1.55">'
+        + escHtml(refReflect) + '</div></div>';
+    }
+    if (refComment) {
+      html += '<div><div style="font-size:.72rem;font-weight:600;color:var(--clr-text-s);margin-bottom:2px">'
+        + '園長コメント</div>'
+        + '<div style="white-space:pre-wrap;background:#f0f8f4;padding:6px 8px;border-radius:4px;line-height:1.55">'
+        + escHtml(refComment) + '</div></div>';
+    }
+    html += '</div>';
+  } else {
+    html += '<div style="padding:8px 14px;font-size:.8rem;color:var(--clr-text-s)">'
+      + '対象期間の評価データが未登録です。</div>';
+  }
+  html += '</details>';
 
   var isSyuninUser = SESSION.role === 'syunin';
   var isEnchoUser  = SESSION.role === 'encho';
