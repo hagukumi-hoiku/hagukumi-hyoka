@@ -1155,18 +1155,12 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div class="page-title">🔍 保育所の自己点検・自己評価</div>
         <p class="page-sub">年度末（2〜3月）に実施する保育所運営の自己点検・評価です。園長・主任・管理者のみ閲覧・入力できます。</p>
 
-        <!-- 年度セレクタ＋過去参照パネル -->
+        <!-- 年度セレクタ -->
         <div class="card" style="margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <label style="font-weight:600;font-size:.9rem">年度：</label>
             <select class="fselect" id="jisshiYearSel" style="width:110px" onchange="loadJisshi()"></select>
-            <button class="btn btn-outline btn-sm" id="jisshiRefBtn" onclick="toggleJisshiRef()">📖 前年度の評価を参照</button>
             <span id="jisshiStatusBadge" style="margin-left:auto;font-size:.82rem;padding:3px 10px;border-radius:12px;background:var(--clr-bg-s);color:var(--clr-text-s)"></span>
-          </div>
-          <!-- 前年度参照パネル -->
-          <div id="jisshiRefPanel" style="display:none;margin-top:14px;border-top:1px solid var(--clr-border);padding-top:12px">
-            <div style="font-size:.83rem;color:var(--clr-text-s);margin-bottom:8px">📊 過去の評価点（最大5年分）</div>
-            <div id="jisshiRefTable" style="overflow-x:auto"></div>
           </div>
         </div>
 
@@ -4808,11 +4802,6 @@ async function loadJisshi() {
   }
 
   renderJisshiForm(_jisshiData, year);
-
-  // 参照パネルが開いていたら再描画
-  if (document.getElementById('jisshiRefPanel').style.display !== 'none') {
-    renderJisshiRef();
-  }
 }
 
 function renderJisshiForm(data, year) {
@@ -4820,50 +4809,98 @@ function renderJisshiForm(data, year) {
   var opinions = data.opinions || {};
   var summary  = data.summary  || '';
 
+  // 前年度データを取得（年度セレクタの1つ前）
+  var prevYear = year - 1;
+  var prevData = null;
+  for (var hi = 0; hi < _jisshiHistory.length; hi++) {
+    if (_jisshiHistory[hi].year === prevYear) { prevData = _jisshiHistory[hi]; break; }
+  }
+  var prevScores = prevData ? (prevData.scores || {}) : null;
+
+  // スコア色
+  function scoreColor(v) {
+    return v === 4 ? '#28a745' : v === 3 ? '#17a2b8' : v === 2 ? '#fd7e14' : v === 1 ? '#dc3545' : '#aaa';
+  }
+
   var html = '';
-  // 評価点説明
-  html += '<div class="card" style="margin-bottom:12px;padding:12px 16px">'
-        + '<div style="font-weight:600;margin-bottom:6px;font-size:.88rem">評価基準</div>'
-        + '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem">';
+
+  // ── 評価基準カード（常時表示）
+  html += '<div class="card" style="margin-bottom:14px;padding:14px 16px;border-left:4px solid var(--clr-primary)">'
+        + '<div style="font-weight:700;margin-bottom:8px;font-size:.92rem">📋 評価基準</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px">';
   JISSHI_SCORES.forEach(function(s) {
-    html += '<span><strong>' + s.val + '</strong>：' + s.label.split('－')[1].trim() + '</span>';
+    var col = scoreColor(s.val);
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;border:1px solid ' + col + ';background:' + col + '18">'
+          + '<span style="width:28px;height:28px;border-radius:50%;background:' + col + ';color:#fff;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+s.val+'</span>'
+          + '<span style="font-size:.84rem">' + s.label.split('－')[1].trim() + '</span>'
+          + '</div>';
   });
   html += '</div></div>';
 
-  // カテゴリ別入力
+  // ── カテゴリ別入力
   JISSHI_ITEMS.forEach(function(cat, ci) {
     html += '<div class="card" style="margin-bottom:12px">';
     html += '<div class="card-title" style="font-size:.97rem;font-weight:700;border-bottom:2px solid var(--clr-primary);padding-bottom:8px;margin-bottom:10px">'
           + (ci + 1) + '. ' + cat.cat + '</div>';
 
-    // 項目別スコア
-    html += '<table style="width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:10px">';
-    html += '<thead><tr>'
-          + '<th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border-bottom:1px solid var(--clr-border);width:55%">内容</th>'
-          + '<th style="text-align:center;padding:5px 8px;background:var(--clr-bg-s);border-bottom:1px solid var(--clr-border);width:45%">評価</th>'
-          + '</tr></thead><tbody>';
+    // テーブルヘッダ：内容 ／ 前年度評価 ／ 今年度評価
+    html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:10px">';
+    if (prevScores) {
+      html += '<thead><tr>'
+            + '<th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">内容</th>'
+            + '<th style="text-align:center;padding:5px 8px;background:#f0f4f8;border-bottom:2px solid var(--clr-border);width:80px;white-space:nowrap">前年度<br><span style="font-size:.72rem;font-weight:400;color:var(--clr-text-s)">' + prevYear + '年度</span></th>'
+            + '<th style="text-align:center;padding:5px 8px;background:#eaf4f0;border-bottom:2px solid var(--clr-primary);width:160px;white-space:nowrap">今年度評価<br><span style="font-size:.72rem;font-weight:400;color:var(--clr-text-s)">' + year + '年度</span></th>'
+            + '</tr></thead>';
+    } else {
+      html += '<thead><tr>'
+            + '<th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">内容</th>'
+            + '<th style="text-align:center;padding:5px 8px;background:#eaf4f0;border-bottom:2px solid var(--clr-primary);width:200px">今年度評価（' + year + '年度）</th>'
+            + '</tr></thead>';
+    }
+    html += '<tbody>';
 
     cat.items.forEach(function(item, ii) {
       var key = ci + '_' + ii;
-      var curVal = scores[key] || '';
+      var curVal = scores[key] ? parseInt(scores[key]) : 0;
+
       html += '<tr>';
       html += '<td style="padding:7px 8px;border-bottom:1px solid var(--clr-border);line-height:1.5">'
             + (ii + 1) + '）' + item + '</td>';
-      html += '<td style="padding:7px 8px;border-bottom:1px solid var(--clr-border);text-align:center">';
-      html += '<select class="fselect" id="jscore_' + key + '" style="width:100%;max-width:220px">'
-            + '<option value="">── 選択 ──</option>';
-      JISSHI_SCORES.forEach(function(s) {
-        html += '<option value="' + s.val + '"' + (String(curVal) === String(s.val) ? ' selected' : '') + '>'
-              + s.label + '</option>';
+
+      // 前年度列（あれば）
+      if (prevScores) {
+        var pv = prevScores[key] ? parseInt(prevScores[key]) : 0;
+        var pvCol = pv ? scoreColor(pv) : '#aaa';
+        html += '<td style="text-align:center;padding:7px 8px;border-bottom:1px solid var(--clr-border);background:#f8fafc">';
+        if (pv) {
+          html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:' + pvCol + ';color:#fff;font-weight:700;font-size:.9rem">' + pv + '</span>';
+        } else {
+          html += '<span style="color:#bbb;font-size:.8rem">－</span>';
+        }
+        html += '</td>';
+      }
+
+      // 今年度入力（ラジオボタン①②③④）
+      html += '<td style="padding:7px 8px;border-bottom:1px solid var(--clr-border);background:#f6fbf8">';
+      html += '<div class="score-radio-group" style="justify-content:center">';
+      [4, 3, 2, 1].forEach(function(v) {
+        var rid = 'jsc_' + ci + '_' + ii + '_' + v;
+        html += '<input type="radio" name="jscore_' + key + '" id="' + rid + '" value="' + v + '"'
+              + (curVal === v ? ' checked' : '') + '>'
+              + '<label for="' + rid + '" style="width:34px;height:34px;font-size:.85rem;'
+              + (curVal === v ? 'background:' + scoreColor(v) + ';border-color:' + scoreColor(v) + ';color:#fff' : '')
+              + '" title="' + JISSHI_SCORES.find(function(s){return s.val===v;}).label + '">' + v + '</label>';
       });
-      html += '</select></td>';
+      html += '</div></td>';
+
       html += '</tr>';
     });
-    html += '</tbody></table>';
 
-    // カテゴリ別意見・改善策
+    html += '</tbody></table></div>';
+
+    // 意見・改善策
     var opVal = opinions[ci] || '';
-    html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:4px;color:var(--clr-text-s)">意見・改善策</div>';
+    html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:4px;color:var(--clr-text-s)">💬 意見・改善策</div>';
     html += '<textarea id="jopinion_' + ci + '" class="finput" rows="3" style="width:100%;resize:vertical;font-size:.85rem;padding:7px">'
           + escHtml(opVal) + '</textarea>';
 
@@ -4872,12 +4909,34 @@ function renderJisshiForm(data, year) {
 
   // 総評
   html += '<div class="card" style="margin-bottom:8px">';
-  html += '<div class="card-title" style="font-size:.97rem;font-weight:700;border-bottom:2px solid var(--clr-accent,#e67e22);padding-bottom:8px;margin-bottom:10px">📝 総評</div>';
+  html += '<div class="card-title" style="font-size:.97rem;font-weight:700;border-bottom:2px solid #e67e22;padding-bottom:8px;margin-bottom:10px">📝 総評</div>';
   html += '<textarea id="jsummary" class="finput" rows="6" style="width:100%;resize:vertical;font-size:.87rem;padding:8px">'
         + escHtml(summary) + '</textarea>';
   html += '</div>';
 
   document.getElementById('jisshiFormArea').innerHTML = html;
+
+  // ラジオ選択時に色を動的更新
+  JISSHI_ITEMS.forEach(function(cat, ci) {
+    cat.items.forEach(function(item, ii) {
+      var key = ci + '_' + ii;
+      [4, 3, 2, 1].forEach(function(v) {
+        var el = document.getElementById('jsc_' + ci + '_' + ii + '_' + v);
+        if (!el) return;
+        el.addEventListener('change', function() {
+          if (!this.checked) return;
+          var col = scoreColor(v);
+          // 同グループのラベルをリセット
+          [4, 3, 2, 1].forEach(function(vv) {
+            var lbl = document.querySelector('label[for="jsc_' + ci + '_' + ii + '_' + vv + '"]');
+            if (lbl) { lbl.style.background = ''; lbl.style.borderColor = ''; lbl.style.color = ''; }
+          });
+          var myLbl = document.querySelector('label[for="jsc_' + ci + '_' + ii + '_' + v + '"]');
+          if (myLbl) { myLbl.style.background = col; myLbl.style.borderColor = col; myLbl.style.color = '#fff'; }
+        });
+      });
+    });
+  });
 }
 
 function collectJisshiFormData() {
@@ -4886,8 +4945,8 @@ function collectJisshiFormData() {
   JISSHI_ITEMS.forEach(function(cat, ci) {
     cat.items.forEach(function(item, ii) {
       var key = ci + '_' + ii;
-      var el = document.getElementById('jscore_' + key);
-      if (el && el.value) scores[key] = parseInt(el.value);
+      var checked = document.querySelector('input[name="jscore_' + key + '"]:checked');
+      if (checked) scores[key] = parseInt(checked.value);
     });
     var opEl = document.getElementById('jopinion_' + ci);
     if (opEl && opEl.value.trim()) opinions[ci] = opEl.value.trim();
@@ -4942,74 +5001,6 @@ async function confirmJisshiSubmit() {
   var ok = await showConfirm('保育所自己点検・評価を提出します。提出後も修正は可能です。よろしいですか？');
   if (!ok) return;
   await saveJisshiData('submitted');
-}
-
-// 前年度参照パネル
-function toggleJisshiRef() {
-  var panel = document.getElementById('jisshiRefPanel');
-  var isOpen = panel.style.display !== 'none';
-  if (isOpen) {
-    panel.style.display = 'none';
-    document.getElementById('jisshiRefBtn').textContent = '📖 前年度の評価を参照';
-  } else {
-    panel.style.display = '';
-    document.getElementById('jisshiRefBtn').textContent = '▲ 参照パネルを閉じる';
-    renderJisshiRef();
-  }
-}
-
-function renderJisshiRef() {
-  var container = document.getElementById('jisshiRefTable');
-  var curYear = parseInt(document.getElementById('jisshiYearSel').value);
-  // 過去最大5年分のうち、現在年度以外
-  var past = _jisshiHistory.filter(function(h){ return h.year < curYear; }).slice(0, 5);
-
-  if (!past.length) {
-    container.innerHTML = '<div style="color:var(--clr-text-s);font-size:.84rem;padding:8px">過去の評価データがありません。</div>';
-    return;
-  }
-
-  // 年度ヘッダ
-  var html = '<table style="border-collapse:collapse;width:100%;font-size:.8rem;min-width:500px">';
-  html += '<thead><tr><th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border:1px solid var(--clr-border);min-width:160px">カテゴリ／項目</th>';
-  past.forEach(function(h) {
-    html += '<th style="padding:5px 8px;background:var(--clr-bg-s);border:1px solid var(--clr-border);text-align:center;white-space:nowrap">'
-          + h.year + '年度<br><span style="font-weight:400;font-size:.75rem;color:var(--clr-text-s)">'
-          + (h.status === 'submitted' ? '提出済' : '下書き') + '</span></th>';
-  });
-  html += '</tr></thead><tbody>';
-
-  JISSHI_ITEMS.forEach(function(cat, ci) {
-    // カテゴリ行
-    html += '<tr><td colspan="' + (past.length + 1) + '" style="padding:5px 8px;background:var(--clr-bg-s);border:1px solid var(--clr-border);font-weight:700;font-size:.82rem">'
-          + (ci + 1) + '. ' + cat.cat + '</td></tr>';
-
-    cat.items.forEach(function(item, ii) {
-      var key = ci + '_' + ii;
-      html += '<tr>';
-      html += '<td style="padding:5px 8px;border:1px solid var(--clr-border);color:var(--clr-text-s)">'
-            + (ii + 1) + '）' + item.substring(0, 40) + (item.length > 40 ? '…' : '') + '</td>';
-      past.forEach(function(h) {
-        var sc = h.scores[key] || '－';
-        var color = sc === 4 ? '#28a745' : sc === 3 ? '#17a2b8' : sc === 2 ? '#fd7e14' : sc === 1 ? '#dc3545' : '#aaa';
-        html += '<td style="text-align:center;padding:5px 8px;border:1px solid var(--clr-border);font-weight:700;color:' + color + '">' + sc + '</td>';
-      });
-      html += '</tr>';
-    });
-
-    // 意見行
-    html += '<tr>';
-    html += '<td style="padding:5px 8px;border:1px solid var(--clr-border);font-style:italic;color:var(--clr-text-s);font-size:.78rem">意見・改善策</td>';
-    past.forEach(function(h) {
-      var op = h.opinions[ci] || '－';
-      html += '<td style="padding:5px 8px;border:1px solid var(--clr-border);font-size:.78rem;color:var(--clr-text-s);max-width:200px">'
-            + escHtml(String(op).substring(0, 60)) + (op.length > 60 ? '…' : '') + '</td>';
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  container.innerHTML = html;
 }
 
 // 印刷プレビュー
