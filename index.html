@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.69</title>
+<title>はぐくみ評価 Ver.1.70</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.69',
+    description: '育保の杜 職員評価システム Ver.1.70',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.69</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.70</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -671,6 +671,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <li id="nav-history" style="display:none"><button onclick="showSection('history')">📊 評価履歴</button></li>
         <li id="nav-bonus" style="display:none"><button onclick="showSection('bonus')">📋 賞与評価</button></li>
         <li id="nav-jisshi" style="display:none"><button onclick="showSection('jisshi')">🔍 保育所自己点検・評価</button></li>
+        <li id="nav-jikocheck" style="display:none"><button onclick="showSection('jikocheck')">📝 保育士自己チェック</button></li>
         <div class="sidebar-divider admin-only" style="display:none"></div>
         <div class="sidebar-section admin-only" style="display:none">管理</div>
         <li id="nav-staff" class="admin-only" style="display:none"><button onclick="showSection('staff')">👥 職員マスタ</button></li>
@@ -1049,6 +1050,11 @@ tr:hover td { background: rgba(74,124,111,.04); }
               <input type="date" class="finput" id="setH2MgrDeadline">
               <p class="fhelp">園長が下半期の園評価を提出する期日。翌カレンダー年6月末。</p>
             </div>
+            <div class="fcol">
+              <label class="flabel">📅 保育士自己チェック 提出期限</label>
+              <input type="date" class="finput" id="setCheckDeadline">
+              <p class="fhelp">この日以降ログイン時に全職員の集計結果が閲覧可能になります。</p>
+            </div>
           </div>
           <div class="frow">
             <div class="fcol" style="flex:2">
@@ -1185,12 +1191,82 @@ tr:hover td { background: rgba(74,124,111,.04); }
         </div>
       </section>
 
-    </main>
-  </div>
-</div>
+      <!-- 保育士の自己チェックシート -->
+      <section id="sec-jikocheck" style="display:none">
+        <div class="page-title">📝 保育士の自己チェックシート</div>
+        <p class="page-sub">年度末に実施する保育士の自己評価チェックシートです。保育士のみ回答・提出できます。</p>
 
-<!-- ============================================================
-  モーダル: 職員登録・編集
+        <!-- 入力モード（職員本人） -->
+        <div id="jikocheckInputArea">
+          <!-- ページ進行バー -->
+          <div class="card" style="margin-bottom:12px;padding:12px 16px" id="jikocheckProgressCard">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <span id="jikocheckPageLabel" style="font-weight:700;font-size:.95rem"></span>
+                <span id="jikocheckStatusBadge" style="margin-left:10px;font-size:.8rem;padding:2px 10px;border-radius:12px"></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:.82rem;color:var(--clr-text-s)" id="jikocheckProgressText"></span>
+                <div style="width:120px;height:8px;background:var(--clr-border);border-radius:4px;overflow:hidden">
+                  <div id="jikocheckProgressBar" style="height:100%;background:var(--clr-primary);transition:.3s;width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- はじめに表示エリア -->
+          <div id="jikocheckIntro" class="card" style="display:none;margin-bottom:12px">
+            <div class="card-title" style="font-size:1rem;font-weight:700;border-bottom:2px solid var(--clr-primary);padding-bottom:8px;margin-bottom:12px">📋 はじめに</div>
+            <div style="font-size:.88rem;line-height:1.8">
+              <p style="margin-bottom:8px"><strong>保育士等の自己評価について</strong>、保育所保育指針では以下のように定義されています。</p>
+              <blockquote style="border-left:3px solid var(--clr-primary);padding:8px 12px;background:var(--clr-bg-s);margin:8px 0;font-size:.85rem;color:var(--clr-text-s)">
+                「保育士等は、保育の計画や保育の記録を通して、自らの保育実践を振り返り、自己評価することを通して、その専門性の向上や保育実践の改善に努めなければならない」
+              </blockquote>
+              <p style="margin:10px 0 6px">このチェックリストは、あなたの保育内容等について自己評価（点検）するためのものです。</p>
+              <div style="background:#eaf4f0;border-radius:6px;padding:10px 14px;margin-top:8px">
+                <p style="font-weight:600;margin-bottom:6px">記入にあたって</p>
+                <p style="margin-bottom:4px">1）保育士としてのあなたが回答してください。</p>
+                <p style="margin-bottom:4px">2）各質問には必ず <strong>A・B・C・D</strong> のいずれかで回答してください。</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+                  <div style="background:#28a74520;border:1px solid #28a745;border-radius:4px;padding:5px 8px;font-size:.83rem"><strong style="color:#28a745">A</strong> できている／わかる</div>
+                  <div style="background:#17a2b820;border:1px solid #17a2b8;border-radius:4px;padding:5px 8px;font-size:.83rem"><strong style="color:#17a2b8">B</strong> おおむねできている</div>
+                  <div style="background:#fd7e1420;border:1px solid #fd7e14;border-radius:4px;padding:5px 8px;font-size:.83rem"><strong style="color:#fd7e14">C</strong> やや不十分</div>
+                  <div style="background:#dc354520;border:1px solid #dc3545;border-radius:4px;padding:5px 8px;font-size:.83rem"><strong style="color:#dc3545">D</strong> 努力が必要</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 問題エリア -->
+          <div id="jikocheckQuestions"></div>
+
+          <!-- ページ操作ボタン -->
+          <div class="card" style="margin-top:8px" id="jikocheckNavCard">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <button class="btn btn-outline" id="jikocheckPrevBtn" onclick="jikocheckChangePage(-1)">◀ 前へ</button>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline" id="jikocheckSaveBtn" onclick="saveJikoCheckPage()">💾 一時保存</button>
+                <button class="btn btn-primary" id="jikocheckNextBtn" onclick="jikocheckChangePage(1)">次へ ▶</button>
+                <button class="btn btn-primary" id="jikocheckSubmitBtn" style="display:none" onclick="confirmJikoCheckSubmit()">✅ 提出する</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- まとめ（集計グラフ）エリア -->
+        <div id="jikocheckSummaryArea" style="display:none">
+          <div class="card" style="margin-bottom:12px;padding:12px 16px">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <label style="font-weight:600;font-size:.9rem">年度：</label>
+              <select class="fselect" id="jikocheckSumYearSel" style="width:110px" onchange="loadJikoCheckSummary()"></select>
+              <label style="font-weight:600;font-size:.9rem">園名：</label>
+              <select class="fselect" id="jikocheckSumGardenSel" style="width:190px" onchange="loadJikoCheckSummary()"></select>
+              <button class="btn btn-outline btn-sm" onclick="loadJikoCheckSummary()">🔄 更新</button>
+            </div>
+          </div>
+          <div id="jikocheckSummaryContent"><div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div></div>
+        </div>
+      </section>
 ============================================================ -->
 <div class="modal-overlay" id="staffModal">
   <div class="modal wide">
@@ -1812,6 +1888,11 @@ async function initApp() {
   _nav('nav-history',  canViewList);
   _nav('nav-bonus',    canBonus);
   _nav('nav-jisshi',   isAdmin || isEncho || isSyunin);
+  // 自己チェック：対象職種のstaffと管理者（閲覧のみ）
+  var jikoCheckTargetTypes = ['保育補助','保育士','乳児リーダー','幼児リーダー','統括リーダー','主任'];
+  var canJikoCheck = !isAdmin && !isEncho && jikoCheckTargetTypes.indexOf(SESSION.jobType) >= 0;
+  var canViewJikoCheck = isAdmin || isEncho || isSyunin || canJikoCheck;
+  _nav('nav-jikocheck', canViewJikoCheck);
 
   // 設定取得（← フェーズバッジはここで取得した最新設定を使って更新する）
   var sr = await api({ action: 'getSettings' });
@@ -1846,7 +1927,7 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
 }
 
-const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalSelfH2','evalMgr','bonus','jisshi','staff','settings'];
+const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalSelfH2','evalMgr','bonus','jisshi','jikocheck','staff','settings'];
 
 async function showSection(name) {
   closeSidebar();
@@ -1877,6 +1958,7 @@ async function showSection(name) {
   if (name === 'settings') loadSettings();
   if (name === 'bonus')    loadBonusSection();
   if (name === 'jisshi')   loadJisshiSection();
+  if (name === 'jikocheck') loadJikoCheckSection();
 }
 
 // ============================================================
@@ -3126,6 +3208,7 @@ async function loadSettings() {
   document.getElementById('setMgrDeadline').value = normDate(SETTINGS['mgr_deadline']);
   document.getElementById('setH2EvalDeadline').value = normDate(SETTINGS['h2_eval_deadline']);
   document.getElementById('setH2MgrDeadline').value  = normDate(SETTINGS['h2_mgr_deadline']);
+  document.getElementById('setCheckDeadline').value   = normDate(SETTINGS['check_deadline']);
   updatePhaseLabel();   // 設定画面を開いた時点でバッジを最新化
 }
 
@@ -3159,7 +3242,8 @@ async function saveSettings() {
     h2_deadline:      document.getElementById('setH2Deadline').value,
     mgr_deadline:     document.getElementById('setMgrDeadline').value,
     h2_eval_deadline: document.getElementById('setH2EvalDeadline').value,
-    h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value
+    h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value,
+    check_deadline:   document.getElementById('setCheckDeadline').value
   };
   const r = await api({ action: 'saveSettings', settings });
   if (r.ok) {
@@ -5129,6 +5213,664 @@ function openJisshiPrint() {
   w.document.write(html);
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); }, 600);
+}
+
+
+// ============================================================
+//  保育士の自己チェックシート
+// ============================================================
+
+const JIKOCHECK_PAGES = [
+  { id:'intro', title:'はじめに', isIntro:true, sectionIdx:-1, questions:[] },
+  { id:'p1',  title:'①保育の理念・保育観', sectionIdx:0, questions:[
+    '①-1　あなたは、すべての子どもについて、一人ひとりの存在とその人権を尊重していますか。',
+    '①-2　児童福祉法の理念に基づき、子どもの最善の利益を考慮して、子どもの生活と健全な発達を保障することが保育園の重要な使命だと理解していますか。',
+    '①-3　あなたは、日頃から「保育所保育指針」をよく読み、その理念を理解したうえで、保育内容や保育方針を考えるときのガイドラインとしていますか。',
+    '①-4　あなたの保育が、子どもの発達の基礎を培う極めて大切な役割を担っていると認識していますか。',
+    '①-5　あなたは、保育所保育は養護と教育が一体となって行われている、ということを意識して保育していますか。',
+    '①-6　今日の保育園には、入園している子どもの保育だけでなく、広く地域の子育て支援をする社会的役割があることを認識していますか。',
+    '①-7　あなたは、子どもに、文化や生活習慣、考え方が多様であることを知らせ、それらを尊重する心を育てるように努めていますか。',
+    '①-8　子どもの性差や個人差にも留意しながら、固定的な性別役割分業意識を植え付けることのないように配慮していますか。',
+    '①-9　あなたは、日頃から、子どもに身体的苦痛を与えたり、人格を辱めるなど精神的苦痛を与えることがないようにしていますか。',
+    '①-10　あなたは、個人情報の保護に配慮し、子どもやその家族についての秘密を正当な理由なく漏らすことがないようにしていますか。',
+    '①-11　あなたは、「子ども・子育て支援プラン」に、若者の就労支援や男性の子育て参加等が盛り込まれていることを知っていますか。',
+    '①-12　様々な特徴（障害）を持つ子も持たない子も、一人ひとりのありのままの姿を受けとめ、互いを認め合えるよう配慮していますか。',
+    '①-13　育児の考え方について、保護者とあなたとで食い違っているとき、先ず相手の気持ちを受けとめ、話し合い、その保護者の立場や考え方を理解するよう努めていますか。',
+    '①-14　子どもの家庭環境は多様だという考えの上で、今、その子どもに何が必要かを見極め、それぞれにとって適切な援助をしていますか。',
+    '①-15　子どもが熱中しているときは、そのときの保育の内容や流れに変更が生じても、危険のない限りその活動を見守るなどの柔軟性をもっていますか。',
+    '①-16　あなたは、子どもと一緒に思い切り体を動かして遊ぶことの重要性を理解し、楽しんでいますか。',
+    '①-17　あなたは、一人ひとりの子どもに目が行き届いていたか振り返り、これからの保育の課題を見つけることができますか。'
+  ]},
+  { id:'p2', title:'②-1　保育計画・指導計画', sectionIdx:1, questions:[
+    '②-1　あなたは、指導計画を作成するとき、「保育所保育指針」を読み、参考にしていますか。',
+    '②-2　あなたは、保育園の方針である理念等をもとにして、指導計画を作成していますか。',
+    '②-3　保育には指導計画（年・月・週・日案など）の作成という、あらかじめ見通しをもった計画性が必要だと思いますか。',
+    '②-4　あなたの月・週案などには、教育的側面（五領域の視点）だけでなく、養護的側面（基礎的事項）もしっかり盛り込まれていますか。',
+    '②-5　あなたは、指導計画を作成するときに、地域の実態や保護者の意向・希望などを考慮していますか。',
+    '②-6　子ども一人ひとりの発達の姿や興味の対象の実態を把握して、月・週・日案などを作成していますか。',
+    '②-7　あなたの月・週・日案などには、子どもの意欲を誘う環境構成が十分工夫されていますか。',
+    '②-8　複数担任の場合、よく話し合ってお互いの考えを十分に理解した上で、月・週・日案などを立てていますか。',
+    '②-9　園の保育理念や方針・目標、あなたの作成した年・月・週・日案などのねらいや内容を、保護者にわかるように説明できますか。',
+    '②-10　あなたは、季節感や日本の伝統的な行事を指導計画のなかに取り入れるようにしていますか。',
+    '②-11　月・週・日案などが、実際の子どもの姿、興味・関心に合っていたかという観点から自分の保育を評価・反省していますか。',
+    '②-12　月１回以上、自分自身の指導計画の点検・評価を行い、その結果を指導計画に生かしていますか。'
+  ]},
+  { id:'p3', title:'②-2　乳児保育', sectionIdx:1, questions:[
+    '②-13　あなたは、一人ひとりの子どもの出生時の状況、その後の発育・発達など、生育歴を細かに把握するとともに、保護者の状況などの背景も理解していますか。',
+    '②-14　哺乳瓶の消毒、調乳、沐浴の仕方など基本的な事柄や、子ども一人ひとりの健康状態などを随時職員相互で確認し合っていますか。',
+    '②-15　授乳について、その子が欲しがる時にやさしく抱いて微笑みかけ、ゆったりと飲ませていますか。',
+    '②-16　離乳食は、家庭と連携をとりながら、一人ひとりの育ち具合やその日の体調に合うように工夫していますか。',
+    '②-17　その子にとって初めての食品を食べさせたときは、皮膚や便性などに異常がないか観察していますか。',
+    '②-18　おむつ交換は「きもちいいね」などとやさしく声をかけたりスキンシップを行っていますか。',
+    '②-19　排便の回数、便性を把握して臀部を清拭していますか。',
+    '②-20　あかちゃんの目の動き、泣く声、しぐさ、片言をメッセージとして受けとめ、ほほえみ、要求に応じる言葉をやさしく返していますか。',
+    '②-21　子どもを外気に触れさせたり、適度な戸外遊びをさせたりして、健康増進をはかるようにしていますか。',
+    '②-22　喃語には、ゆったりと応えたり、やさしく話しかけたりして、発語の意欲を育んでいますか。',
+    '②-23　絵本を見せながら、その子の指さすものに答えたり、やさしい言葉を添えたりして、やり取りを楽しむことができていますか。',
+    '②-24　あなたがどんな状態にあるときにでも、あかちゃんの笑顔やしぐさをかわいいと感じることができますか。',
+    '②-25　あなたは、自分の服装の色合い、頭髪・爪などの清潔や室内の清潔にも配慮していますか。',
+    '②-26　寝返りができない乳児を寝かせる場合には、仰向けに寝かせるとともに、睡眠中の姿勢・かけぶとん・呼吸等の確認をしていますか。',
+    '②-27　一人ひとりの生活リズムや欲求、その日の体調等を把握した上で、睡眠の時間を調節するなどの柔軟性をもっていますか。',
+    '②-28　連絡ノートを活用するなどして、保育園以外での子どもの様子も把握するように努めていますか。',
+    '②-29　たて抱き、腹這いなど子どもが様々な姿勢をとれるようにしていますか。',
+    '②-30　寝返りのできない乳児を寝かせる場合には安全に配慮し呼吸と体位のチェックを行い記録をしていますか。',
+    '②-31　事故予防に努めた保育を行っていますか。（おんぶをする時、授乳前、サークルの出入りなど決められたルールで行っているか）'
+  ]},
+  { id:'p4', title:'②-3　３歳未満児保育（前半）', sectionIdx:1, questions:[
+    '②-32　大勢の子どもを保育するときでも、あなたを独占したがるその子の気持ちを十分に満たすなど、子どもの背景に配慮しながら個別対応の努力や工夫ができていますか。',
+    '②-33　「できない、やって！」と甘えてくるときは、その都度、その子の気持ちを受けとめ、一人ひとりの発達に応じて要求を満たす援助をしていますか。',
+    '②-34　あなたは子どもの「これな～に？」「どうして？」などの繰り返しの質問に、忙しい時でもできるだけその都度応えようとしていますか。',
+    '②-35　探索活動が十分行えるよう、安全にはよく気配りつつ、環境を整えたうえで、子どもが要求する行動を容認できますか。',
+    '②-36　着替えや食事などの時には、その子に応じた手助けやことばかけをしながら、時間を要しても自分からしようとする気持ちを大切にしていますか。',
+    '②-37　食べ物をこぼしたり汚したりしながらも、子どもが自分で食べる意欲を育てるために、楽しい雰囲気で食事ができることを第一に考えていますか。',
+    '②-38　子どもがおもちゃの取り合いなどでぶつかり合うとき、危険のない限り、子どもの発達の程度や心の動きを考えながら、しばらく見守ることができますか。',
+    '②-39　「おや、何だろう？」「これで遊ぼう」と好奇心や興味を引き起こす教材や素材、場を用意する心配りをしていますか。',
+    '②-40　散歩の時に、保育者も一緒に楽しみながら、花や葉、虫や動物などを見つけたりして、子どもとともに自然物や動物への興味・関心をもつことを大切にしていますか。',
+    '②-41　子どもと会話をするときに、その子の視線に合わせてゆっくり話を聞いて、子どもの話したい気持ちや伝わった喜びを共感していますか。',
+    '②-42　あなたは、自分の表情に配慮しながら、子どもに分かるように、ゆっくり・はっきり・おだやかに・具体的に短い言葉で語りかけていますか。',
+    '②-43　子どもに「絵本を読んで」「遊んで」と言われた時に、場面に応じて「待って」と言った場合にも、その理由を伝え、その子の気持ちに答えていますか。',
+    '②-44　歌を歌ったり、リズムにのって体を動かすとき、あなたは歌や動きを子どもに合わせ、一緒に楽しむことができますか。'
+  ]},
+  { id:'p5', title:'②-3　３歳未満児保育（後半）', sectionIdx:1, questions:[
+    '②-45　わがままで「いやだ」という子どもの内面に配慮しながら、その子の気持ちを肯定的な方向に向けるようにしていますか。',
+    '②-46　自分の思いどおりにならず、おこったり泣いたりする子どもに対して、丁寧に話して聞かせたり、気持ちを切り替える時間をとり、ゆったりと持つことができますか。',
+    '②-47　子どもたちの中に人を信頼する気持ちが育つようなかかわりをしていますか。',
+    '②-48　登園時に泣く子どもに対して、放っておいたり叱ったりするのでなく、子どもの状況に応じて抱いたり優しく声を掛けたりしていますか。',
+    '②-49　お漏らしをした時、優しく子どもの心を傷つけないように配慮していますか。',
+    '②-50　午睡時には子守歌を歌ったり、背中を軽くたたくなどして安心して心地よい眠りにつけるよう配慮していますか。',
+    '②-51　衣服の脱着の際、せかしたり着せてしまったりしないで、自分でやろうとする子どもの気持ちを大切にしていますか。',
+    '②-52　午睡時に眠くない子どもへの配慮をしていますか。',
+    '②-53　食事の前の手洗いをするなど清潔習慣が身につくよう援助していますか。また自分も必ずしていますか。',
+    '②-54　子どもが残さず食べることを強制したり、偏食を直そうと叱ったりしていませんか。またはイライラしたりせかしたりしていませんか。',
+    '②-55　子どもが落ち着いて食事を楽しめるよう工夫していますか。',
+    '②-56　時には雰囲気を変えて食べるなど工夫していますか。',
+    '②-57　子どもが配膳や片付けなどに参加できるよう、または関心が深まるよう配慮していますか。'
+  ]},
+  { id:'p6', title:'②-4　行事', sectionIdx:1, questions:[
+    '②-58　あなたは、園の「行事」について、その意味について十分に考えてから、保育の中に組み込んでいますか。',
+    '②-59　「行事」を保育に取り入れるときには、それが子どもの健やかな育ちにつながる意味をもつことを意識していますか。',
+    '②-60　みんなで楽しむとともに、一人ひとりが十分に自分の力を発揮できるような「行事」となっていますか。',
+    '②-61　子どもたちにとってその季節や時期にしか味わえない有意義な経験となるような「行事」となっていますか。',
+    '②-62　子どもたちが期待をもって「行事」に参加できるよう、年間計画の段階から子どもの主体性を尊重する保育場面を用意していますか。',
+    '②-63　「行事」に参加することを嫌がる子どもには、その気持ちを汲み取って、行事の中でその子が活動できる場面を用意していますか。',
+    '②-64　保護者が参加する「行事」のときには、保護者の評価にあまりとらわれず、日常の子どものありのままを見てもらう気持ちのゆとりをもっていますか。',
+    '②-65　あなたは「行事」が、子どもの生活や遊びから発展していくように、日常の保育の積み重ねの結果となるように心がけていますか。',
+    '②-66　保護者や地域住民にも参加してもらうような「行事」については、園だより等で事前にその趣旨を説明し、理解や協力を要請していますか。',
+    '②-67　子どもも保護者も期待感をもつ「行事」には、あなた自らも喜んで余裕をもって参加できていますか。'
+  ]},
+  { id:'p7', title:'②-5　延長保育・一時保育', sectionIdx:1, questions:[
+    '②-68　長時間にわたる保育を受ける子どもには、特に畳やカーペットで寝転ぶことができるようにするなど、家庭的雰囲気に配慮していますか。',
+    '②-69　次々にお迎えが来るなかで、「ママ来ないね」のつぶやきに対して、その子の気持ちを受け止めて、安定した気持ちで待つことができるよう適切な対応をしていますか。',
+    '②-70　あなたは延長保育で、一人ひとりが好きな遊びができるように配慮していますか。',
+    '②-71　延長保育の子どもには、担任でなくても、園での様子が保護者に十分伝わるように、連絡ノートやおたよりを活用していますか。',
+    '②-72　延長保育の時間帯には、とりわけ異年齢のこども同士で遊べるような工夫をしていますか。',
+    '②-73　一時保育の申し入れには、保護者の事情等の子どもの背景を十分に考慮しつつ、その子を受け入れることができますか。',
+    '②-74　慣れない所に一時的に預けられる子どもの不安な気持ちを考えて、予定している日案を変更するなど柔軟な姿勢をもっていますか。',
+    '②-75　一時保育で受け入れた子どもが、集団の中で遊べるよう、遊びを工夫したり仲立ちしたりしていますか。',
+    '②-76　一時保育で受け入れる子どもが安定できるよう、遊びのコーナーや遊具・教材などの準備に配慮していますか。',
+    '②-77　一時保育や延長保育の子どもの保護者に、緊急の連絡がとれるような手立てを確認していますか。'
+  ]},
+  { id:'p8', title:'③保健活動・安全管理', sectionIdx:2, questions:[
+    '③-1　身長・体重等の測定や医師の診断から、発育・発達の状態を把握して、それを保護者や他の職員に伝えるとともに、日常の保育に生かしていますか。',
+    '③-2　その子の体調の些細な変化や以上に速やかに対応するために、日常的な体調や機嫌の状態をつかむよう努めていますか。',
+    '③-3　あなたは、子どもに何らかの異常がみつかった場合、より適切な処置ができるように、嘱託医の指導を受けるなど日頃から学習をしていますか。',
+    '③-4　あなたは、健康観察で子どもの健康状態をある程度判断することができますか。',
+    '③-5　子ども一人ひとりの体調をしっかり把握し、食事の量や内容を変えるなどの配慮をしていますか。',
+    '③-6　あなたは、睡眠中の子どもの顔色、呼吸の状態を観察するなど、SIDS等への予防に努めていますか。',
+    '③-7　アトピー性皮膚炎・植物アレルギー等の子どもに対して、医師の指導のもとに適切な対応をしていますか。',
+    '③-8　あなたは、日頃から虐待の早期発見を心がけ、虐待が疑われる場合には、園長に伝えるなどの予防策を考えていますか。',
+    '③-9　備品棚やピアノなどの転倒防止、その事故が起こらないように、あなたの保育室内外の安全点検を毎日怠らないように努めていますか。',
+    '③-10　園庭にガラスの破片など危険なものがないか調べたり、土を掘り返して整えるなど、安全な環境づくりの努力をしていますか。',
+    '③-11　地震等の災害や火災に備え、積極的に避難訓練等に参加し、非常災害時にあなたが何をしなければならないか理解していますか。',
+    '③-12　登降園時の事故防止について、保護者が何を注意すればよいか、あなた自身が説明することができますか。',
+    '③-13　そのまま見過ごしたら明らかに危険な行動には、理由を説明して「いけません」などの言葉ではっきりと制止していますか。',
+    '③-14　適切でない対応をしているほかの職員の行為を目にした時、助言ができていますか。',
+    '③-15　不審者が侵入した場合に備えて、子どもの安全を確保するための対応策を日頃から心がけ、職員間で話し合っていますか。',
+    '③-16　子どもの体調不良や怪我などの情報を職員間で共有していますか。',
+    '③-17　保育室の換気や温度・湿度に配慮して保育していますか。',
+    '③-18　玩具・遊具は消毒したり衛生面に配慮し、破損の有無を毎日確認していますか。',
+    '③-19　誤飲を防ぐため玩具の大きさに配慮していますか。',
+    '③-20　園児が使用する玩具や用具を新しくしたり、製作活動で使用する材料など園長または主任の許可をとってから使用していますか。',
+    '③-21　施設・設備の安全点検を行い、不具合の箇所は必要な対策をとっていますか。',
+    '③-22　子どもが危険な場所や遊びが分かり安全に気を付けて行動するよう働きかけていますか。',
+    '③-23　交通安全の習慣が身につくように日ごろから指導をしていますか。'
+  ]},
+  { id:'p9', title:'④保護者・地域社会・関係機関との連携', sectionIdx:3, questions:[
+    '④-1　園での様子を伝え家族での様子を聞くなかで、子どもの育ちを保護者とともに、考え、喜び合うことができますか。',
+    '④-2　その日の子どもの健康状態や興味をもった遊びなど、必要に応じてお迎え時に保護者に丁寧に伝えるように努めていますか。',
+    '④-3　保護者から突然、お迎えが遅くなると連絡があった時にも、快く応対するように努めていますか。',
+    '④-4　保護者が育児の悩みや心配事を話してみたくなり、一緒に考えてくれる存在であると思えるよう、こちらからすすんで触れ合うことを心がけていますか。',
+    '④-5　例えあなたの保育に批判的な保護者であっても、対立せずに受容し、意見や要求を聞こうとする姿勢がもてますか。',
+    '④-6　あなたは、保育に関する保護者の考えや提案を積極的に聞き、適切と思うものについては、園長等と話し合ったうえで受け入れるよう努めていますか。',
+    '④-7　保育園が保護者に保育参加（保育に直接加わる）をしてもらう方針を決めた場合、協力できますか。',
+    '④-8　あなたは、連絡帳を、保護者がその内容をよく理解でき、楽しみにするような書き方をしていますか。',
+    '④-9　保護者同士が相談相手になれるよう、お互いをよく知り合う機会を多く設ける努力をしていますか。',
+    '④-10　地域の人たちによるボランティア活動などをどのように保育に取り入れたらよいか、職員間で話し合うとともに、あなた自身も見通しを持っていますか。',
+    '④-11　老人会、町内会など地域組織と連携するとき、保育士としてどういう役割を担うべきか、考えたことがありますか。',
+    '④-12　あなたは、保育園が地域の中学・高校の生徒との交流をしたり、実習生を受け入れるときに、めんどうがらずに指導することができますか。',
+    '④-13　散歩や行事などで、子どもたちが地域の人々と触れ合う機会をもつようにするとともに、気持ちよくあいさつをかわしていますか。',
+    '④-14　公園などの公共の場を使用した後は、あなたは子どもたちと一緒に清掃するなど、気を配っていますか。',
+    '④-15　苦情解決の仕組みを知っていますか。'
+  ]},
+  { id:'p10', title:'⑤地域の子育て支援', sectionIdx:4, questions:[
+    '⑤-1　あなたは、日頃の保育内容・子どもたちへの保育方法のすべてが、地域の子育て支援につながることを自覚していますか。',
+    '⑤-2　あなたは、保育園には子育ての相談などの「地域の子育て支援」という役割が求められていることを受け止め、自分も積極的にかかわりたいと考えていますか。',
+    '⑤-3　あなたは、相談の基本原理（受容・相互信頼関係・個別性・自己決定・秘密保持）について理解し、子育て相談の実践に生かしたいと考えていますか。',
+    '⑤-4　あなたは、本来業務の保育に支障がない限り、電話相談などの子育て支援を行いたいと思いますか。',
+    '⑤-5　あなたは、子育て相談を実施する際に連携すべき機関等（保健センター・児童相談所・福祉事務所・医療機関等）の機能についてよく知っていますか。',
+    '⑤-6　あなたは、子育てサークル・子育てボランティアの育成・支援に関心があり、勤務園が実施するときには、協力するつもりですか。',
+    '⑤-7　保育園が発信元になって、園の保護者以外にも子育ての大切さや喜びを伝える役割を担っていることを理解していますか。',
+    '⑤-8　地域と良好な関係を築けるように、挨拶をしたり行事に誘ったりして地域の方が気軽に保育園を利用できるようにしていますか。'
+  ]},
+  { id:'p11', title:'⑥保育園の職務・役割分担', sectionIdx:5, questions:[
+    '⑥-1　園長や主任の指示がどういう意図で出されているかわからないとき、あなたは質問をしたり意見を言ったりできますか。',
+    '⑥-2　他の職員や上司からの助言に対して素直に受け止め、改善していますか。',
+    '⑥-3　登園を嫌がることが続くなど、問題を感じたとき、あなたは園長・主任・先輩保育士などに原因や対策のしかたを相談していますか。',
+    '⑥-4　あなたは、職員会議で必要と思う質問や意見をはっきり発言することができますか。',
+    '⑥-5　職員会議等で自分の意見や考えと違う結論がでたときも、それに従って気持ちよく協力し、実行できますか。',
+    '⑥-6　栄養士など保育士以外の職種の人たちが保育に関わるとき、その人たちへの気配りや協力関係に配慮するとともに、保育士としてのあなたの役割が何であるかを理解していますか。',
+    '⑥-7　あなたは保育士として、他の職種の職員やパートの人たちにどんな役割を果たしてほしいか、具体的な期待をもっていますか。',
+    '⑥-8　自分の役割のほか、フリー・園長・主任の役割を理解していますか。',
+    '⑥-9　あなたは、欠勤した日の出来事や連絡・注意事項は、自分から尋ねて理解するなど、職員間の連携に努めていますか。',
+    '⑥-10　あなたは、自分のクラスの教材や備品を、責任をもって毎日点検・管理していますか。',
+    '⑥-11　あなたは、たとえ自分のクラスのものでなくても、教材・教具などの管理が不備であれば、自ら進んで整えることができますか。',
+    '⑥-12　あなたは本来の業務以外に保育園に関わる仕事を頼まれた時、それも職務の一端と考え、責任をもって引き受けていますか。',
+    '⑥-13　あなたは資材（廃材等）の有効利用や経費節減に努めるなど、コスト意識をもって業務に取り組んでいますか。'
+  ]},
+  { id:'p12', title:'⑦保育士としての資質向上（研修・研究活動）', sectionIdx:6, questions:[
+    '⑦-1　あなたは、保育士としての責務と誇りを自覚して、人間性と専門性の向上に努めていますか。',
+    '⑦-2　あなたは、自分の保育を振り返り、問題点や課題をみつけることができますか。',
+    '⑦-3　自分の保育に対する同僚や上司からの批判や意見を、感情的にならず謙虚に聞き、時には反省することができますか。',
+    '⑦-4　保育をする中で生じた疑問や悩みを、同僚や上司にわかるように説明することができますか。',
+    '⑦-5　あなたは、その日の子ども一人ひとりの活動や姿を、しっかり記録に留めることができますか。',
+    '⑦-6　あなたは、どのような子どもについても、一人ひとりの課題をみつけ、ケーススタディをすることができますか。',
+    '⑦-7　あなたは、保育の悩みや疑問を解決するために、研究・専門書をみつけて、そこから学ぶことができますか。',
+    '⑦-8　あなたは、他のクラスの保育について、疑問や感想・意見をお互いの向上のために、言葉に配慮しながら素直に述べることができますか。',
+    '⑦-9　あなたは研修で得た内容・成果は、園の職員にわかるように丁寧に説明し、意見交換をするために役立てていますか。',
+    '⑦-10　あなたは、積極的に研究グループやサークルに参加して独自に勉強していますか。',
+    '⑦-11　あなたは、研修会の機会があれば、自費でも参加したいと思いますか。',
+    '⑦-12　あなたの保育実践について、園長はじめ他の職員が把握できる保育日誌などの記録が書けていますか。'
+  ]}
+];
+
+const JIKOCHECK_TOTAL_PAGES = JIKOCHECK_PAGES.length; // 13（はじめに含む）
+const JIKOCHECK_SECTION_NAMES = [
+  '①保育の理念・保育観',
+  '②保育の内容',
+  '③保健活動・安全管理',
+  '④保護者・地域社会・関係機関との連携',
+  '⑤地域の子育て支援',
+  '⑥保育園の職務・役割分担',
+  '⑦保育士としての資質向上'
+];
+const JIKOCHECK_SCORE = { A:4, B:3, C:2, D:1 };
+const JIKOCHECK_COLORS = { A:'#28a745', B:'#17a2b8', C:'#fd7e14', D:'#dc3545' };
+const JIKOCHECK_LABELS = { A:'できている', B:'おおむね', C:'やや不十分', D:'努力が必要' };
+
+var _jcPage    = 0;
+var _jcAnswers = {};
+var _jcStatus  = 'draft';
+var _jcYear    = 0;
+
+// ─── ロード ──────────────────────────────────────────────────
+async function loadJikoCheckSection() {
+  var role = SESSION.role;
+  var TARGET_TYPES = ['保育補助','保育士','乳児リーダー','幼児リーダー','統括リーダー','主任'];
+  var isTarget  = role !== 'admin' && role !== 'encho'
+               && TARGET_TYPES.indexOf(SESSION.jobType) >= 0;
+  var isManager = role === 'admin' || role === 'encho' || role === 'syunin';
+
+  _jcYear = parseInt(SETTINGS.current_year) || new Date().getFullYear();
+
+  if (isTarget) {
+    document.getElementById('jikocheckInputArea').style.display  = '';
+    document.getElementById('jikocheckSummaryArea').style.display = 'none';
+
+    var r = await api({ action:'getJikoCheck', year:_jcYear });
+    if (!r.ok) { toast(r.msg,'error'); return; }
+    if (r.record) {
+      _jcAnswers = r.record.answers || {};
+      _jcStatus  = r.record.status  || 'draft';
+    } else {
+      _jcAnswers = {}; _jcStatus = 'draft';
+    }
+    _jcPage = 0;
+    renderJikoCheckPage();
+
+    // 提出済み＋期限後 → 集計も表示
+    if (_jcStatus === 'submitted') {
+      var dl = SETTINGS['check_deadline'] || '';
+      if (dl && new Date() >= new Date(dl)) {
+        document.getElementById('jikocheckSummaryArea').style.display = '';
+        _initJikoSumSelectors();
+        await loadJikoCheckSummary();
+      }
+    }
+  } else if (isManager) {
+    document.getElementById('jikocheckInputArea').style.display  = 'none';
+    document.getElementById('jikocheckSummaryArea').style.display = '';
+    _initJikoSumSelectors();
+    await loadJikoCheckSummary();
+  } else {
+    document.getElementById('jikocheckInputArea').innerHTML =
+      '<div class="card" style="padding:24px;text-align:center;color:var(--clr-text-s)">このシートの対象外です（保育士のみ）。</div>';
+    document.getElementById('jikocheckSummaryArea').style.display = 'none';
+  }
+}
+
+// ─── ページ描画 ───────────────────────────────────────────────
+function renderJikoCheckPage() {
+  var pg     = JIKOCHECK_PAGES[_jcPage];
+  var totalQ = 0;
+  JIKOCHECK_PAGES.forEach(function(p){ if(!p.isIntro) totalQ += p.questions.length; });
+  var doneQ  = Object.keys(_jcAnswers).length;
+
+  // プログレス
+  document.getElementById('jikocheckPageLabel').textContent =
+    'ページ ' + (_jcPage+1) + ' / ' + JIKOCHECK_TOTAL_PAGES + '　' + pg.title;
+  document.getElementById('jikocheckProgressText').textContent =
+    doneQ + ' / ' + totalQ + ' 問回答済';
+  document.getElementById('jikocheckProgressBar').style.width =
+    Math.round(doneQ / totalQ * 100) + '%';
+
+  var badge = document.getElementById('jikocheckStatusBadge');
+  if (_jcStatus === 'submitted') {
+    badge.textContent='✅ 提出済'; badge.style.background='#d4edda'; badge.style.color='#155724';
+  } else {
+    badge.textContent='✏️ 下書き'; badge.style.background='#fff3cd'; badge.style.color='#856404';
+  }
+
+  // ナビボタン
+  document.getElementById('jikocheckPrevBtn').disabled = (_jcPage === 0);
+  var isLast = (_jcPage === JIKOCHECK_TOTAL_PAGES - 1);
+  document.getElementById('jikocheckNextBtn').style.display   = isLast ? 'none' : '';
+  document.getElementById('jikocheckSubmitBtn').style.display = isLast ? '' : 'none';
+
+  // はじめにページ
+  document.getElementById('jikocheckIntro').style.display = pg.isIntro ? '' : 'none';
+  if (pg.isIntro) { document.getElementById('jikocheckQuestions').innerHTML=''; return; }
+
+  // 問題レンダリング
+  var html = '<div class="card" style="margin-bottom:4px">'
+           + '<div class="card-title" style="font-size:.95rem;font-weight:700;border-bottom:2px solid var(--clr-primary);padding-bottom:8px;margin-bottom:8px">'
+           + pg.title + '</div>'
+           + '<div style="font-size:.77rem;color:var(--clr-text-s);margin-bottom:10px">'
+           + '各質問に対し A〜D を選択してください。'
+           + '<span style="margin-left:12px">A:できている　B:おおむね　C:やや不十分　D:努力が必要</span></div>';
+
+  pg.questions.forEach(function(q, qi) {
+    var key = _jcPage + '_' + qi;
+    var cur = _jcAnswers[key] || '';
+    var isLast2 = qi === pg.questions.length - 1;
+    html += '<div style="padding:8px 4px;' + (isLast2?'':'border-bottom:1px solid var(--clr-border);') + '">'
+          + '<div style="font-size:.84rem;line-height:1.55;margin-bottom:6px">' + q + '</div>'
+          + '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    ['A','B','C','D'].forEach(function(v) {
+      var col  = JIKOCHECK_COLORS[v];
+      var isSel = cur === v;
+      html += '<input type="radio" name="jcq_' + key + '" id="jcq_' + key + '_' + v
+            + '" value="' + v + '"' + (isSel?' checked':'') + ' style="display:none">'
+            + '<label for="jcq_' + key + '_' + v + '" style="'
+            + 'display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;'
+            + 'border:2px solid ' + (isSel?col:'var(--clr-border)') + ';'
+            + 'background:' + (isSel?col:'#fff') + ';'
+            + 'color:' + (isSel?'#fff':'var(--clr-text)') + ';'
+            + 'cursor:pointer;font-size:.83rem;font-weight:600;transition:.15s">'
+            + '<span style="font-size:.9rem">' + v + '</span>'
+            + '<span style="font-size:.72rem;font-weight:400">' + JIKOCHECK_LABELS[v] + '</span>'
+            + '</label>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('jikocheckQuestions').innerHTML = html;
+
+  // ラジオ変更イベント
+  pg.questions.forEach(function(q, qi) {
+    var key = _jcPage + '_' + qi;
+    ['A','B','C','D'].forEach(function(v) {
+      var el = document.getElementById('jcq_' + key + '_' + v);
+      if (!el) return;
+      el.addEventListener('change', function() {
+        if (!this.checked) return;
+        _jcAnswers[key] = v;
+        ['A','B','C','D'].forEach(function(vv) {
+          var col2 = JIKOCHECK_COLORS[vv];
+          var lbl  = document.querySelector('label[for="jcq_' + key + '_' + vv + '"]');
+          if (!lbl) return;
+          var sel2 = vv === v;
+          lbl.style.borderColor = sel2 ? col2 : 'var(--clr-border)';
+          lbl.style.background  = sel2 ? col2 : '#fff';
+          lbl.style.color       = sel2 ? '#fff' : 'var(--clr-text)';
+        });
+        // プログレス更新
+        var doneQ2 = Object.keys(_jcAnswers).length;
+        var totalQ2 = 0;
+        JIKOCHECK_PAGES.forEach(function(p){ if(!p.isIntro) totalQ2 += p.questions.length; });
+        document.getElementById('jikocheckProgressText').textContent = doneQ2 + ' / ' + totalQ2 + ' 問回答済';
+        document.getElementById('jikocheckProgressBar').style.width  = Math.round(doneQ2/totalQ2*100) + '%';
+      });
+    });
+  });
+}
+
+// ─── ページ移動（前/次） ─────────────────────────────────────
+async function jikocheckChangePage(dir) {
+  if (!JIKOCHECK_PAGES[_jcPage].isIntro) {
+    await _saveJikoSilent();
+  }
+  var next = _jcPage + dir;
+  if (next < 0 || next >= JIKOCHECK_TOTAL_PAGES) return;
+  _jcPage = next;
+  renderJikoCheckPage();
+  window.scrollTo(0,0);
+}
+
+// ─── 一時保存 ────────────────────────────────────────────────
+async function saveJikoCheckPage() {
+  var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
+  if (r.ok) toast('一時保存しました','success');
+  else      toast(r.msg,'error');
+}
+
+async function _saveJikoSilent() {
+  await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
+}
+
+// ─── 提出 ────────────────────────────────────────────────────
+async function confirmJikoCheckSubmit() {
+  var totalQ = 0;
+  JIKOCHECK_PAGES.forEach(function(p){ if(!p.isIntro) totalQ += p.questions.length; });
+  var doneQ = Object.keys(_jcAnswers).length;
+  if (doneQ < totalQ) {
+    alert('まだ ' + (totalQ - doneQ) + ' 問が未回答です。\nすべて回答してから提出してください。');
+    return;
+  }
+  showConfirm(
+    '保育士自己チェックシートを提出',
+    '全 ' + totalQ + ' 問への回答を提出します。提出後も期限まで修正できます。よろしいですか？',
+    async function() {
+      var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'submitted' });
+      if (r.ok) {
+        _jcStatus = 'submitted';
+        toast('提出しました','success');
+        renderJikoCheckPage();
+        var dl = SETTINGS['check_deadline'] || '';
+        if (dl && new Date() >= new Date(dl)) {
+          document.getElementById('jikocheckSummaryArea').style.display = '';
+          _initJikoSumSelectors();
+          await loadJikoCheckSummary();
+        }
+      } else {
+        toast(r.msg,'error');
+      }
+    }
+  );
+}
+
+// ─── 集計セレクタ初期化 ──────────────────────────────────────
+function _initJikoSumSelectors() {
+  var cy = parseInt(SETTINGS.current_year) || new Date().getFullYear();
+  var ySel = document.getElementById('jikocheckSumYearSel');
+  if (ySel && !ySel.options.length) {
+    for (var y = cy; y >= cy-4; y--) {
+      var o = document.createElement('option');
+      o.value = y; o.textContent = y + '年度';
+      if (y === cy) o.selected = true;
+      ySel.appendChild(o);
+    }
+  }
+  var gSel = document.getElementById('jikocheckSumGardenSel');
+  if (gSel && !gSel.options.length) {
+    var role = SESSION.role;
+    var gs   = role === 'admin' ? ['はぐくみ保育園','第2はぐくみ保育園'] : [SESSION.garden];
+    gs.forEach(function(g) {
+      var o = document.createElement('option');
+      o.value = g; o.textContent = g; gSel.appendChild(o);
+    });
+    if (role !== 'admin') gSel.disabled = true;
+  }
+}
+
+// ─── 集計ロード＆描画 ─────────────────────────────────────────
+async function loadJikoCheckSummary() {
+  var year   = parseInt(document.getElementById('jikocheckSumYearSel').value);
+  var garden = document.getElementById('jikocheckSumGardenSel').value;
+  document.getElementById('jikocheckSummaryContent').innerHTML =
+    '<div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div>';
+  var r = await api({ action:'getJikoCheckSummary', year:year, garden:garden });
+  if (!r.ok) {
+    document.getElementById('jikocheckSummaryContent').innerHTML =
+      '<div class="card" style="padding:20px;text-align:center;color:var(--clr-text-s)">' + escHtml(r.msg) + '</div>';
+    return;
+  }
+  _renderJikoSummary(r);
+}
+
+// スコア計算（7大項目×100点換算）
+function _calcJikoScores(answers) {
+  var sums = [0,0,0,0,0,0,0];
+  var cnts = [0,0,0,0,0,0,0];
+  JIKOCHECK_PAGES.forEach(function(pg, pi) {
+    if (pg.isIntro) return;
+    var si = pg.sectionIdx;
+    pg.questions.forEach(function(q, qi) {
+      var v = answers[pi + '_' + qi];
+      if (v && JIKOCHECK_SCORE[v]) {
+        sums[si] += JIKOCHECK_SCORE[v];
+        cnts[si]++;
+      }
+    });
+  });
+  return sums.map(function(s,i){
+    return cnts[i] ? Math.round(s / (cnts[i] * 4) * 100) : null;
+  });
+}
+
+function _renderJikoSummary(data) {
+  var records   = data.records   || [];   // 提出済みのみ
+  var myRecord  = data.myRecord  || null;
+  var submitted = data.submitted || 0;
+  var target    = data.targetCount || 0;
+
+  // 園平均スコア
+  var gAvg = [0,0,0,0,0,0,0];
+  var gN   = records.length;
+  records.forEach(function(rec) {
+    var sc = _calcJikoScores(rec.answers);
+    sc.forEach(function(v,i){ if(v!==null) gAvg[i] += v; });
+  });
+  if (gN > 0) gAvg = gAvg.map(function(s){ return Math.round(s/gN); });
+
+  // 自己スコア
+  var myScores = myRecord ? _calcJikoScores(myRecord.answers) : null;
+
+  var html = '';
+
+  // ── 提出状況バナー
+  var allDone = (submitted >= target && target > 0);
+  html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
+        + (allDone?'#d4edda':'#fff3cd') + '">'
+        + '<div style="font-weight:700;font-size:.92rem">📊 '
+        + data.year + '年度　' + (data.garden||'') + '　提出状況：'
+        + '<span style="color:' + (allDone?'#155724':'#856404') + '">'
+        + submitted + ' / ' + target + ' 名提出済</span></div>'
+        + (allDone ? '' : '<div style="font-size:.8rem;color:#856404;margin-top:4px">全員提出後に集計が確定します。現在は提出済み分のみ集計中。</div>')
+        + '</div>';
+
+  if (gN === 0) {
+    html += '<div class="card" style="padding:24px;text-align:center;color:var(--clr-text-s)">提出済みデータがありません。</div>';
+    document.getElementById('jikocheckSummaryContent').innerHTML = html;
+    return;
+  }
+
+  // ── グラフ（Canvas）
+  html += '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+        + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:10px">'
+        + '📈 大項目別スコア（100点換算）</div>'
+        + '<div style="font-size:.77rem;color:var(--clr-text-s);margin-bottom:6px">'
+        + 'A:4点　B:3点　C:2点　D:1点　→　各項目の満点に対する得点率×100</div>'
+        + '<div style="position:relative;width:100%;overflow-x:auto">'
+        + '<canvas id="jikocheckChart" style="max-width:100%;display:block"></canvas>'
+        + '</div></div>';
+
+  // ── スコア比較表
+  html += '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+        + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:8px">'
+        + '📋 大項目スコア一覧</div>'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.83rem">'
+        + '<thead><tr>'
+        + '<th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">大項目</th>'
+        + '<th style="text-align:center;padding:5px 8px;background:#eaf4f0;border-bottom:2px solid var(--clr-primary);width:72px">園平均</th>'
+        + (myScores ? '<th style="text-align:center;padding:5px 8px;background:#fff8e1;border-bottom:2px solid #ffc107;width:60px">自己点</th>'
+                    + '<th style="text-align:center;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border);width:50px">差</th>' : '')
+        + '</tr></thead><tbody>';
+
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i) {
+    var avg  = gAvg[i];
+    var my   = myScores ? myScores[i] : null;
+    var diff = (my !== null && avg) ? (my - avg) : null;
+    var dc   = diff === null ? '#999' : (diff > 0 ? '#28a745' : diff < 0 ? '#dc3545' : '#888');
+    html += '<tr>'
+          + '<td style="padding:6px 8px;border-bottom:1px solid var(--clr-border)">' + lbl + '</td>'
+          + '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:var(--clr-primary)">' + (avg||'－') + '</td>';
+    if (myScores) {
+      html += '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:#856404">' + (my!==null?my:'－') + '</td>'
+            + '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:' + dc + '">'
+            + (diff!==null?(diff>0?'+'+diff:diff):'－') + '</td>';
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  // ── A〜D 選択率表（大項目別・提出者全体）
+  html += '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+        + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:8px">'
+        + '📊 A〜D 選択率（大項目別・提出済み ' + gN + ' 名）</div>'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.81rem">'
+        + '<thead><tr><th style="text-align:left;padding:4px 6px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">大項目</th>';
+  ['A','B','C','D'].forEach(function(v) {
+    html += '<th style="text-align:center;padding:4px 6px;background:'
+          + JIKOCHECK_COLORS[v] + '18;border-bottom:2px solid '
+          + JIKOCHECK_COLORS[v] + ';width:56px">' + v + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl, si) {
+    var cnt = {A:0,B:0,C:0,D:0,t:0};
+    JIKOCHECK_PAGES.forEach(function(pg,pi) {
+      if (pg.isIntro || pg.sectionIdx !== si) return;
+      pg.questions.forEach(function(q,qi) {
+        var key = pi + '_' + qi;
+        records.forEach(function(rec) {
+          var v = rec.answers[key];
+          if (v && cnt[v]!==undefined) { cnt[v]++; cnt.t++; }
+        });
+      });
+    });
+    html += '<tr><td style="padding:5px 6px;border-bottom:1px solid var(--clr-border)">' + lbl + '</td>';
+    ['A','B','C','D'].forEach(function(v) {
+      var pct = cnt.t ? Math.round(cnt[v]/cnt.t*100) : 0;
+      html += '<td style="text-align:center;padding:5px 6px;border-bottom:1px solid var(--clr-border)">'
+            + '<span style="display:inline-block;background:' + JIKOCHECK_COLORS[v] + '22;'
+            + 'border-radius:4px;padding:2px 6px;font-weight:600;color:' + JIKOCHECK_COLORS[v] + '">'
+            + pct + '%</span></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  document.getElementById('jikocheckSummaryContent').innerHTML = html;
+
+  // ── Canvas グラフ描画
+  setTimeout(function() {
+    var canvas = document.getElementById('jikocheckChart');
+    if (!canvas) return;
+    var W = Math.max(canvas.parentElement.offsetWidth - 4, 300);
+    canvas.width  = W;
+    canvas.height = 200;
+    var ctx = canvas.getContext('2d');
+    var n   = JIKOCHECK_SECTION_NAMES.length; // 7
+    var pL  = 34, pR = 12, pT = 22, pB = 36;
+    var cW  = W - pL - pR;
+    var cH  = canvas.height - pT - pB;
+    var bgW = cW / n;
+    var bW  = myScores ? Math.min(24, bgW * 0.3) : Math.min(32, bgW * 0.4);
+
+    // グリッド＋Y軸ラベル
+    ctx.strokeStyle = '#e4e4e4'; ctx.lineWidth = 1;
+    [0,25,50,75,100].forEach(function(v) {
+      var y = pT + (1 - v/100) * cH;
+      ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(W-pR, y); ctx.stroke();
+      ctx.fillStyle='#999'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+      ctx.fillText(v, pL-3, y+3);
+    });
+
+    // バー
+    JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i) {
+      var cx = pL + bgW*i + bgW/2;
+
+      // 園平均バー（緑）
+      var aV = gAvg[i] || 0;
+      var aH = (aV/100) * cH;
+      var ax = myScores ? cx - bW - 2 : cx - bW/2;
+      ctx.fillStyle = '#4a7c6f';
+      ctx.fillRect(ax, pT + cH - aH, bW, aH);
+      if (aH > 12) {
+        ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(aV, ax + bW/2, pT + cH - aH + 11);
+      }
+
+      // 自己点バー（黄）
+      if (myScores && myScores[i] !== null) {
+        var mV = myScores[i];
+        var mH = (mV/100) * cH;
+        var mx = cx + 2;
+        ctx.fillStyle = '#ffc107';
+        ctx.fillRect(mx, pT + cH - mH, bW, mH);
+        if (mH > 12) {
+          ctx.fillStyle='#333'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+          ctx.fillText(mV, mx + bW/2, pT + cH - mH + 11);
+        }
+      }
+
+      // X軸ラベル（①〜⑦）
+      ctx.fillStyle='#666'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(lbl.charAt(0), cx, pT + cH + 14);
+    });
+
+    // 凡例
+    ctx.fillStyle='#4a7c6f'; ctx.fillRect(pL, 4, 12, 9);
+    ctx.fillStyle='#444'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('園平均', pL+16, 12);
+    if (myScores) {
+      ctx.fillStyle='#ffc107'; ctx.fillRect(pL+66, 4, 12, 9);
+      ctx.fillStyle='#444'; ctx.fillText('自己点', pL+82, 12);
+    }
+  }, 80);
 }
 
 </script>
