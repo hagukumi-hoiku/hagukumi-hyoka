@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.68</title>
+<title>はぐくみ評価 Ver.1.69</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.68',
+    description: '育保の杜 職員評価システム Ver.1.69',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.68</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.69</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1163,17 +1163,6 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <label style="font-weight:600;font-size:.9rem">園名：</label>
             <select class="fselect" id="jisshiGardenSel" style="width:190px" onchange="loadJisshi()"></select>
             <span id="jisshiStatusBadge" style="margin-left:auto;font-size:.82rem;padding:3px 10px;border-radius:12px;background:var(--clr-bg-s);color:var(--clr-text-s)"></span>
-          </div>
-        </div>
-
-        <!-- 前年度コメント参照パネル -->
-        <div class="card" style="margin-bottom:12px;padding:10px 14px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <button class="btn btn-outline btn-sm" id="jisshiRefBtn" onclick="toggleJisshiRef()">📖 前年度のコメントを参照</button>
-            <span style="font-size:.8rem;color:var(--clr-text-s)" id="jisshiRefYearLabel"></span>
-          </div>
-          <div id="jisshiRefPanel" style="display:none;margin-top:12px;border-top:1px solid var(--clr-border);padding-top:10px">
-            <div id="jisshiRefContent"></div>
           </div>
         </div>
 
@@ -4820,12 +4809,6 @@ async function loadJisshi() {
   // 前年度コメント参照パネルのラベル更新
   var prevYear = year - 1;
   var prevData = _jisshiHistory.find(function(h){ return h.year === prevYear; }) || null;
-  document.getElementById('jisshiRefYearLabel').textContent =
-    prevData ? '（' + prevYear + '年度のデータあり）' : '（' + prevYear + '年度のデータなし）';
-  // 参照パネルが開いていたら更新
-  if (document.getElementById('jisshiRefPanel').style.display !== 'none') {
-    renderJisshiRef(prevData);
-  }
 
   document.getElementById('jisshiFormArea').innerHTML =
     '<div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div>';
@@ -4883,45 +4866,41 @@ function renderJisshiForm(data, year, prevData) {
     html += '<div class="card-title" style="font-size:.97rem;font-weight:700;border-bottom:2px solid var(--clr-primary);padding-bottom:8px;margin-bottom:10px">'
           + (ci+1) + '. ' + cat.cat + '</div>';
 
-    // 列ヘッダ
-    html += '<div style="display:flex;margin-bottom:4px;font-size:.75rem;font-weight:600;color:var(--clr-text-s)">'
-          + '<div style="flex:1;padding-left:4px">内容</div>';
-    if (prevScores) {
-      html += '<div style="width:44px;flex-shrink:0;text-align:center;background:#f0f4f8;padding:2px 0;border-radius:4px 0 0 0">前年<br><span style="font-size:.68rem;font-weight:400">'+prevYear+'</span></div>';
-    }
-    html += '<div style="width:164px;flex-shrink:0;text-align:center;background:#eaf4f0;padding:2px 0;border-radius:'+(prevScores?'0':'4px')+'4px 0 0">今年度（'+year+'）</div>'
-          + '</div>';
-
-    // 各項目行
+    // 各項目行（項目テキスト→前年度→今年度を縦積み2行構成）
     cat.items.forEach(function(item, ii) {
       var key    = ci + '_' + ii;
       var curVal = scores[key] ? parseInt(scores[key]) : 0;
       var isLast = ii === cat.items.length - 1;
       var bd     = isLast ? '' : 'border-bottom:1px solid var(--clr-border);';
 
-      html += '<div style="display:flex;'+bd+'padding:6px 4px;align-items:stretch">';
+      html += '<div style="'+bd+'padding:8px 4px">';
 
-      // 項目テキスト（flex:1）
-      html += '<div style="flex:1;min-width:0;font-size:.84rem;line-height:1.55;padding-right:6px;display:flex;align-items:center">'+(ii+1)+'）'+item+'</div>';
+      // 1行目：項目テキスト
+      html += '<div style="font-size:.84rem;line-height:1.55;margin-bottom:6px">'+(ii+1)+'）'+item+'</div>';
 
-      // 前年度バッジ（44px固定）
+      // 2行目：前年度表示＋今年度ラジオを横並び
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+
+      // 前年度（あれば）
       if (prevScores) {
         var pv  = prevScores[key] ? parseInt(prevScores[key]) : 0;
-        var pvC = pv ? scoreColor(pv) : '#ccc';
-        html += '<div style="width:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f8fafc">';
+        var pvC = pv ? scoreColor(pv) : '#bbb';
+        html += '<div style="display:flex;align-items:center;gap:4px;background:#f0f4f8;border-radius:6px;padding:4px 8px;flex-shrink:0">'
+              + '<span style="font-size:.73rem;color:#666;white-space:nowrap">前年</span>';
         html += pv
-          ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:'+pvC+';color:#fff;font-weight:700;font-size:.86rem">'+pv+'</span>'
-          : '<span style="color:#ccc;font-size:.8rem">－</span>';
+          ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:'+pvC+';color:#fff;font-weight:700;font-size:.84rem">'+pv+'</span>'
+          : '<span style="color:#bbb;font-size:.8rem;padding:0 4px">－</span>';
         html += '</div>';
       }
 
-      // 今年度ラジオ（164px固定・4ボタン横並び）
-      html += '<div style="width:164px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:5px;background:#f6fbf8;padding:6px 2px">';
+      // 今年度ラジオ（4ボタン横並び）
+      html += '<div style="display:flex;align-items:center;gap:6px;background:#f6fbf8;border-radius:6px;padding:4px 8px;flex-shrink:0">'
+            + '<span style="font-size:.73rem;color:#4a7c6f;white-space:nowrap">今年度</span>';
       [4,3,2,1].forEach(function(v) {
         var rid2 = 'jsc_'+ci+'_'+ii+'_'+v;
         var col  = scoreColor(v);
         var chk  = curVal === v;
-        html += '<input type="radio" name="jscore_'+key+'" id="'+rid2+'" value="'+v+'"'+(chk?' checked':'')+'>'
+        html += '<input type="radio" name="jscore_'+key+'" id="'+rid2+'" value="'+v+'"'+(chk?' checked':'')+' style="display:none">'
               + '<label for="'+rid2+'" style="display:inline-flex;align-items:center;justify-content:center;'
               + 'width:32px;height:32px;border-radius:50%;margin:0;'
               + 'border:2px solid '+(chk?col:'var(--clr-border)')+';'
@@ -4931,6 +4910,7 @@ function renderJisshiForm(data, year, prevData) {
       });
       html += '</div>';
 
+      html += '</div>'; // 2行目
       html += '</div>'; // row
     });
 
@@ -5082,58 +5062,6 @@ async function confirmJisshiSubmit() {
       await saveJisshiData('submitted');
     }
   );
-}
-
-// 前年度コメント参照パネル
-function toggleJisshiRef() {
-  var panel = document.getElementById('jisshiRefPanel');
-  var isOpen = panel.style.display !== 'none';
-  if (isOpen) {
-    panel.style.display = 'none';
-    document.getElementById('jisshiRefBtn').textContent = '📖 前年度のコメントを参照';
-  } else {
-    panel.style.display = '';
-    document.getElementById('jisshiRefBtn').textContent = '▲ コメント参照を閉じる';
-    var year   = parseInt(document.getElementById('jisshiYearSel').value);
-    var prevData = _jisshiHistory.find(function(h){ return h.year === year - 1; }) || null;
-    renderJisshiRef(prevData);
-  }
-}
-
-function renderJisshiRef(prevData) {
-  var container = document.getElementById('jisshiRefContent');
-  if (!prevData) {
-    container.innerHTML = '<div style="color:var(--clr-text-s);font-size:.85rem;padding:4px 0">前年度のデータがありません。</div>';
-    return;
-  }
-  var year    = prevData.year;
-  var ops     = prevData.opinions || {};
-  var summary = prevData.summary  || '';
-
-  var html = '<div style="font-size:.83rem;color:var(--clr-text-s);margin-bottom:8px">📅 '+year+'年度のコメント（'+
-    (prevData.status==='submitted'?'<span style="color:#155724">提出済</span>':'<span style="color:#856404">下書き</span>')+'）</div>';
-
-  JISSHI_ITEMS.forEach(function(cat, ci) {
-    var op = ops[ci];
-    if (!op) return;
-    html += '<div style="margin-bottom:8px;padding:8px 10px;border-left:3px solid var(--clr-primary);background:var(--clr-bg-s);border-radius:0 4px 4px 0">'
-          + '<div style="font-size:.78rem;font-weight:700;color:var(--clr-primary);margin-bottom:3px">'+(ci+1)+'. '+cat.cat+'</div>'
-          + '<div style="font-size:.84rem;white-space:pre-wrap">'+escHtml(op)+'</div>'
-          + '</div>';
-  });
-
-  if (summary) {
-    html += '<div style="margin-top:10px;padding:8px 10px;border-left:3px solid #e67e22;background:#fff8f0;border-radius:0 4px 4px 0">'
-          + '<div style="font-size:.78rem;font-weight:700;color:#e67e22;margin-bottom:3px">📝 総評</div>'
-          + '<div style="font-size:.84rem;white-space:pre-wrap">'+escHtml(summary)+'</div>'
-          + '</div>';
-  }
-
-  if (html === '<div style="font-size:.83rem;color:var(--clr-text-s);margin-bottom:8px">📅 '+year+'年度のコメント（'+(prevData.status==='submitted'?'<span style="color:#155724">提出済</span>':'<span style="color:#856404">下書き</span>')+'）</div>') {
-    html += '<div style="color:var(--clr-text-s);font-size:.85rem">コメントの記載がありません。</div>';
-  }
-
-  container.innerHTML = html;
 }
 
 // 印刷プレビュー
