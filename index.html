@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.73</title>
+<title>はぐくみ評価 Ver.1.74</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.73',
+    description: '育保の杜 職員評価システム Ver.1.74',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.73</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.74</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -627,7 +627,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <label>パスワード</label>
       <input type="password" id="loginPw" placeholder="パスワードを入力" autocomplete="current-password">
     </div>
-    <button class="btn btn-primary btn-block btn-lg" onclick="doLogin()">ログイン</button>
+    <button class="btn btn-primary btn-block btn-lg" id="loginBtn">ログイン</button>
     <p id="loginErr" style="color:var(--clr-danger);font-size:.82rem;margin-top:12px;text-align:center;"></p>
   </div>
 </div>
@@ -1832,6 +1832,7 @@ function doLogout() {
   document.getElementById('loginPw').value = '';
 }
 
+document.getElementById('loginBtn').addEventListener('click', function() { doLogin(); });
 document.getElementById('loginId').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); document.getElementById('loginPw').focus(); }
 });
