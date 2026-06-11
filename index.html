@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.72</title>
+<title>はぐくみ評価 Ver.1.73</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.72',
+    description: '育保の杜 職員評価システム Ver.1.73',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.72</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.73</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1255,6 +1255,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
 
         <!-- まとめ（集計グラフ）エリア -->
         <div id="jikocheckSummaryArea" style="display:none">
+          <!-- 提出済みバナー（職員本人向け） -->
+          <div id="jikocheckSubmittedBanner" style="display:none"></div>
           <div class="card" style="margin-bottom:12px;padding:12px 16px">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <label style="font-weight:600;font-size:.9rem">年度：</label>
@@ -5442,39 +5444,38 @@ async function loadJikoCheckSection() {
                && TARGET_TYPES.indexOf(SESSION.jobType) >= 0;
   var isManager = role === 'admin' || role === 'encho' || role === 'syunin';
 
-  // current_year は数値で取得（未設定時は今年度）
   _jcYear = parseInt(SETTINGS.current_year) || new Date().getFullYear();
 
   if (isTarget) {
-    document.getElementById('jikocheckInputArea').style.display  = '';
-    document.getElementById('jikocheckSummaryArea').style.display = 'none';
-
     var r = await api({ action:'getJikoCheck', year:_jcYear });
     if (!r.ok) { toast(r.msg, 'error'); return; }
 
     if (r.record) {
-      _jcAnswers = r.record.answers || {};
-      _jcStatus  = r.record.status  || 'draft';
+      // キーを明示的に文字列化して確実に保持
+      var raw = r.record.answers || {};
+      _jcAnswers = {};
+      Object.keys(raw).forEach(function(k){ _jcAnswers[String(k)] = raw[k]; });
+      _jcStatus = r.record.status || 'draft';
     } else {
       _jcAnswers = {}; _jcStatus = 'draft';
     }
-    // 提出済みなら最終ページ（まとめ直前）、未提出なら最初の回答ページ
-    _jcPage = 0;
-    renderJikoCheckPage();
 
-    // 提出済み＋期限後 → 集計も下部に表示
     if (_jcStatus === 'submitted') {
-      var dl = SETTINGS['check_deadline'] || '';
-      if (dl) {
-        var dlDate = new Date(dl); dlDate.setHours(0,0,0,0);
-        var today  = new Date();   today.setHours(0,0,0,0);
-        if (today >= dlDate) {
-          document.getElementById('jikocheckSummaryArea').style.display = '';
-          _initJikoSumSelectors();
-          await loadJikoCheckSummary();
-        }
-      }
+      // ── 提出済み：入力フォームを閉じて集計のみ表示
+      document.getElementById('jikocheckInputArea').style.display  = 'none';
+      document.getElementById('jikocheckSummaryArea').style.display = '';
+      _renderJikoSubmittedBanner();
+      _initJikoSumSelectors();
+      await loadJikoCheckSummary();
+    } else {
+      // ── 下書き or 初回：入力フォーム表示
+      document.getElementById('jikocheckInputArea').style.display  = '';
+      document.getElementById('jikocheckSummaryArea').style.display = 'none';
+      // 最後に回答があったページから再開（初回ははじめに=0）
+      _jcPage = _findLastAnsweredPage();
+      renderJikoCheckPage();
     }
+
   } else if (isManager) {
     document.getElementById('jikocheckInputArea').style.display  = 'none';
     document.getElementById('jikocheckSummaryArea').style.display = '';
@@ -5484,6 +5485,41 @@ async function loadJikoCheckSection() {
     document.getElementById('jikocheckInputArea').innerHTML =
       '<div class="card" style="padding:24px;text-align:center;color:var(--clr-text-s)">このシートの対象外です（保育士のみ）。</div>';
     document.getElementById('jikocheckSummaryArea').style.display = 'none';
+  }
+}
+
+// 最後に回答があったページを探す（下書き再開用）
+function _findLastAnsweredPage() {
+  var lastPage = 0; // デフォルトは「はじめに」
+  Object.keys(_jcAnswers).forEach(function(key) {
+    var pi = parseInt(key.split('_')[0]);
+    if (!isNaN(pi) && pi > lastPage) lastPage = pi;
+  });
+  // 回答済みページの次のページへ（未回答ページから始める）
+  if (lastPage > 0 && lastPage < JIKOCHECK_TOTAL_PAGES - 1) return lastPage;
+  return lastPage;
+}
+
+// 提出済みバナー（集計エリアの上に表示）
+function _renderJikoSubmittedBanner() {
+  var dl = SETTINGS['check_deadline'] || '';
+  var dlDate = dl ? new Date(dl) : null;
+  var today  = new Date(); today.setHours(0,0,0,0);
+  var isPastDeadline = dlDate ? (today >= new Date(dlDate.setHours(0,0,0,0))) : false;
+
+  var banner = document.getElementById('jikocheckSubmittedBanner');
+  if (!banner) return;
+  banner.style.display = '';
+  if (isPastDeadline) {
+    banner.innerHTML = '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
+      + '<div style="font-weight:700;color:#155724">✅ 提出済みです。下の集計で自己点と園平均を確認できます。</div>'
+      + '</div>';
+  } else {
+    banner.innerHTML = '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
+      + '<div style="font-weight:700;color:#155724">✅ 提出済みです。</div>'
+      + '<div style="font-size:.83rem;color:#155724;margin-top:4px">'
+      + (dl ? '集計結果は提出期限（' + dl.substring(0,10) + '）以降に表示されます。' : '集計はしばらくお待ちください。')
+      + '</div></div>';
   }
 }
 
@@ -5503,11 +5539,7 @@ function renderJikoCheckPage() {
     Math.round(doneQ / totalQ * 100) + '%';
 
   var badge = document.getElementById('jikocheckStatusBadge');
-  if (_jcStatus === 'submitted') {
-    badge.textContent='✅ 提出済'; badge.style.background='#d4edda'; badge.style.color='#155724';
-  } else {
-    badge.textContent='✏️ 下書き'; badge.style.background='#fff3cd'; badge.style.color='#856404';
-  }
+  badge.textContent='✏️ 下書き'; badge.style.background='#fff3cd'; badge.style.color='#856404';
 
   // ナビボタン
   document.getElementById('jikocheckPrevBtn').disabled = (_jcPage === 0);
@@ -5528,14 +5560,14 @@ function renderJikoCheckPage() {
            + '<span style="margin-left:12px">A:できている　B:おおむね　C:やや不十分　D:努力が必要</span></div>';
 
   pg.questions.forEach(function(q, qi) {
-    var key = _jcPage + '_' + qi;
+    var key = String(_jcPage) + '_' + String(qi);  // 明示的に文字列化
     var cur = _jcAnswers[key] || '';
-    var isLast2 = qi === pg.questions.length - 1;
-    html += '<div style="padding:8px 4px;' + (isLast2?'':'border-bottom:1px solid var(--clr-border);') + '">'
+    var isLastQ = qi === pg.questions.length - 1;
+    html += '<div style="padding:8px 4px;' + (isLastQ?'':'border-bottom:1px solid var(--clr-border);') + '">'
           + '<div style="font-size:.84rem;line-height:1.55;margin-bottom:6px">' + q + '</div>'
           + '<div style="display:flex;gap:6px;flex-wrap:wrap">';
     ['A','B','C','D'].forEach(function(v) {
-      var col  = JIKOCHECK_COLORS[v];
+      var col   = JIKOCHECK_COLORS[v];
       var isSel = cur === v;
       html += '<input type="radio" name="jcq_' + key + '" id="jcq_' + key + '_' + v
             + '" value="' + v + '"' + (isSel?' checked':'') + ' style="display:none">'
@@ -5556,7 +5588,7 @@ function renderJikoCheckPage() {
 
   // ラジオ変更イベント
   pg.questions.forEach(function(q, qi) {
-    var key = _jcPage + '_' + qi;
+    var key = String(_jcPage) + '_' + String(qi);
     ['A','B','C','D'].forEach(function(v) {
       var el = document.getElementById('jcq_' + key + '_' + v);
       if (!el) return;
@@ -5702,30 +5734,218 @@ function _renderJikoSummary(data) {
   var submitted = data.submitted || 0;
   var target    = data.targetCount || 0;
 
-  // 園平均スコア
-  var gAvg = [0,0,0,0,0,0,0];
-  var gN   = records.length;
-  records.forEach(function(rec) {
-    var sc = _calcJikoScores(rec.answers);
-    sc.forEach(function(v,i){ if(v!==null) gAvg[i] += v; });
-  });
-  if (gN > 0) gAvg = gAvg.map(function(s){ return Math.round(s/gN); });
+  // 期限・全員提出チェック
+  var dl = SETTINGS['check_deadline'] || '';
+  var today = new Date(); today.setHours(0,0,0,0);
+  var isPastDeadline = dl ? (today >= new Date(new Date(dl).setHours(0,0,0,0))) : false;
+  var allSubmitted   = target > 0 && submitted >= target;
+  // 園平均を表示するのは「全員提出済み」のとき
+  var showGarden = allSubmitted;
 
   // 自己スコア
   var myScores = myRecord ? _calcJikoScores(myRecord.answers) : null;
 
+  // 園平均スコア（全員提出時のみ計算）
+  var gAvg = [0,0,0,0,0,0,0];
+  var gN   = records.length;
+  if (showGarden && gN > 0) {
+    records.forEach(function(rec) {
+      var sc = _calcJikoScores(rec.answers);
+      sc.forEach(function(v,i){ if(v!==null) gAvg[i] += v; });
+    });
+    gAvg = gAvg.map(function(s){ return Math.round(s/gN); });
+  }
+
   var html = '';
 
-  // ── 提出状況バナー
-  var allDone = (submitted >= target && target > 0);
-  html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
-        + (allDone?'#d4edda':'#fff3cd') + '">'
-        + '<div style="font-weight:700;font-size:.92rem">📊 '
-        + data.year + '年度　' + (data.garden||'') + '　提出状況：'
-        + '<span style="color:' + (allDone?'#155724':'#856404') + '">'
-        + submitted + ' / ' + target + ' 名提出済</span></div>'
-        + (allDone ? '' : '<div style="font-size:.8rem;color:#856404;margin-top:4px">全員提出後に集計が確定します。現在は提出済み分のみ集計中。</div>')
+  // ── 提出状況バナー（管理者向け）
+  var isManager = SESSION.role === 'admin' || SESSION.role === 'encho' || SESSION.role === 'syunin';
+  if (isManager) {
+    var allDone = allSubmitted;
+    html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
+          + (allDone?'#d4edda':'#fff3cd') + '">'
+          + '<div style="font-weight:700;font-size:.92rem">📊 '
+          + data.year + '年度　' + (data.garden||'') + '　提出状況：'
+          + '<span style="color:' + (allDone?'#155724':'#856404') + '">'
+          + submitted + ' / ' + target + ' 名提出済</span></div>'
+          + (!allDone ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">全員提出後に園平均が確定・表示されます。現在は提出済み分で集計中。</div>' : '')
+          + '</div>';
+  }
+
+  // 自己スコアがない場合
+  if (!myScores && !showGarden) {
+    html += '<div class="card" style="padding:24px;text-align:center;color:var(--clr-text-s)">データがありません。</div>';
+    document.getElementById('jikocheckSummaryContent').innerHTML = html;
+    return;
+  }
+
+  // ── グラフ（レーダー）
+  html += '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+        + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:6px">'
+        + '📊 大項目別スコア レーダーチャート（100点換算）</div>'
+        + '<div style="font-size:.77rem;color:var(--clr-text-s);margin-bottom:8px">'
+        + 'A:4点　B:3点　C:2点　D:1点　→　各項目の満点に対する得点率×100</div>'
+        + '<div style="display:flex;justify-content:center">'
+        + '<canvas id="jikocheckChart" width="320" height="320" style="max-width:320px;display:block"></canvas>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:center;gap:20px;margin-top:8px;font-size:.8rem">'
+        + (myScores
+          ? '<span style="display:flex;align-items:center;gap:5px">'
+          + '<span style="display:inline-block;width:14px;height:3px;background:#e67e22;border-radius:2px"></span>'
+          + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e67e2220;border:2px solid #e67e22"></span>'
+          + '自己点</span>' : '')
+        + (showGarden
+          ? '<span style="display:flex;align-items:center;gap:5px">'
+          + '<span style="display:inline-block;width:14px;height:3px;background:#4a7c6f;border-radius:2px"></span>'
+          + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4a7c6f20;border:2px solid #4a7c6f"></span>'
+          + '園平均</span>' : '')
+        + '</div>'
+        + (!showGarden && gN < target
+          ? '<div style="text-align:center;font-size:.79rem;color:var(--clr-text-s);margin-top:6px">'
+          + '📌 全員（' + target + '名）提出後に園平均が重なります。（現在 ' + submitted + '名提出済）</div>'
+          : '')
         + '</div>';
+
+  // ── スコア比較表
+  html += '<div class="card" style="margin-bottom:12px">'
+        + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+        + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:8px">'
+        + '📋 大項目スコア一覧</div>'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.83rem">'
+        + '<thead><tr>'
+        + '<th style="text-align:left;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">大項目</th>'
+        + (myScores ? '<th style="text-align:center;padding:5px 8px;background:#fff8e1;border-bottom:2px solid #ffc107;width:60px">自己点</th>' : '')
+        + (showGarden ? '<th style="text-align:center;padding:5px 8px;background:#eaf4f0;border-bottom:2px solid var(--clr-primary);width:72px">園平均</th>'
+                      + '<th style="text-align:center;padding:5px 8px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border);width:50px">差</th>' : '')
+        + '</tr></thead><tbody>';
+
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i) {
+    var my  = myScores ? myScores[i] : null;
+    var avg = showGarden ? gAvg[i] : null;
+    var diff = (my !== null && avg !== null) ? (my - avg) : null;
+    var dc   = diff === null ? '#999' : (diff > 0 ? '#28a745' : diff < 0 ? '#dc3545' : '#888');
+    html += '<tr>'
+          + '<td style="padding:6px 8px;border-bottom:1px solid var(--clr-border)">' + lbl + '</td>'
+          + (myScores ? '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:#e67e22">' + (my!==null?my:'－') + '</td>' : '')
+          + (showGarden
+            ? '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:var(--clr-primary)">' + (avg||'－') + '</td>'
+            + '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--clr-border);font-weight:700;color:' + dc + '">'
+            + (diff!==null?(diff>0?'+'+diff:diff):'－') + '</td>' : '')
+          + '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  // ── A〜D 選択率（管理者or全員提出後のみ）
+  if (showGarden || isManager) {
+    html += '<div class="card" style="margin-bottom:12px">'
+          + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
+          + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:8px">'
+          + '📊 A〜D 選択率（大項目別・提出済み ' + gN + ' 名）</div>'
+          + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.81rem">'
+          + '<thead><tr><th style="text-align:left;padding:4px 6px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">大項目</th>';
+    ['A','B','C','D'].forEach(function(v) {
+      html += '<th style="text-align:center;padding:4px 6px;background:'
+            + JIKOCHECK_COLORS[v] + '18;border-bottom:2px solid '
+            + JIKOCHECK_COLORS[v] + ';width:56px">' + v + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    JIKOCHECK_SECTION_NAMES.forEach(function(lbl, si) {
+      var cnt = {A:0,B:0,C:0,D:0,t:0};
+      JIKOCHECK_PAGES.forEach(function(pg,pi) {
+        if (pg.isIntro || pg.sectionIdx !== si) return;
+        pg.questions.forEach(function(q,qi) {
+          var key = pi + '_' + qi;
+          records.forEach(function(rec) {
+            var v = rec.answers[key];
+            if (v && cnt[v]!==undefined) { cnt[v]++; cnt.t++; }
+          });
+        });
+      });
+      html += '<tr><td style="padding:5px 6px;border-bottom:1px solid var(--clr-border)">' + lbl + '</td>';
+      ['A','B','C','D'].forEach(function(v) {
+        var pct = cnt.t ? Math.round(cnt[v]/cnt.t*100) : 0;
+        html += '<td style="text-align:center;padding:5px 6px;border-bottom:1px solid var(--clr-border)">'
+              + '<span style="display:inline-block;background:' + JIKOCHECK_COLORS[v] + '22;'
+              + 'border-radius:4px;padding:2px 6px;font-weight:600;color:' + JIKOCHECK_COLORS[v] + '">'
+              + pct + '%</span></td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+  }
+
+  document.getElementById('jikocheckSummaryContent').innerHTML = html;
+
+  // ── レーダーチャート描画
+  setTimeout(function() {
+    var canvas = document.getElementById('jikocheckChart');
+    if (!canvas) return;
+    var S   = 320;
+    canvas.width = S; canvas.height = S;
+    var ctx = canvas.getContext('2d');
+    var cx  = S / 2, cy = S / 2;
+    var n   = 7;
+    var maxR = 118;
+
+    function angle(i) { return (Math.PI * 2 * i / n) - Math.PI / 2; }
+    function pt(i, r) { return { x: cx + r * Math.cos(angle(i)), y: cy + r * Math.sin(angle(i)) }; }
+
+    // グリッド
+    [25,50,75,100].forEach(function(lv) {
+      var r = maxR * lv / 100;
+      ctx.beginPath();
+      for (var i = 0; i < n; i++) { var p = pt(i,r); i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+      ctx.closePath();
+      ctx.strokeStyle = lv===100?'#bbb':'#ddd'; ctx.lineWidth = lv===100?1.5:1; ctx.stroke();
+      var tp = pt(1,r);
+      ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='left';
+      ctx.fillText(lv, tp.x+3, tp.y+3);
+    });
+    // 軸線
+    for (var i = 0; i < n; i++) {
+      var ep = pt(i,maxR);
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ep.x,ep.y);
+      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    function drawRadar(scores, fillColor, strokeColor) {
+      ctx.beginPath();
+      for (var i = 0; i < n; i++) {
+        var v = (scores[i]!==null && scores[i]!==undefined) ? scores[i] : 0;
+        var p = pt(i, maxR*v/100);
+        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();
+      ctx.fillStyle=fillColor; ctx.fill();
+      ctx.strokeStyle=strokeColor; ctx.lineWidth=2; ctx.stroke();
+      for (var i = 0; i < n; i++) {
+        var v2  = (scores[i]!==null && scores[i]!==undefined) ? scores[i] : 0;
+        var p2  = pt(i, maxR*v2/100);
+        var off = pt(i, maxR*v2/100 + 14);
+        ctx.beginPath(); ctx.arc(p2.x,p2.y,4,0,Math.PI*2);
+        ctx.fillStyle=strokeColor; ctx.fill();
+        ctx.fillStyle=strokeColor; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(v2, off.x, off.y+3);
+      }
+    }
+
+    // 園平均（全員提出後のみ）
+    if (showGarden) drawRadar(gAvg, 'rgba(74,124,111,0.18)', '#4a7c6f');
+    // 自己点
+    if (myScores)   drawRadar(myScores, 'rgba(230,126,34,0.18)', '#e67e22');
+
+    // 軸ラベル
+    var shortLabels = ['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
+    for (var i = 0; i < n; i++) {
+      var lp = pt(i, maxR+22);
+      var lines = shortLabels[i].split('\n');
+      ctx.font='bold 9px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#444';
+      lines.forEach(function(line,li){ ctx.fillText(line, lp.x, lp.y+li*12-(lines.length-1)*6); });
+    }
+  }, 80);
+}
 
   if (gN === 0) {
     html += '<div class="card" style="padding:24px;text-align:center;color:var(--clr-text-s)">提出済みデータがありません。</div>';
@@ -5824,102 +6044,6 @@ function _renderJikoSummary(data) {
   html += '</tbody></table></div></div>';
 
   document.getElementById('jikocheckSummaryContent').innerHTML = html;
-
-  // ── レーダーチャート描画
-  setTimeout(function() {
-    var canvas = document.getElementById('jikocheckChart');
-    if (!canvas) return;
-    var S   = 320;
-    canvas.width = S; canvas.height = S;
-    var ctx = canvas.getContext('2d');
-    var cx  = S / 2, cy = S / 2;
-    var n   = 7;                   // 頂点数（7角形）
-    var maxR = 118;                // 最大半径
-    var levels = [25, 50, 75, 100];
-
-    // 各頂点の角度（上から時計回り、①が真上）
-    function angle(i) { return (Math.PI * 2 * i / n) - Math.PI / 2; }
-    function pt(i, r) {
-      return { x: cx + r * Math.cos(angle(i)), y: cy + r * Math.sin(angle(i)) };
-    }
-
-    // ── 背景グリッド（同心多角形）
-    levels.forEach(function(lv) {
-      var r = maxR * lv / 100;
-      ctx.beginPath();
-      for (var i = 0; i < n; i++) {
-        var p = pt(i, r);
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-      }
-      ctx.closePath();
-      ctx.strokeStyle = lv === 100 ? '#bbb' : '#ddd';
-      ctx.lineWidth   = lv === 100 ? 1.5 : 1;
-      ctx.stroke();
-      // グリッドスケール（右上の軸に表示）
-      var tp = pt(1, r);
-      ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-      ctx.fillText(lv, tp.x + 3, tp.y + 3);
-    });
-
-    // ── 軸線
-    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
-    for (var i = 0; i < n; i++) {
-      var ep = pt(i, maxR);
-      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ep.x, ep.y); ctx.stroke();
-    }
-
-    // ── データ描画関数
-    function drawRadar(scores, fillColor, strokeColor) {
-      ctx.beginPath();
-      for (var i = 0; i < n; i++) {
-        var v = (scores[i] !== null && scores[i] !== undefined) ? scores[i] : 0;
-        var r = maxR * v / 100;
-        var p = pt(i, r);
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-      }
-      ctx.closePath();
-      ctx.fillStyle   = fillColor;
-      ctx.fill();
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth   = 2;
-      ctx.stroke();
-      // 頂点ドット
-      for (var i = 0; i < n; i++) {
-        var v2 = (scores[i] !== null && scores[i] !== undefined) ? scores[i] : 0;
-        var r2 = maxR * v2 / 100;
-        var p2 = pt(i, r2);
-        ctx.beginPath();
-        ctx.arc(p2.x, p2.y, 4, 0, Math.PI*2);
-        ctx.fillStyle = strokeColor; ctx.fill();
-        // スコア値ラベル
-        ctx.fillStyle = strokeColor;
-        ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-        var off = pt(i, r2 + 14);
-        ctx.fillText(v2, off.x, off.y + 3);
-      }
-    }
-
-    // 園平均（緑・半透明）
-    drawRadar(gAvg, 'rgba(74,124,111,0.18)', '#4a7c6f');
-
-    // 自己点（オレンジ・半透明）
-    if (myScores) {
-      drawRadar(myScores, 'rgba(230,126,34,0.18)', '#e67e22');
-    }
-
-    // ── 軸ラベル（①〜⑦）
-    var shortLabels = ['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
-    ctx.fillStyle = '#444'; ctx.lineWidth = 1;
-    for (var i = 0; i < n; i++) {
-      var lp = pt(i, maxR + 22);
-      var lines = shortLabels[i].split('\n');
-      ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-      lines.forEach(function(line, li) {
-        ctx.fillText(line, lp.x, lp.y + li * 12 - (lines.length-1)*6);
-      });
-    }
-  }, 80);
-}
 
 </script>
 
