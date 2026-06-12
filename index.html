@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.76</title>
+<title>はぐくみ評価 Ver.1.77</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var manifest = {
     name: 'はぐくみ評価',
     short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.76',
+    description: '育保の杜 職員評価システム Ver.1.77',
     start_url: './',
     display: 'standalone',
     orientation: 'portrait',
@@ -617,7 +617,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.76</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.77</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1054,6 +1054,15 @@ tr:hover td { background: rgba(74,124,111,.04); }
               <label class="flabel">📅 保育士自己チェック 提出期限</label>
               <input type="date" class="finput" id="setCheckDeadline">
               <p class="fhelp">この日以降ログイン時に全職員の集計結果が閲覧可能になります。</p>
+            </div>
+            <div class="fcol">
+              <label class="flabel">📢 保育士自己チェック 園平均を公開</label>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem">
+                  <input type="checkbox" id="setCheckPublish" style="width:18px;height:18px">
+                  ONにすると職員ログイン時に園平均と自己点を重ねて表示します
+                </label>
+              </div>
             </div>
           </div>
           <div class="frow">
@@ -3214,6 +3223,7 @@ async function loadSettings() {
   document.getElementById('setH2EvalDeadline').value = normDate(SETTINGS['h2_eval_deadline']);
   document.getElementById('setH2MgrDeadline').value  = normDate(SETTINGS['h2_mgr_deadline']);
   document.getElementById('setCheckDeadline').value   = normDate(SETTINGS['check_deadline']);
+  document.getElementById('setCheckPublish').checked  = (SETTINGS['check_publish'] === 'true');
   updatePhaseLabel();   // 設定画面を開いた時点でバッジを最新化
 }
 
@@ -3248,7 +3258,8 @@ async function saveSettings() {
     mgr_deadline:     document.getElementById('setMgrDeadline').value,
     h2_eval_deadline: document.getElementById('setH2EvalDeadline').value,
     h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value,
-    check_deadline:   document.getElementById('setCheckDeadline').value
+    check_deadline:   document.getElementById('setCheckDeadline').value,
+    check_publish:    document.getElementById('setCheckPublish').checked ? 'true' : 'false'
   };
   const r = await api({ action: 'saveSettings', settings });
   if (r.ok) {
@@ -5450,15 +5461,13 @@ async function loadJikoCheckSection() {
   if (isTarget) {
     var r = await api({ action:'getJikoCheck', year:_jcYear });
     if (!r.ok) { toast(r.msg, 'error'); return; }
-    console.log('[jikoCheck] getJikoCheck response:', JSON.stringify({
-      ok: r.ok, status: r.record && r.record.status,
-      answerCount: r.record && r.record.answerCount,
-      rawAnswerLen: r.record && r.record.rawAnswerLen,
-      year: _jcYear
-    }));
+
+    console.log('[jikoCheck] record:', r.record ? {
+      status: r.record.status, answerCount: r.record.answerCount,
+      rawAnswerLen: r.record.rawAnswerLen
+    } : 'null');
 
     if (r.record) {
-      // キーを明示的に文字列化して確実に保持
       var raw = r.record.answers || {};
       _jcAnswers = {};
       Object.keys(raw).forEach(function(k){ _jcAnswers[String(k)] = raw[k]; });
@@ -5468,17 +5477,15 @@ async function loadJikoCheckSection() {
     }
 
     if (_jcStatus === 'submitted') {
-      // ── 提出済み：入力フォームを閉じて集計のみ表示
+      // 提出済み：入力非表示・分析表示
       document.getElementById('jikocheckInputArea').style.display  = 'none';
       document.getElementById('jikocheckSummaryArea').style.display = '';
-      _renderJikoSubmittedBanner();
       _initJikoSumSelectors();
       await loadJikoCheckSummary();
     } else {
-      // ── 下書き or 初回：入力フォーム表示
+      // 一時保存 or 初回：保存ページから再開
       document.getElementById('jikocheckInputArea').style.display  = '';
       document.getElementById('jikocheckSummaryArea').style.display = 'none';
-      // 最後に回答があったページから再開（初回ははじめに=0）
       _jcPage = _findLastAnsweredPage();
       renderJikoCheckPage();
     }
@@ -5495,39 +5502,15 @@ async function loadJikoCheckSection() {
   }
 }
 
-// 最後に回答があったページを探す（下書き再開用）
+// 最後に回答があったページを探す（一時保存再開用）
 function _findLastAnsweredPage() {
-  var lastPage = 0; // デフォルトは「はじめに」
+  if (!Object.keys(_jcAnswers).length) return 0;
+  var lastPage = 1;
   Object.keys(_jcAnswers).forEach(function(key) {
     var pi = parseInt(key.split('_')[0]);
     if (!isNaN(pi) && pi > lastPage) lastPage = pi;
   });
-  // 回答済みページの次のページへ（未回答ページから始める）
-  if (lastPage > 0 && lastPage < JIKOCHECK_TOTAL_PAGES - 1) return lastPage;
-  return lastPage;
-}
-
-// 提出済みバナー（集計エリアの上に表示）
-function _renderJikoSubmittedBanner() {
-  var dl = SETTINGS['check_deadline'] || '';
-  var dlDate = dl ? new Date(dl) : null;
-  var today  = new Date(); today.setHours(0,0,0,0);
-  var isPastDeadline = dlDate ? (today >= new Date(dlDate.setHours(0,0,0,0))) : false;
-
-  var banner = document.getElementById('jikocheckSubmittedBanner');
-  if (!banner) return;
-  banner.style.display = '';
-  if (isPastDeadline) {
-    banner.innerHTML = '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
-      + '<div style="font-weight:700;color:#155724">✅ 提出済みです。下の集計で自己点と園平均を確認できます。</div>'
-      + '</div>';
-  } else {
-    banner.innerHTML = '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
-      + '<div style="font-weight:700;color:#155724">✅ 提出済みです。</div>'
-      + '<div style="font-size:.83rem;color:#155724;margin-top:4px">'
-      + (dl ? '集計結果は提出期限（' + dl.substring(0,10) + '）以降に表示されます。' : '集計はしばらくお待ちください。')
-      + '</div></div>';
-  }
+  return Math.min(lastPage, JIKOCHECK_TOTAL_PAGES - 1);
 }
 
 // ─── ページ描画 ───────────────────────────────────────────────
@@ -5744,8 +5727,9 @@ function _renderJikoSummary(data) {
 
   // 全員提出済みかどうか
   var allSubmitted = target > 0 && submitted >= target;
-  // 園平均表示条件：全員提出 OR 管理者（管理者は途中経過も見える）
-  var showGarden = allSubmitted || isManager;
+  // 園平均表示条件：全員提出＋admin公開済み OR 管理者（途中経過も見える）
+  var isPublished = !!data.isPublished;
+  var showGarden  = (allSubmitted && isPublished) || isManager;
 
   // 自己スコア
   var myScores = myRecord ? _calcJikoScores(myRecord.answers) : null;
@@ -5765,16 +5749,29 @@ function _renderJikoSummary(data) {
 
   // ── 提出状況バナー
   var allDone = allSubmitted;
-  html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
-        + (allDone?'#d4edda':'#fff3cd') + '">'
-        + '<div style="font-weight:700;font-size:.92rem">📊 '
-        + data.year + '年度　' + (data.garden||'') + '　提出状況：'
-        + '<span style="color:' + (allDone?'#155724':'#856404') + '">'
-        + submitted + ' / ' + target + ' 名提出済</span></div>'
-        + (!allDone ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">'
-          + (isManager ? '全員提出後に集計が確定します。現在は提出済み分で集計中。'
-                       : '全員提出後に園平均が表示されます。') + '</div>' : '')
-        + '</div>';
+  if (!isManager) {
+    // 職員本人向けバナー
+    html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
+          + '<div style="font-weight:700;color:#155724">✅ 提出済みです。</div>'
+          + '<div style="font-size:.83rem;color:#155724;margin-top:4px">'
+          + (showGarden ? '園平均と自己点を重ねて表示しています。'
+            : allDone ? '全員提出済みです。管理者が公開すると園平均が表示されます。'
+            : '全員提出後、管理者が公開すると園平均が表示されます。（現在 ' + submitted + ' / ' + target + ' 名提出済）')
+          + '</div></div>';
+  } else {
+    // 管理者向けバナー
+    html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
+          + (allDone?'#d4edda':'#fff3cd') + '">'
+          + '<div style="font-weight:700;font-size:.92rem">📊 '
+          + data.year + '年度　' + (data.garden||'') + '　提出状況：'
+          + '<span style="color:' + (allDone?'#155724':'#856404') + '">'
+          + submitted + ' / ' + target + ' 名提出済</span>'
+          + (isPublished ? '　<span style="background:#28a745;color:#fff;font-size:.75rem;padding:2px 8px;border-radius:10px">公開中</span>' : '')
+          + '</div>'
+          + (!allDone ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">全員提出後に設定画面から「園平均を公開」をONにすると職員に園平均が表示されます。</div>' : '')
+          + (allDone && !isPublished ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">⚠️ 全員提出済みです。設定画面から「園平均を公開」をONにすると職員に結果が公開されます。</div>' : '')
+          + '</div>';
+  }
 
   // データが何もない場合
   if (gN === 0 && !myScores) {
