@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.79</title>
+<title>はぐくみ評価 Ver.1.80</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.79',
+    description:'育保の杜 職員評価システム Ver.1.80',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.79</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.80</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -5472,7 +5472,7 @@ async function loadJikoCheckSection() {
       document.getElementById('jikocheckInputArea').style.display  = 'none';
       document.getElementById('jikocheckSummaryArea').style.display = '';
       _initJikoSumSelectors();
-      await loadJikoCheckSummary();
+      await loadJikoCheckSummary(_jcYear, SESSION.garden);
     } else {
       // 一時保存 or 初回：保存ページから再開
       document.getElementById('jikocheckInputArea').style.display  = '';
@@ -5610,8 +5610,11 @@ async function jikocheckChangePage(dir) {
 
 // ─── 一時保存 ────────────────────────────────────────────────
 async function saveJikoCheckPage() {
+  var ansCount = Object.keys(_jcAnswers).length;
+  console.log('[saveJikoCheck] draft, answerCount='+ansCount+' year='+_jcYear);
   var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
-  if (r.ok) toast('一時保存しました','success');
+  console.log('[saveJikoCheck] response:', JSON.stringify(r));
+  if (r.ok) toast('一時保存しました（'+ansCount+'問）','success');
   else      toast(r.msg,'error');
 }
 
@@ -5632,7 +5635,10 @@ async function confirmJikoCheckSubmit() {
     '保育士自己チェックシートを提出',
     '全 ' + totalQ + ' 問への回答を提出します。提出後も期限まで修正できます。よろしいですか？',
     async function() {
+      var ansCount = Object.keys(_jcAnswers).length;
+      console.log('[submitJikoCheck] submitting, answerCount='+ansCount+' year='+_jcYear);
       var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'submitted' });
+      console.log('[submitJikoCheck] response:', JSON.stringify(r));
       if (r.ok) {
         _jcStatus = 'submitted';
         toast('提出しました','success');
@@ -5675,12 +5681,23 @@ function _initJikoSumSelectors() {
 }
 
 // ─── 集計ロード＆描画 ─────────────────────────────────────────
-async function loadJikoCheckSummary() {
-  var year   = parseInt(document.getElementById('jikocheckSumYearSel').value);
-  var garden = document.getElementById('jikocheckSumGardenSel').value;
+async function loadJikoCheckSummary(yearOverride, gardenOverride) {
+  // セレクタが初期化済みなら使う、なければSESSIONから直接取得
+  var ySel = document.getElementById('jikocheckSumYearSel');
+  var gSel = document.getElementById('jikocheckSumGardenSel');
+  var year   = yearOverride   || (ySel && ySel.value ? parseInt(ySel.value) : _jcYear || parseInt(SETTINGS.current_year) || new Date().getFullYear());
+  var garden = gardenOverride || (gSel && gSel.value ? gSel.value : SESSION.garden);
+
   document.getElementById('jikocheckSummaryContent').innerHTML =
     '<div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div>';
+
+  console.log('[jikoCheckSummary] year='+year+' garden='+garden+' staffId='+SESSION.staffId);
+
   var r = await api({ action:'getJikoCheckSummary', year:year, garden:garden });
+
+  console.log('[jikoCheckSummary] response ok='+r.ok+' msg='+(r.msg||'')
+    +' submitted='+(r.submitted||0)+' myRecord='+(r.myRecord?'yes':'null'));
+
   if (!r.ok) {
     document.getElementById('jikocheckSummaryContent').innerHTML =
       '<div class="card" style="padding:20px;text-align:center;color:var(--clr-text-s)">' + escHtml(r.msg) + '</div>';
