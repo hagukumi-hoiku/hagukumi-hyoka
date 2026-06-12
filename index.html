@@ -573,30 +573,21 @@ tr:hover td { background: rgba(74,124,111,.04); }
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 90; }
 .sidebar-overlay.show { display: block; }
 </style>
+<link rel="manifest" id="pwa-manifest">
 <script>
-// PWA manifest動的生成
 (function(){
-  var manifest = {
-    name: 'はぐくみ評価',
-    short_name: 'はぐくみ評価',
-    description: '育保の杜 職員評価システム Ver.1.79',
-    start_url: location.pathname,
-    display: 'standalone',
-    orientation: 'portrait',
-    background_color: '#ffffff',
-    theme_color: '#2e5549',
-    icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='170' x='100' font-size='16' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E",
-      sizes: '192x192',
-      type: 'image/svg+xml',
-      purpose: 'any maskable'
-    }]
+  var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
+  var m = {
+    name:'はぐくみ評価', short_name:'はぐくみ評価',
+    description:'育保の杜 職員評価システム Ver.1.79',
+    start_url: location.href.split('?')[0],
+    scope: location.pathname,
+    display:'standalone', orientation:'portrait',
+    background_color:'#ffffff', theme_color:'#2e5549',
+    icons:[{src:icon, sizes:'192x192', type:'image/svg+xml', purpose:'any maskable'}]
   };
-  var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  var url  = URL.createObjectURL(blob);
-  var link = document.createElement('link');
-  link.rel = 'manifest'; link.href = url;
-  document.head.appendChild(link);
+  var encoded = 'data:application/json,' + encodeURIComponent(JSON.stringify(m));
+  document.getElementById('pwa-manifest').href = encoded;
 })();
 </script>
 </head>
