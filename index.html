@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.85</title>
+<title>はぐくみ評価 Ver.1.87</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.85',
+    description:'育保の杜 職員評価システム Ver.1.87',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.85</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.87</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1274,6 +1274,9 @@ tr:hover td { background: rgba(74,124,111,.04); }
             </div>
           </div>
           <div id="jikocheckSummaryContent"><div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div></div>
+          <div style="text-align:right;margin-top:6px">
+            <button class="btn btn-outline btn-sm" onclick="openJikoCheckPrint()">🖨 印刷プレビュー</button>
+          </div>
         </div>
       </section>
 <!-- ============================================================
@@ -5608,9 +5611,26 @@ function renderJikoCheckPage() {
 
 // ─── ページ移動（前/次） ─────────────────────────────────────
 async function jikocheckChangePage(dir) {
-  if (!JIKOCHECK_PAGES[_jcPage].isIntro) {
+  var pg = JIKOCHECK_PAGES[_jcPage];
+
+  // 「次へ」のとき未回答チェック
+  if (dir > 0 && !pg.isIntro) {
+    var unans = [];
+    pg.questions.forEach(function(q, qi) {
+      var key = String(_jcPage) + '_' + String(qi);
+      if (!_jcAnswers[key]) unans.push(qi + 1);
+    });
+    if (unans.length > 0) {
+      alert(pg.title + '\n\n未回答の質問があります（' + unans.length + '問）：\n' +
+        unans.slice(0,5).map(function(n){ return n + '問目'; }).join('、') +
+        (unans.length > 5 ? ' ほか' + (unans.length-5) + '問' : '') +
+        '\n\nすべて回答してから次へ進んでください。');
+      return;
+    }
+    // 全問回答済みなら自動保存してから移動
     await _saveJikoSilent();
   }
+
   var next = _jcPage + dir;
   if (next < 0 || next >= JIKOCHECK_TOTAL_PAGES) return;
   _jcPage = next;
@@ -5620,20 +5640,13 @@ async function jikocheckChangePage(dir) {
 
 // ─── 一時保存 ────────────────────────────────────────────────
 async function saveJikoCheckPage() {
-  var ansCount = Object.keys(_jcAnswers).length;
-  console.log('[saveJikoCheck] draft, answerCount='+ansCount+' year='+_jcYear);
   var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
-  console.log('[saveJikoCheck] response:', JSON.stringify(r));
-  if (r.ok) toast('一時保存しました（'+ansCount+'問）','success');
+  if (r.ok) toast('一時保存しました','success');
   else      toast(r.msg,'error');
 }
 
 async function _saveJikoSilent() {
-  var ansCount = Object.keys(_jcAnswers).length;
-  console.log('[autoSave] year='+_jcYear+' answerCount='+ansCount+' staffId='+SESSION.staffId+' jobType='+SESSION.jobType);
-  var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
-  console.log('[autoSave] response:', JSON.stringify(r));
-  if (!r.ok) toast('自動保存エラー: ' + r.msg, 'error');
+  await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'draft' });
 }
 
 // ─── 提出 ────────────────────────────────────────────────────
@@ -5649,20 +5662,16 @@ async function confirmJikoCheckSubmit() {
     '保育士自己チェックシートを提出',
     '全 ' + totalQ + ' 問への回答を提出します。提出後も期限まで修正できます。よろしいですか？',
     async function() {
-      var ansCount = Object.keys(_jcAnswers).length;
-      console.log('[submitJikoCheck] submitting, answerCount='+ansCount+' year='+_jcYear);
+      // 提出前に必ず保存してからステータスをsubmittedに
       var r = await api({ action:'saveJikoCheck', year:_jcYear, answers:_jcAnswers, status:'submitted' });
-      console.log('[submitJikoCheck] response:', JSON.stringify(r));
       if (r.ok) {
         _jcStatus = 'submitted';
         toast('提出しました','success');
-        renderJikoCheckPage();
-        var dl = SETTINGS['check_deadline'] || '';
-        if (dl && new Date() >= new Date(dl)) {
-          document.getElementById('jikocheckSummaryArea').style.display = '';
-          _initJikoSumSelectors();
-          await loadJikoCheckSummary();
-        }
+        // 入力エリア非表示→集計表示へ切り替え
+        document.getElementById('jikocheckInputArea').style.display  = 'none';
+        document.getElementById('jikocheckSummaryArea').style.display = '';
+        _initJikoSumSelectors();
+        await loadJikoCheckSummary(_jcYear, SESSION.garden);
       } else {
         toast(r.msg,'error');
       }
@@ -5692,6 +5701,95 @@ function _initJikoSumSelectors() {
     });
     if (role !== 'admin') gSel.disabled = true;
   }
+}
+
+// ─── 印刷プレビュー ──────────────────────────────────────────
+function openJikoCheckPrint() {
+  if (!_jcAnswers || !_jcStatus) { toast('データを読み込んでください', 'error'); return; }
+
+  var year   = _jcYear;
+  var garden = SESSION.garden || '';
+  var name   = SESSION.name   || '';
+
+  // スコア計算
+  var scores = _calcJikoScores(_jcAnswers);
+  var ABCD   = { A:0, B:0, C:0, D:0 };
+  var total  = 0;
+  Object.values(_jcAnswers).forEach(function(v){ if(ABCD[v]!==undefined){ ABCD[v]++; total++; } });
+
+  var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
+    + '<title>' + year + '年度　保育士自己チェックシート　' + name + '</title>'
+    + '<style>'
+    + 'body{font-family:"Meiryo","MS Gothic",sans-serif;font-size:10pt;margin:15mm;color:#000}'
+    + 'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
+    + '.meta{text-align:right;font-size:8.5pt;color:#555;margin-bottom:10px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}'
+    + 'th,td{border:1px solid #aaa;padding:4px 6px}'
+    + 'th{background:#e8e8e8;font-weight:700;text-align:center}'
+    + '.sec{background:#d0e8d0;font-weight:700}'
+    + '.score-A{color:#28a745;font-weight:700}'
+    + '.score-B{color:#17a2b8;font-weight:700}'
+    + '.score-C{color:#fd7e14;font-weight:700}'
+    + '.score-D{color:#dc3545;font-weight:700}'
+    + '.summary{border:2px solid #333;padding:10px;margin-top:12px}'
+    + '.radar-note{font-size:8.5pt;color:#555;margin-bottom:6px}'
+    + '@media print{@page{margin:12mm}}'
+    + '</style></head><body>'
+    + '<h1>' + year + '年度　保育士の自己チェックシート</h1>'
+    + '<div class="meta">' + garden + '　' + name + '　記入日：' + new Date().toLocaleDateString('ja-JP') + '</div>';
+
+  // 全回答一覧
+  html += '<table><thead><tr>'
+        + '<th style="width:5%">No</th>'
+        + '<th style="text-align:left">内容</th>'
+        + '<th style="width:8%">回答</th>'
+        + '</tr></thead><tbody>';
+
+  var qNo = 0;
+  JIKOCHECK_PAGES.forEach(function(pg, pi) {
+    if (pg.isIntro) return;
+    html += '<tr class="sec"><td colspan="3">' + pg.title + '</td></tr>';
+    pg.questions.forEach(function(q, qi) {
+      qNo++;
+      var key = pi + '_' + qi;
+      var ans = _jcAnswers[key] || '－';
+      var cls = ans !== '－' ? 'score-' + ans : '';
+      html += '<tr>'
+            + '<td style="text-align:center">' + qNo + '</td>'
+            + '<td>' + escHtml(q) + '</td>'
+            + '<td class="' + cls + '" style="text-align:center;font-size:11pt">' + ans + '</td>'
+            + '</tr>';
+    });
+  });
+  html += '</tbody></table>';
+
+  // 集計サマリー
+  html += '<div class="summary">'
+        + '<strong>【集計】</strong>　総回答数：' + total + '問　'
+        + 'A:' + ABCD.A + '問（' + Math.round(ABCD.A/total*100) + '%）　'
+        + 'B:' + ABCD.B + '問（' + Math.round(ABCD.B/total*100) + '%）　'
+        + 'C:' + ABCD.C + '問（' + Math.round(ABCD.C/total*100) + '%）　'
+        + 'D:' + ABCD.D + '問（' + Math.round(ABCD.D/total*100) + '%）'
+        + '</div>';
+
+  // 大項目スコア
+  html += '<table style="margin-top:12px"><thead><tr>'
+        + '<th style="text-align:left">大項目</th><th style="width:80px">自己点（100点換算）</th>'
+        + '</tr></thead><tbody>';
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl, i) {
+    var sc = scores[i];
+    html += '<tr><td>' + lbl + '</td>'
+          + '<td style="text-align:center;font-weight:700">' + (sc !== null ? sc : '－') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  html += '<div style="text-align:right;font-size:8.5pt;color:#666;margin-top:12px">社会福祉法人育保の杜　' + garden + '</div>'
+        + '</body></html>';
+
+  var w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); }, 500);
 }
 
 // ─── デバッグ ─────────────────────────────────────────────────
@@ -5763,20 +5861,22 @@ function _calcJikoScores(answers) {
 }
 
 function _renderJikoSummary(data) {
-  var records   = data.records   || [];   // 提出済みのみ
+  var records   = data.records   || [];
   var myRecord  = data.myRecord  || null;
   var submitted = data.submitted || 0;
   var target    = data.targetCount || 0;
   var isManager = SESSION.role === 'admin' || SESSION.role === 'encho' || SESSION.role === 'syunin';
-
-  // 全員提出済みかどうか
-  var allSubmitted = target > 0 && submitted >= target;
-  // 園平均表示条件：全員提出＋admin公開済み OR 管理者（途中経過も見える）
   var isPublished = !!data.isPublished;
-  var showGarden  = (allSubmitted && isPublished) || isManager;
+
+  var allSubmitted = target > 0 && submitted >= target;
+  // 公開フラグONなら人数に関わらず園平均表示（管理者は常に表示）
+  var showGarden = isPublished || isManager;
 
   // 自己スコア
   var myScores = myRecord ? _calcJikoScores(myRecord.answers) : null;
+  console.log('[renderSummary] myRecord:', myRecord ? 'yes' : 'null',
+    'myScores:', JSON.stringify(myScores),
+    'answerKeys sample:', myRecord ? JSON.stringify(Object.keys(myRecord.answers).slice(0,5)) : '[]');
 
   // 園平均スコア計算（提出済み全員分）
   var gAvg = [0,0,0,0,0,0,0];
@@ -5791,19 +5891,16 @@ function _renderJikoSummary(data) {
 
   var html = '';
 
-  // ── 提出状況バナー
-  var allDone = allSubmitted;
+  // ── バナー
   if (!isManager) {
-    // 職員本人向けバナー
-    html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:#d4edda;border-left:4px solid #28a745">'
-          + '<div style="font-weight:700;color:#155724">✅ 提出済みです。</div>'
-          + '<div style="font-size:.83rem;color:#155724;margin-top:4px">'
-          + (showGarden ? '園平均と自己点を重ねて表示しています。'
-            : allDone ? '全員提出済みです。管理者が公開すると園平均が表示されます。'
-            : '全員提出後、管理者が公開すると園平均が表示されます。（現在 ' + submitted + ' / ' + target + ' 名提出済）')
+    // 一般職員：「提出済み」だけ表示
+    html += '<div class="card" style="margin-bottom:12px;padding:10px 16px;background:#d4edda;border-left:4px solid #28a745">'
+          + '<div style="font-weight:700;color:#155724">✅ 提出済みです。'
+          + (showGarden ? '　自己点と園平均を重ねて表示しています。' : '')
           + '</div></div>';
   } else {
-    // 管理者向けバナー
+    // 管理者：提出状況バナー
+    var allDone = allSubmitted;
     html += '<div class="card" style="margin-bottom:12px;padding:12px 16px;background:'
           + (allDone?'#d4edda':'#fff3cd') + '">'
           + '<div style="font-weight:700;font-size:.92rem">📊 '
@@ -5812,8 +5909,7 @@ function _renderJikoSummary(data) {
           + submitted + ' / ' + target + ' 名提出済</span>'
           + (isPublished ? '　<span style="background:#28a745;color:#fff;font-size:.75rem;padding:2px 8px;border-radius:10px">公開中</span>' : '')
           + '</div>'
-          + (!allDone ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">全員提出後に設定画面から「園平均を公開」をONにすると職員に園平均が表示されます。</div>' : '')
-          + (allDone && !isPublished ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">⚠️ 全員提出済みです。設定画面から「園平均を公開」をONにすると職員に結果が公開されます。</div>' : '')
+          + (!isPublished ? '<div style="font-size:.8rem;color:#856404;margin-top:4px">設定画面で「園平均を公開」をONにすると職員にも園平均が表示されます。</div>' : '')
           + '</div>';
   }
 
@@ -5846,10 +5942,6 @@ function _renderJikoSummary(data) {
           + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4a7c6f20;border:2px solid #4a7c6f"></span>'
           + '園平均</span>' : '')
         + '</div>'
-        + (!showGarden && gN < target
-          ? '<div style="text-align:center;font-size:.79rem;color:var(--clr-text-s);margin-top:6px">'
-          + '📌 全員（' + target + '名）提出後に園平均が重なります。（現在 ' + submitted + '名提出済）</div>'
-          : '')
         + '</div>';
 
   // ── スコア比較表
