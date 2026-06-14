@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.87</title>
+<title>はぐくみ評価 Ver.1.88</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.87',
+    description:'育保の杜 職員評価システム Ver.1.88',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.87</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.88</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1274,6 +1274,9 @@ tr:hover td { background: rgba(74,124,111,.04); }
             </div>
           </div>
           <div id="jikocheckSummaryContent"><div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div></div>
+          <div style="text-align:right;margin-top:6px;padding-bottom:8px">
+            <button class="btn btn-outline btn-sm" onclick="openJikoCheckPrint()">🖨 回答内容を印刷</button>
+          </div>
           <div style="text-align:right;margin-top:6px">
             <button class="btn btn-outline btn-sm" onclick="openJikoCheckPrint()">🖨 印刷プレビュー</button>
           </div>
@@ -6019,70 +6022,126 @@ function _renderJikoSummary(data) {
   setTimeout(function() {
     var canvas = document.getElementById('jikocheckChart');
     if (!canvas) return;
-    var S   = 320;
+    var S = 340;
     canvas.width = S; canvas.height = S;
     var ctx = canvas.getContext('2d');
-    var cx  = S / 2, cy = S / 2;
-    var n   = 7;
-    var maxR = 118;
+    var cx = S/2, cy = S/2, n = 7, maxR = 110;
 
-    function angle(i) { return (Math.PI * 2 * i / n) - Math.PI / 2; }
-    function pt(i, r) { return { x: cx + r * Math.cos(angle(i)), y: cy + r * Math.sin(angle(i)) }; }
+    function angle(i) { return (Math.PI*2*i/n) - Math.PI/2; }
+    function pt(i,r)  { return { x: cx+r*Math.cos(angle(i)), y: cy+r*Math.sin(angle(i)) }; }
 
     // グリッド
     [25,50,75,100].forEach(function(lv) {
-      var r = maxR * lv / 100;
+      var r = maxR*lv/100;
       ctx.beginPath();
-      for (var i = 0; i < n; i++) { var p = pt(i,r); i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+      for (var i=0;i<n;i++){var p=pt(i,r);i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);}
       ctx.closePath();
-      ctx.strokeStyle = lv===100?'#bbb':'#ddd'; ctx.lineWidth = lv===100?1.5:1; ctx.stroke();
-      var tp = pt(1,r);
-      ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='left';
-      ctx.fillText(lv, tp.x+3, tp.y+3);
+      ctx.strokeStyle=lv===100?'#999':'#ddd'; ctx.lineWidth=lv===100?1.5:1; ctx.stroke();
+      var tp=pt(1,r);
+      ctx.fillStyle='#bbb'; ctx.font='8px sans-serif'; ctx.textAlign='left';
+      ctx.fillText(lv, tp.x+2, tp.y+3);
     });
     // 軸線
-    for (var i = 0; i < n; i++) {
-      var ep = pt(i,maxR);
+    for (var i=0;i<n;i++){
+      var ep=pt(i,maxR);
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ep.x,ep.y);
-      ctx.strokeStyle='#ccc'; ctx.lineWidth=1; ctx.stroke();
+      ctx.strokeStyle='#ddd'; ctx.lineWidth=1; ctx.stroke();
     }
 
-    function drawRadar(scores, fillColor, strokeColor) {
+    // ラベルオフセット：2系列が重なるとき左右にずらす
+    function drawRadar(scores, fillColor, strokeColor, labelSide) {
       ctx.beginPath();
-      for (var i = 0; i < n; i++) {
-        var v = (scores[i]!==null && scores[i]!==undefined) ? scores[i] : 0;
-        var p = pt(i, maxR*v/100);
+      for (var i=0;i<n;i++){
+        var v=(scores[i]!=null)?scores[i]:0;
+        var p=pt(i,maxR*v/100);
         i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
       }
       ctx.closePath();
       ctx.fillStyle=fillColor; ctx.fill();
-      ctx.strokeStyle=strokeColor; ctx.lineWidth=2; ctx.stroke();
-      for (var i = 0; i < n; i++) {
-        var v2  = (scores[i]!==null && scores[i]!==undefined) ? scores[i] : 0;
-        var p2  = pt(i, maxR*v2/100);
-        var off = pt(i, maxR*v2/100 + 14);
-        ctx.beginPath(); ctx.arc(p2.x,p2.y,4,0,Math.PI*2);
+      ctx.strokeStyle=strokeColor; ctx.lineWidth=2.5; ctx.stroke();
+      for (var i=0;i<n;i++){
+        var v2=(scores[i]!=null)?scores[i]:0;
+        var p2=pt(i,maxR*v2/100);
+        var ang=angle(i);
+        var dist=maxR*v2/100+15;
+        var perpAng=ang+Math.PI/2;
+        var lx=cx+dist*Math.cos(ang)+labelSide*9*Math.cos(perpAng);
+        var ly=cy+dist*Math.sin(ang)+labelSide*9*Math.sin(perpAng);
+        ctx.beginPath(); ctx.arc(p2.x,p2.y,3.5,0,Math.PI*2);
         ctx.fillStyle=strokeColor; ctx.fill();
         ctx.fillStyle=strokeColor; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
-        ctx.fillText(v2, off.x, off.y+3);
+        // 背景白でラベルを読みやすく
+        ctx.save();
+        ctx.fillStyle='rgba(255,255,255,0.75)';
+        var tw=ctx.measureText(String(v2)).width;
+        ctx.fillRect(lx-tw/2-2, ly-9, tw+4, 13);
+        ctx.restore();
+        ctx.fillStyle=strokeColor; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(v2, lx, ly+2);
       }
     }
 
-    // 園平均（全員提出後のみ）
-    if (showGarden) drawRadar(gAvg, 'rgba(74,124,111,0.18)', '#4a7c6f');
-    // 自己点
-    if (myScores)   drawRadar(myScores, 'rgba(230,126,34,0.18)', '#e67e22');
+    var both = showGarden && myScores;
+    if (showGarden) drawRadar(gAvg,     'rgba(74,124,111,0.20)', '#4a7c6f', both?-1:0);
+    if (myScores)   drawRadar(myScores, 'rgba(230,126,34,0.22)', '#e67e22', both? 1:0);
 
     // 軸ラベル
-    var shortLabels = ['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
-    for (var i = 0; i < n; i++) {
-      var lp = pt(i, maxR+22);
-      var lines = shortLabels[i].split('\n');
-      ctx.font='bold 9px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#444';
-      lines.forEach(function(line,li){ ctx.fillText(line, lp.x, lp.y+li*12-(lines.length-1)*6); });
+    var sl=['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
+    for (var i=0;i<n;i++){
+      var lp=pt(i,maxR+22);
+      var ls=sl[i].split('\n');
+      ctx.font='bold 9px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#333';
+      ls.forEach(function(line,li){ ctx.fillText(line, lp.x, lp.y+li*12-(ls.length-1)*6); });
     }
   }, 80);
 }
+
+// ── 保育士自己チェックシート 印刷プレビュー
+function openJikoCheckPrint() {
+  if (!_jcAnswers || !Object.keys(_jcAnswers).length) {
+    toast('回答データがありません','error'); return;
+  }
+  var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
+    + '<title>保育士自己チェックシート</title>'
+    + '<style>'
+    + 'body{font-family:"Meiryo",sans-serif;font-size:10pt;margin:15mm;color:#000}'
+    + 'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
+    + '.meta{text-align:right;font-size:9pt;color:#555;margin-bottom:10px}'
+    + '.legend{display:flex;gap:16px;margin-bottom:10px;font-size:9pt;background:#f5f5f5;padding:5px 10px;border-radius:4px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}'
+    + 'th,td{border:1px solid #ccc;padding:3px 6px}'
+    + 'th{background:#e8e8e8;font-weight:700}'
+    + '.sec td{background:#f0f0f0;font-weight:700}'
+    + '.ans{text-align:center;font-weight:700;font-size:11pt}'
+    + '.A{color:#28a745}.B{color:#17a2b8}.C{color:#fd7e14}.D{color:#dc3545}'
+    + '@media print{@page{margin:12mm}}'
+    + '</style></head><body>'
+    + '<h1>保育士の自己チェックシート</h1>'
+    + '<div class="meta">'+(_jcYear||'')+'年度　'+(SESSION.garden||'')+'　'+(SESSION.name||'')
+    + '　記入日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
+    + '<div class="legend">'
+    + '<b>A</b>：できている　<b>B</b>：おおむねできている　<b>C</b>：やや不十分　<b>D</b>：努力が必要'
+    + '</div>'
+    + '<table><thead><tr><th style="width:4%">No</th><th>内容</th><th style="width:6%">回答</th></tr></thead><tbody>';
+
+  var qNo=0;
+  JIKOCHECK_PAGES.forEach(function(pg,pi){
+    if(pg.isIntro)return;
+    html+='<tr class="sec"><td colspan="3">'+pg.title+'</td></tr>';
+    pg.questions.forEach(function(q,qi){
+      qNo++;
+      var key=pi+'_'+qi;
+      var ans=_jcAnswers[key]||'－';
+      html+='<tr><td style="text-align:center">'+qNo+'</td><td>'+escHtml(q)+'</td>'
+           +'<td class="ans '+ans+'">'+ans+'</td></tr>';
+    });
+  });
+  html+='</tbody></table></body></html>';
+  var w=window.open('','_blank','width=900,height=700');
+  w.document.write(html); w.document.close();
+  setTimeout(function(){w.focus();w.print();},500);
+}
+
 
 </script>
 
