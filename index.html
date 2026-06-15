@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.89</title>
+<title>はぐくみ評価 Ver.1.91</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.89',
+    description:'育保の杜 職員評価システム Ver.1.91',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.89</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.91</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1275,9 +1275,6 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </div>
           <div id="jikocheckSummaryContent"><div style="text-align:center;padding:32px;color:var(--clr-text-s)">読み込み中…</div></div>
           <div style="text-align:right;margin-top:6px;padding-bottom:8px">
-            <button class="btn btn-outline btn-sm" onclick="openJikoCheckPrint()">🖨 回答内容を印刷</button>
-          </div>
-          <div style="text-align:right;margin-top:6px">
             <button class="btn btn-outline btn-sm" onclick="openJikoCheckPrint()">🖨 印刷プレビュー</button>
           </div>
         </div>
@@ -5707,190 +5704,6 @@ function _initJikoSumSelectors() {
 }
 
 // ─── 印刷プレビュー ──────────────────────────────────────────
-function openJikoCheckPrint() {
-  if (!_jcAnswers || !_jcStatus) { toast('データを読み込んでください', 'error'); return; }
-
-  var year   = _jcYear;
-  var garden = SESSION.garden || '';
-  var name   = SESSION.name   || '';
-  var isManager = SESSION.role === 'admin' || SESSION.role === 'encho' || SESSION.role === 'syunin';
-
-  // 自己スコア計算
-  var myScores = _calcJikoScores(_jcAnswers);
-
-  // 最新の集計データ（_lastSummaryData）から園平均を取得
-  var gAvg      = (window._lastSummaryData && window._lastSummaryData.gAvg) || null;
-  var showGarden = gAvg !== null;
-
-  // ABCD 集計（全体）
-  var abcdAll = {A:0,B:0,C:0,D:0,t:0};
-  Object.values(_jcAnswers).forEach(function(v){ if(abcdAll[v]!==undefined){abcdAll[v]++;abcdAll.t++;} });
-
-  // 大項目別 ABCD 集計（自己）
-  var secAbcd = JIKOCHECK_SECTION_NAMES.map(function(){ return {A:0,B:0,C:0,D:0,t:0}; });
-  JIKOCHECK_PAGES.forEach(function(pg,pi){
-    if(pg.isIntro)return;
-    var si=pg.sectionIdx;
-    pg.questions.forEach(function(q,qi){
-      var v=_jcAnswers[pi+'_'+qi];
-      if(v&&secAbcd[si][v]!==undefined){secAbcd[si][v]++;secAbcd[si].t++;}
-    });
-  });
-
-  // レーダーSVG生成
-  function buildRadarSvg(myScores, gAvg) {
-    var S=300, cx=150, cy=150, maxR=100, n=7;
-    function ang(i){ return Math.PI*2*i/n - Math.PI/2; }
-    function px(i,r){ return (cx+r*Math.cos(ang(i))).toFixed(1); }
-    function py(i,r){ return (cy+r*Math.sin(ang(i))).toFixed(1); }
-
-    var svg = '<svg width="'+S+'" height="'+S+'" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:auto">';
-
-    // グリッド
-    [25,50,75,100].forEach(function(lv){
-      var r=maxR*lv/100;
-      var pts=[];
-      for(var i=0;i<n;i++) pts.push(px(i,r)+','+py(i,r));
-      svg+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="'+(lv===100?'#999':'#ddd')+'" stroke-width="'+(lv===100?1.5:1)+'"/>';
-      svg+='<text x="'+(parseFloat(px(1,r))+3)+'" y="'+(parseFloat(py(1,r))+3)+'" font-size="8" fill="#bbb">'+lv+'</text>';
-    });
-    // 軸
-    for(var i=0;i<n;i++){
-      svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+px(i,maxR)+'" y2="'+py(i,maxR)+'" stroke="#ddd" stroke-width="1"/>';
-    }
-
-    function polygonPath(scores,color,labelSide){
-      var pts=[]; for(var i=0;i<n;i++){var v=scores[i]||0;pts.push(px(i,maxR*v/100)+','+py(i,maxR*v/100));}
-      svg+='<polygon points="'+pts.join(' ')+'" fill="'+color+'" fill-opacity="0.25" stroke="'+color+'" stroke-width="2.5"/>';
-      for(var i=0;i<n;i++){
-        var v=scores[i]||0;
-        var a=ang(i), dist=maxR*v/100+14;
-        var lx=(cx+dist*Math.cos(a)+labelSide*8*Math.cos(a+Math.PI/2)).toFixed(1);
-        var ly=(cy+dist*Math.sin(a)+labelSide*8*Math.sin(a+Math.PI/2)).toFixed(1);
-        svg+='<circle cx="'+px(i,maxR*v/100)+'" cy="'+py(i,maxR*v/100)+'" r="3.5" fill="'+color+'"/>';
-        svg+='<rect x="'+(parseFloat(lx)-9)+'" y="'+(parseFloat(ly)-9)+'" width="18" height="13" fill="white" fill-opacity="0.8"/>';
-        svg+='<text x="'+lx+'" y="'+ly+'" font-size="10" font-weight="bold" fill="'+color+'" text-anchor="middle">'+v+'</text>';
-      }
-    }
-    var both = gAvg!==null && myScores!==null;
-    if(gAvg)      polygonPath(gAvg,     '#4a7c6f', both?-1:0);
-    if(myScores)  polygonPath(myScores, '#e67e22', both? 1:0);
-
-    // 軸ラベル
-    var sl=['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
-    for(var i=0;i<n;i++){
-      var lp={x:parseFloat(px(i,maxR+22)),y:parseFloat(py(i,maxR+22))};
-      var lines=sl[i].split('\n');
-      lines.forEach(function(line,li){
-        svg+='<text x="'+lp.x+'" y="'+(lp.y+li*12-(lines.length-1)*6)+'" font-size="8.5" font-weight="bold" fill="#333" text-anchor="middle">'+line+'</text>';
-      });
-    }
-    svg+='</svg>';
-    return svg;
-  }
-
-  var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
-    + '<title>'+year+'年度　保育士自己チェックシート　'+name+'</title>'
-    + '<style>'
-    + 'body{font-family:"Meiryo","MS Gothic",sans-serif;font-size:10pt;margin:15mm;color:#000}'
-    + 'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
-    + 'h2{font-size:11pt;border-bottom:2px solid #2e5549;padding-bottom:4px;margin:16px 0 8px;color:#2e5549}'
-    + '.meta{text-align:right;font-size:8.5pt;color:#555;margin-bottom:10px}'
-    + '.legend{display:flex;gap:16px;margin-bottom:10px;font-size:8.5pt;background:#f5f5f5;padding:5px 10px;border-radius:4px}'
-    + 'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}'
-    + 'th,td{border:1px solid #aaa;padding:3px 6px}'
-    + 'th{background:#e8e8e8;font-weight:700;text-align:center}'
-    + '.sec{background:#d0e8d0;font-weight:700}'
-    + '.score-A{color:#28a745;font-weight:700}'
-    + '.score-B{color:#17a2b8;font-weight:700}'
-    + '.score-C{color:#fd7e14;font-weight:700}'
-    + '.score-D{color:#dc3545;font-weight:700}'
-    + '.A{color:#28a745;font-weight:700} .B{color:#17a2b8;font-weight:700}'
-    + '.C{color:#fd7e14;font-weight:700} .D{color:#dc3545;font-weight:700}'
-    + '.chart-wrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}'
-    + '.legend-box{display:flex;flex-direction:column;gap:6px;font-size:8.5pt}'
-    + '.legend-item{display:flex;align-items:center;gap:6px}'
-    + '.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block}'
-    + '@media print{@page{size:A4;margin:12mm}h2{page-break-before:auto}}'
-    + '</style></head><body>'
-    + '<h1>'+year+'年度　保育士の自己チェックシート</h1>'
-    + '<div class="meta">'+garden+'　'+name+'　記入日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
-    + '<div class="legend">A：できている　B：おおむねできている　C：やや不十分　D：努力が必要</div>';
-
-  // ── 1. 全回答一覧
-  html += '<h2>● 回答内容</h2>';
-  html += '<table><thead><tr>'
-        + '<th style="width:5%">No</th>'
-        + '<th style="text-align:left">内容</th>'
-        + '<th style="width:7%">回答</th>'
-        + '</tr></thead><tbody>';
-  var qNo=0;
-  JIKOCHECK_PAGES.forEach(function(pg,pi){
-    if(pg.isIntro)return;
-    html+='<tr class="sec"><td colspan="3">'+pg.title+'</td></tr>';
-    pg.questions.forEach(function(q,qi){
-      qNo++;
-      var key=pi+'_'+qi, ans=_jcAnswers[key]||'－', cls=ans!=='－'?'score-'+ans:'';
-      html+='<tr><td style="text-align:center">'+qNo+'</td><td>'+escHtml(q)+'</td>'
-           +'<td class="'+cls+'" style="text-align:center;font-size:11pt">'+ans+'</td></tr>';
-    });
-  });
-  html+='</tbody></table>';
-
-  // ── 2. レーダーチャート＋スコア表
-  html += '<h2>● 大項目別スコア（100点換算）</h2>';
-
-  // チャート＋凡例
-  html += '<div class="chart-wrap"><div>';
-  html += buildRadarSvg(myScores, gAvg);
-  html += '</div><div class="legend-box">';
-  html += '<div class="legend-item"><span class="legend-dot" style="background:#e67e22"></span>自己点</div>';
-  if(showGarden) html += '<div class="legend-item"><span class="legend-dot" style="background:#4a7c6f"></span>園平均</div>';
-  html += '<div style="margin-top:12px;font-size:8.5pt"><b>評価：A:4点 B:3点 C:2点 D:1点</b></div></div></div>';
-
-  // スコア比較表
-  html += '<table><thead><tr><th style="text-align:left">大項目</th>'
-        + '<th>自己点</th>'
-        + (showGarden?'<th>園平均</th><th>差</th>':'')
-        + '</tr></thead><tbody>';
-  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
-    var my=myScores[i], avg=gAvg?gAvg[i]:null;
-    var diff=(my!==null&&avg!==null)?(my-avg):null;
-    var dc=diff===null?'#999':diff>0?'#28a745':diff<0?'#dc3545':'#888';
-    html+='<tr><td>'+lbl+'</td>'
-         +'<td style="text-align:center;font-weight:700;color:#e67e22">'+(my!==null?my:'－')+'</td>';
-    if(showGarden){
-      html+='<td style="text-align:center;font-weight:700;color:#4a7c6f">'+(avg!==null?avg:'－')+'</td>'
-           +'<td style="text-align:center;font-weight:700;color:'+dc+'">'
-           +(diff!==null?(diff>0?'+'+diff:diff):'－')+'</td>';
-    }
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-
-  // ── 3. A〜D 選択率表
-  html += '<h2>● A〜D 回答割合（大項目別）</h2>';
-  html += '<table><thead><tr><th style="text-align:left">大項目</th>'
-        + '<th class="A">A</th><th class="B">B</th><th class="C">C</th><th class="D">D</th>'
-        + '</tr></thead><tbody>';
-  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
-    var sc=secAbcd[i];
-    html+='<tr><td>'+lbl+'</td>';
-    ['A','B','C','D'].forEach(function(v){
-      var pct=sc.t?Math.round(sc[v]/sc.t*100):0;
-      html+='<td style="text-align:center" class="'+v+'">'+pct+'%<br><span style="font-size:7.5pt;font-weight:normal;color:#666">('+sc[v]+'問)</span></td>';
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-
-  html+='<div style="text-align:right;font-size:8.5pt;color:#666;margin-top:8px">社会福祉法人育保の杜　'+garden+'</div>'
-      +'</body></html>';
-
-  var w=window.open('','_blank','width=1000,height=800');
-  w.document.write(html); w.document.close();
-  setTimeout(function(){w.focus();w.print();},600);
-}
 
 // ─── デバッグ ─────────────────────────────────────────────────
 async function runJikoDebug() {
@@ -6198,47 +6011,155 @@ function _renderJikoSummary(data) {
 // ── 保育士自己チェックシート 印刷プレビュー
 function openJikoCheckPrint() {
   if (!_jcAnswers || !Object.keys(_jcAnswers).length) {
-    toast('回答データがありません','error'); return;
+    toast('回答データがありません', 'error'); return;
   }
-  var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
-    + '<title>保育士自己チェックシート</title>'
-    + '<style>'
-    + 'body{font-family:"Meiryo",sans-serif;font-size:10pt;margin:15mm;color:#000}'
-    + 'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
-    + '.meta{text-align:right;font-size:9pt;color:#555;margin-bottom:10px}'
-    + '.legend{display:flex;gap:16px;margin-bottom:10px;font-size:9pt;background:#f5f5f5;padding:5px 10px;border-radius:4px}'
-    + 'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}'
-    + 'th,td{border:1px solid #ccc;padding:3px 6px}'
-    + 'th{background:#e8e8e8;font-weight:700}'
-    + '.sec td{background:#f0f0f0;font-weight:700}'
-    + '.ans{text-align:center;font-weight:700;font-size:11pt}'
-    + '.A{color:#28a745}.B{color:#17a2b8}.C{color:#fd7e14}.D{color:#dc3545}'
-    + '@media print{@page{margin:12mm}}'
-    + '</style></head><body>'
-    + '<h1>保育士の自己チェックシート</h1>'
-    + '<div class="meta">'+(_jcYear||'')+'年度　'+(SESSION.garden||'')+'　'+(SESSION.name||'')
-    + '　記入日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
-    + '<div class="legend">'
-    + '<b>A</b>：できている　<b>B</b>：おおむねできている　<b>C</b>：やや不十分　<b>D</b>：努力が必要'
-    + '</div>'
-    + '<table><thead><tr><th style="width:4%">No</th><th>内容</th><th style="width:6%">回答</th></tr></thead><tbody>';
+  var year   = _jcYear;
+  var garden = SESSION.garden || '';
+  var name   = SESSION.name   || '';
+  var myScores  = _calcJikoScores(_jcAnswers);
+  var gAvg      = (window._lastSummaryData && window._lastSummaryData.gAvg) || null;
+  var showGarden = gAvg !== null;
 
+  // 大項目別 ABCD 集計
+  var secAbcd = JIKOCHECK_SECTION_NAMES.map(function(){ return {A:0,B:0,C:0,D:0,t:0}; });
+  JIKOCHECK_PAGES.forEach(function(pg,pi){
+    if(pg.isIntro)return;
+    var si=pg.sectionIdx;
+    pg.questions.forEach(function(q,qi){
+      var v=_jcAnswers[pi+'_'+qi];
+      if(v&&secAbcd[si][v]!==undefined){secAbcd[si][v]++;secAbcd[si].t++;}
+    });
+  });
+
+  // レーダーSVG
+  function buildRadarSvg(myS, gA) {
+    var S=300,cx=150,cy=150,maxR=100,n=7;
+    function ang(i){ return Math.PI*2*i/n-Math.PI/2; }
+    function px(i,r){ return (cx+r*Math.cos(ang(i))).toFixed(1); }
+    function py(i,r){ return (cy+r*Math.sin(ang(i))).toFixed(1); }
+    var svg='<svg width="'+S+'" height="'+S+'" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:auto">';
+    [25,50,75,100].forEach(function(lv){
+      var r=maxR*lv/100, pts=[];
+      for(var i=0;i<n;i++) pts.push(px(i,r)+','+py(i,r));
+      svg+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="'+(lv===100?'#999':'#ddd')+'" stroke-width="'+(lv===100?1.5:1)+'"/>';
+      svg+='<text x="'+(parseFloat(px(1,r))+3)+'" y="'+(parseFloat(py(1,r))+3)+'" font-size="8" fill="#bbb">'+lv+'</text>';
+    });
+    for(var i=0;i<n;i++){
+      svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+px(i,maxR)+'" y2="'+py(i,maxR)+'" stroke="#ddd" stroke-width="1"/>';
+    }
+    function poly(scores,color,side){
+      var pts=[]; for(var i=0;i<n;i++){var v=scores[i]||0;pts.push(px(i,maxR*v/100)+','+py(i,maxR*v/100));}
+      svg+='<polygon points="'+pts.join(' ')+'" fill="'+color+'" fill-opacity="0.25" stroke="'+color+'" stroke-width="2.5"/>';
+      for(var i=0;i<n;i++){
+        var v=scores[i]||0, a=ang(i), d=maxR*v/100+14;
+        var lx=(cx+d*Math.cos(a)+side*8*Math.cos(a+Math.PI/2)).toFixed(1);
+        var ly=(cy+d*Math.sin(a)+side*8*Math.sin(a+Math.PI/2)).toFixed(1);
+        svg+='<circle cx="'+px(i,maxR*v/100)+'" cy="'+py(i,maxR*v/100)+'" r="3.5" fill="'+color+'"/>';
+        svg+='<rect x="'+(parseFloat(lx)-9)+'" y="'+(parseFloat(ly)-9)+'" width="18" height="13" fill="white" fill-opacity="0.8"/>';
+        svg+='<text x="'+lx+'" y="'+ly+'" font-size="10" font-weight="bold" fill="'+color+'" text-anchor="middle">'+v+'</text>';
+      }
+    }
+    var both=gA!==null&&myS!==null;
+    if(gA)  poly(gA, '#4a7c6f', both?-1:0);
+    if(myS) poly(myS,'#e67e22', both? 1:0);
+    var sl=['①保育の\n理念・保育観','②保育の\n内容','③保健\n活動・安全','④保護者\n地域連携','⑤地域子育\n支援','⑥職務\n役割分担','⑦資質\n向上'];
+    for(var i=0;i<n;i++){
+      var lp={x:parseFloat(px(i,maxR+22)),y:parseFloat(py(i,maxR+22))};
+      sl[i].split('\n').forEach(function(line,li){
+        svg+='<text x="'+lp.x+'" y="'+(lp.y+li*12-(sl[i].split('\n').length-1)*6)+'" font-size="8.5" font-weight="bold" fill="#333" text-anchor="middle">'+line+'</text>';
+      });
+    }
+    return svg+'</svg>';
+  }
+
+  var html='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
+    +'<title>'+year+'年度　保育士自己チェックシート　'+name+'</title>'
+    +'<style>'
+    +'body{font-family:"Meiryo",sans-serif;font-size:10pt;margin:15mm;color:#000}'
+    +'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
+    +'h2{font-size:11pt;border-bottom:2px solid #2e5549;padding-bottom:4px;margin:16px 0 8px;color:#2e5549}'
+    +'.meta{text-align:right;font-size:8.5pt;color:#555;margin-bottom:10px}'
+    +'.legend{font-size:8.5pt;background:#f5f5f5;padding:5px 10px;border-radius:4px;margin-bottom:10px}'
+    +'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}'
+    +'th,td{border:1px solid #aaa;padding:3px 6px}'
+    +'th{background:#e8e8e8;font-weight:700;text-align:center}'
+    +'.sec{background:#d0e8d0;font-weight:700}'
+    +'.score-A{color:#28a745;font-weight:700}.score-B{color:#17a2b8;font-weight:700}'
+    +'.score-C{color:#fd7e14;font-weight:700}.score-D{color:#dc3545;font-weight:700}'
+    +'.A{color:#28a745;font-weight:700}.B{color:#17a2b8;font-weight:700}'
+    +'.C{color:#fd7e14;font-weight:700}.D{color:#dc3545;font-weight:700}'
+    +'.chart-wrap{display:flex;gap:20px;align-items:flex-start;margin-bottom:12px}'
+    +'@media print{@page{size:A4;margin:12mm}}'
+    +'</style></head><body>'
+    +'<h1>'+year+'年度　保育士の自己チェックシート</h1>'
+    +'<div class="meta">'+garden+'　'+name+'　記入日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
+    +'<div class="legend">A：できている　B：おおむねできている　C：やや不十分　D：努力が必要</div>';
+
+  // 1. 回答内容
+  html+='<h2>● 回答内容</h2>'
+      +'<table><thead><tr><th style="width:5%">No</th><th style="text-align:left">内容</th><th style="width:7%">回答</th></tr></thead><tbody>';
   var qNo=0;
   JIKOCHECK_PAGES.forEach(function(pg,pi){
     if(pg.isIntro)return;
     html+='<tr class="sec"><td colspan="3">'+pg.title+'</td></tr>';
     pg.questions.forEach(function(q,qi){
       qNo++;
-      var key=pi+'_'+qi;
-      var ans=_jcAnswers[key]||'－';
+      var key=pi+'_'+qi, ans=_jcAnswers[key]||'－';
       html+='<tr><td style="text-align:center">'+qNo+'</td><td>'+escHtml(q)+'</td>'
-           +'<td class="ans '+ans+'">'+ans+'</td></tr>';
+           +'<td class="score-'+ans+'" style="text-align:center;font-size:11pt">'+ans+'</td></tr>';
     });
   });
-  html+='</tbody></table></body></html>';
-  var w=window.open('','_blank','width=900,height=700');
+  html+='</tbody></table>';
+
+  // 2. レーダーチャート＋スコア表
+  html+='<h2>● 大項目別スコア（100点換算）</h2>'
+      +'<div class="chart-wrap"><div>'+buildRadarSvg(myScores,gAvg)+'</div>'
+      +'<div style="font-size:8.5pt;line-height:2">'
+      +'<span style="color:#e67e22">●</span> 自己点<br>'
+      +(showGarden?'<span style="color:#4a7c6f">●</span> 園平均<br>':'')
+      +'</div></div>';
+
+  html+='<table><thead><tr><th style="text-align:left">大項目</th><th>自己点</th>'
+      +(showGarden?'<th>園平均</th><th>差</th>':'')
+      +'</tr></thead><tbody>';
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
+    var my=myScores[i], avg=gAvg?gAvg[i]:null;
+    var diff=(my!==null&&avg!==null)?(my-avg):null;
+    var dc=diff===null?'#999':diff>0?'#28a745':diff<0?'#dc3545':'#888';
+    html+='<tr><td>'+lbl+'</td>'
+         +'<td style="text-align:center;font-weight:700;color:#e67e22">'+(my!==null?my:'－')+'</td>';
+    if(showGarden){
+      html+='<td style="text-align:center;font-weight:700;color:#4a7c6f">'+(avg!==null?avg:'－')+'</td>'
+           +'<td style="text-align:center;font-weight:700;color:'+dc+'">'
+           +(diff!==null?(diff>0?'+'+diff:diff):'－')+'</td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+
+  // 3. ABCD 割合表
+  html+='<h2>● A〜D 回答割合（大項目別）</h2>'
+      +'<table><thead><tr><th style="text-align:left">大項目</th>'
+      +'<th class="A">A</th><th class="B">B</th><th class="C">C</th><th class="D">D</th>'
+      +'</tr></thead><tbody>';
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
+    var sc=secAbcd[i];
+    html+='<tr><td>'+lbl+'</td>';
+    ['A','B','C','D'].forEach(function(v){
+      var pct=sc.t?Math.round(sc[v]/sc.t*100):0;
+      html+='<td style="text-align:center" class="'+v+'">'+pct+'%<br>'
+           +'<span style="font-size:7.5pt;font-weight:normal;color:#666">('+sc[v]+'問)</span></td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+
+  html+='<div style="text-align:right;font-size:8.5pt;color:#666;margin-top:8px">社会福祉法人育保の杜　'+garden+'</div>'
+      +'</body></html>';
+
+  var w=window.open('','_blank','width=1000,height=800');
   w.document.write(html); w.document.close();
-  setTimeout(function(){w.focus();w.print();},500);
+  setTimeout(function(){w.focus();w.print();},600);
 }
 
 
