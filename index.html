@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.92</title>
+<title>はぐくみ評価 Ver.1.93</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.92',
+    description:'育保の杜 職員評価システム Ver.1.93',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.92</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.93</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -5899,45 +5899,68 @@ function _renderJikoSummary(data) {
   });
   html += '</tbody></table></div></div>';
 
-  // ── A〜D 選択率（管理者or全員提出後のみ）
+  // ── A〜D 選択率（自己点＋園平均の2段構成）
   if (showGarden || isManager) {
+    // 自己の大項目別ABCD集計
+    var myAbcd = null;
+    if (myRecord) {
+      myAbcd = JIKOCHECK_SECTION_NAMES.map(function(){ return {A:0,B:0,C:0,D:0,t:0}; });
+      JIKOCHECK_PAGES.forEach(function(pg,pi){
+        if(pg.isIntro)return;
+        var si2=pg.sectionIdx;
+        pg.questions.forEach(function(q,qi){
+          var v=myRecord.answers[pi+'_'+qi];
+          if(v&&myAbcd[si2][v]!==undefined){myAbcd[si2][v]++;myAbcd[si2].t++;}
+        });
+      });
+    }
     html += '<div class="card" style="margin-bottom:12px">'
           + '<div class="card-title" style="font-size:.93rem;font-weight:700;'
           + 'border-bottom:2px solid var(--clr-primary);padding-bottom:6px;margin-bottom:8px">'
-          + '📊 A〜D 選択率（大項目別・提出済み ' + gN + ' 名）</div>'
+          + '📊 A〜D 選択率（大項目別）</div>'
           + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.81rem">'
           + '<thead><tr><th style="text-align:left;padding:4px 6px;background:var(--clr-bg-s);border-bottom:2px solid var(--clr-border)">大項目</th>';
     ['A','B','C','D'].forEach(function(v) {
       html += '<th style="text-align:center;padding:4px 6px;background:'
             + JIKOCHECK_COLORS[v] + '18;border-bottom:2px solid '
-            + JIKOCHECK_COLORS[v] + ';width:56px">' + v + '</th>';
+            + JIKOCHECK_COLORS[v] + ';width:72px">' + v + '</th>';
     });
     html += '</tr></thead><tbody>';
 
-    JIKOCHECK_SECTION_NAMES.forEach(function(lbl, si) {
-      var cnt = {A:0,B:0,C:0,D:0,t:0};
+    JIKOCHECK_SECTION_NAMES.forEach(function(lbl, si3) {
+      var gc = {A:0,B:0,C:0,D:0,t:0};
       JIKOCHECK_PAGES.forEach(function(pg,pi) {
-        if (pg.isIntro || pg.sectionIdx !== si) return;
+        if (pg.isIntro || pg.sectionIdx !== si3) return;
         pg.questions.forEach(function(q,qi) {
           var key = pi + '_' + qi;
           records.forEach(function(rec) {
-            var v = rec.answers[key];
-            if (v && cnt[v]!==undefined) { cnt[v]++; cnt.t++; }
+            var vr = rec.answers[key];
+            if (vr && gc[vr]!==undefined) { gc[vr]++; gc.t++; }
           });
         });
       });
       html += '<tr><td style="padding:5px 6px;border-bottom:1px solid var(--clr-border)">' + lbl + '</td>';
       ['A','B','C','D'].forEach(function(v) {
-        var pct = cnt.t ? Math.round(cnt[v]/cnt.t*100) : 0;
-        html += '<td style="text-align:center;padding:5px 6px;border-bottom:1px solid var(--clr-border)">'
-              + '<span style="display:inline-block;background:' + JIKOCHECK_COLORS[v] + '22;'
-              + 'border-radius:4px;padding:2px 6px;font-weight:600;color:' + JIKOCHECK_COLORS[v] + '">'
-              + pct + '%</span></td>';
+        var col  = JIKOCHECK_COLORS[v];
+        var gpct = gc.t ? Math.round(gc[v]/gc.t*100) : 0;
+        var mc   = myAbcd ? myAbcd[si3] : null;
+        var mpct = (mc && mc.t) ? Math.round(mc[v]/mc.t*100) : null;
+        html += '<td style="text-align:center;padding:4px 5px;border-bottom:1px solid var(--clr-border)">';
+        if (mpct !== null) {
+          html += '<div style="font-weight:700;color:'+col+';font-size:.84rem">'+mpct+'%</div>';
+        }
+        html += '<div style="font-size:.74rem;color:#888;margin-top:1px">'
+              + (mpct!==null?'（':'') + '園 '+gpct+'%' + (mpct!==null?'）':'')
+              + '</div></td>';
       });
       html += '</tr>';
     });
+    html += '<tr><td colspan="5" style="padding:3px 6px;font-size:.74rem;color:var(--clr-text-s)">'
+          + '上段：自己　下段（園）：提出済み'+gN+'名の平均'
+          + '</td></tr>';
     html += '</tbody></table></div></div>';
   }
+
 
   document.getElementById('jikocheckSummaryContent').innerHTML = html;
 
@@ -6105,7 +6128,7 @@ function openJikoCheckPrint() {
   }
 
   var html='<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
-    +'<title>'+year+'年度　保育士自己チェックシート集計　'+garden+'</title>'
+    +'<title>'+year+'年度　保育士自己チェックシート'+(isManager?'（園全体集計）':'　'+name)+'</title>'
     +'<style>'
     +'body{font-family:"Meiryo",sans-serif;font-size:10pt;margin:15mm;color:#000}'
     +'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
@@ -6123,12 +6146,12 @@ function openJikoCheckPrint() {
     +'.chart-wrap{display:flex;gap:20px;align-items:flex-start;margin-bottom:12px}'
     +'@media print{@page{size:A4;margin:12mm}}'
     +'</style></head><body>'
-    +'<h1>'+year+'年度　保育士の自己チェックシート'+(isManager?'（園全体集計）':'')+'</h1>'
-    +'<div class="meta">'+garden+(name?'　'+name:'')+'　出力日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
+    +'<h1>'+year+'年度　保育士の自己チェックシート'+(isManager?'　園全体集計':'')+'</h1>'
+    +'<div class="meta">'+garden+(name&&!isManager?'　'+name:'')+'　出力日：'+new Date().toLocaleDateString('ja-JP')+'</div>'
     +'<div class="legend">A：できている　B：おおむねできている　C：やや不十分　D：努力が必要</div>';
 
-  // 1. 回答内容（個人回答がある場合のみ）
-  if (hasAnswers) {
+  // 1. 回答内容（一般職員のみ）
+  if (!isManager && hasAnswers) {
     html+='<h2>● 回答内容</h2>'
         +'<table><thead><tr><th style="width:5%">No</th><th style="text-align:left">内容</th><th style="width:7%">回答</th></tr></thead><tbody>';
     var qNo=0;
@@ -6146,38 +6169,32 @@ function openJikoCheckPrint() {
   }
 
   // 2. レーダーチャート＋スコア表
-  html+='<h2>● 大項目別スコア（100点換算）</h2>';
-  if (!showGarden && !myScores) {
-    html+='<p style="color:#888;font-size:.9rem">集計データがありません。</p>';
-  } else {
-    html+='<div class="chart-wrap"><div>'+buildRadarSvg(myScores,gAvg)+'</div>'
-        +'<div style="font-size:8.5pt;line-height:2">'
-        +(myScores?'<span style="color:#e67e22">●</span> '+(isManager?'自己点':'自己点')+'<br>':'')
-        +(showGarden?'<span style="color:#4a7c6f">●</span> 園平均<br>':'')
-        +'</div></div>'
-        +'<table><thead><tr><th style="text-align:left">大項目</th>'
-        +(myScores?'<th>自己点</th>':'')
-        +(showGarden?'<th>園平均</th>':'')
-        +((myScores&&showGarden)?'<th>差</th>':'')
-        +'</tr></thead><tbody>';
-    JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
-      var my=myScores?myScores[i]:null, avg=showGarden?gAvg[i]:null;
-      var diff=(my!==null&&avg!==null)?(my-avg):null;
-      var dc=diff===null?'#999':diff>0?'#28a745':diff<0?'#dc3545':'#888';
-      html+='<tr><td>'+lbl+'</td>';
-      if(myScores) html+='<td style="text-align:center;font-weight:700;color:#e67e22">'+(my!==null?my:'－')+'</td>';
-      if(showGarden) html+='<td style="text-align:center;font-weight:700;color:#4a7c6f">'+(avg!==null?avg:'－')+'</td>';
-      if(myScores&&showGarden) html+='<td style="text-align:center;font-weight:700;color:'+dc+'">'+(diff!==null?(diff>0?'+'+diff:diff):'－')+'</td>';
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-  }
+  html+='<h2>● 大項目別スコア（100点換算）</h2>'
+      +'<div class="chart-wrap"><div>'+buildRadarSvg(myScores,gAvg)+'</div>'
+      +'<div style="font-size:8.5pt;line-height:2">'
+      +(myScores?'<span style="color:#e67e22">●</span> 自己点<br>':'')
+      +(showGarden?'<span style="color:#4a7c6f">●</span> 園平均<br>':'')
+      +'</div></div>';
 
-  // 3. ABCD 割合表
-  var abcdTitle = isManager
-    ? '● A〜D 回答割合（大項目別・園全体 提出済み'+(window._lastSummaryData&&window._lastSummaryData.submittedN||'')+'名）'
-    : '● A〜D 回答割合（大項目別）';
-  html+='<h2>'+abcdTitle+'</h2>'
+  html+='<table><thead><tr><th style="text-align:left">大項目</th>'
+      +(myScores?'<th>自己点</th>':'')
+      +(showGarden?'<th>園平均</th>':'')
+      +((myScores&&showGarden)?'<th>差</th>':'')
+      +'</tr></thead><tbody>';
+  JIKOCHECK_SECTION_NAMES.forEach(function(lbl,i){
+    var my2=myScores?myScores[i]:null, avg2=gAvg?gAvg[i]:null;
+    var diff=(my2!==null&&avg2!==null)?(my2-avg2):null;
+    var dc=diff===null?'#999':diff>0?'#28a745':diff<0?'#dc3545':'#888';
+    html+='<tr><td>'+lbl+'</td>'
+         +(myScores?'<td style="text-align:center;font-weight:700;color:#e67e22">'+(my2!==null?my2:'－')+'</td>':'')
+         +(showGarden?'<td style="text-align:center;font-weight:700;color:#4a7c6f">'+(avg2!==null?avg2:'－')+'</td>':'')
+         +((myScores&&showGarden)?'<td style="text-align:center;font-weight:700;color:'+dc+'">'+(diff!==null?(diff>0?'+'+diff:diff):'－')+'</td>':'')
+         +'</tr>';
+  });
+  html+='</tbody></table>';
+
+  // 3. A〜D 選択率
+  html+='<h2>● A〜D 選択率（大項目別）</h2>'
       +'<table><thead><tr><th style="text-align:left">大項目</th>'
       +'<th class="A">A</th><th class="B">B</th><th class="C">C</th><th class="D">D</th>'
       +'</tr></thead><tbody>';
@@ -6186,16 +6203,25 @@ function openJikoCheckPrint() {
     html+='<tr><td>'+lbl+'</td>';
     ['A','B','C','D'].forEach(function(v){
       var pct=sc.t?Math.round(sc[v]/sc.t*100):0;
-      html+='<td style="text-align:center" class="'+v+'">'+pct+'%<br>'
-           +'<span style="font-size:7.5pt;font-weight:normal;color:#666">('+sc[v]+'問)</span></td>';
+      if (!isManager && myAbcd) {
+        var mc=myAbcd[i], mpct=mc.t?Math.round(mc[v]/mc.t*100):0;
+        html+='<td style="text-align:center" class="'+v+'">'
+             +'<div style="font-weight:700">'+mpct+'%</div>'
+             +'<div style="font-size:7.5pt;color:#888">（園 '+pct+'%）</div></td>';
+      } else {
+        html+='<td style="text-align:center" class="'+v+'">'+pct+'%<br>'
+             +'<span style="font-size:7.5pt;font-weight:normal;color:#666">('+sc[v]+'問)</span></td>';
+      }
     });
     html+='</tr>';
   });
+  var submN=(window._lastSummaryData&&window._lastSummaryData.submittedN)||gN||'';
+  html+='<tr><td colspan="5" style="font-size:7.5pt;color:#888;padding:3px 6px">'
+       +(isManager?'提出済み'+submN+'名の集計':'上段：自己　下段（）：園平均（提出済み'+submN+'名）')
+       +'</td></tr>';
   html+='</tbody></table>';
-
   html+='<div style="text-align:right;font-size:8.5pt;color:#666;margin-top:8px">社会福祉法人育保の杜　'+garden+'</div>'
       +'</body></html>';
-
   var w=window.open('','_blank','width=1000,height=800');
   w.document.write(html); w.document.close();
   setTimeout(function(){w.focus();w.print();},600);
