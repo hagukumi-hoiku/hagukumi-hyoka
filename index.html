@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.94</title>
+<title>はぐくみ評価 Ver.1.95</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.94',
+    description:'育保の杜 職員評価システム Ver.1.95',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.94</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.95</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -5168,62 +5168,118 @@ async function confirmJisshiSubmit() {
 // 印刷プレビュー
 function openJisshiPrint() {
   if (!_jisshiData) { toast('データを読み込んでください', 'error'); return; }
-  var year   = parseInt(document.getElementById('jisshiYearSel').value);
-  var garden = document.getElementById('jisshiGardenSel').value || SESSION.garden || '';
-  var d = collectJisshiFormData();
-  var scores = d.scores;
-  var opinions = d.opinions;
+  var year    = parseInt(document.getElementById('jisshiYearSel').value);
+  var garden  = document.getElementById('jisshiGardenSel').value || SESSION.garden || '';
+  var d       = collectJisshiFormData();
+  var scores  = d.scores;
+  var opinions= d.opinions;
   var summary = d.summary;
 
-  // 合計点・平均点の計算
+  // 全体 100点換算
   var totalScore = 0, totalCount = 0;
-  Object.keys(scores).forEach(function(k) { totalScore += scores[k]; totalCount++; });
-  var avgScore = totalCount > 0 ? (totalScore / totalCount).toFixed(2) : '－';
+  Object.keys(scores).forEach(function(k){ totalScore += scores[k]; totalCount++; });
+  var score100 = totalCount > 0 ? Math.round(totalScore / (totalCount * 4) * 100) : null;
+
+  // カテゴリ別 100点換算
+  var catScores = JISSHI_ITEMS.map(function(cat, ci) {
+    var sum = 0, cnt = 0;
+    cat.items.forEach(function(item, ii) {
+      var v = scores[ci + '_' + ii];
+      if (v) { sum += v; cnt++; }
+    });
+    return cnt > 0 ? Math.round(sum / (cnt * 4) * 100) : null;
+  });
+
+  function scoreColor(v) {
+    return v>=75?'#28a745':v>=50?'#17a2b8':v>=25?'#fd7e14':'#dc3545';
+  }
 
   var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">'
     + '<title>' + year + '年度　保育所の自己点検・自己評価　' + garden + '</title>'
     + '<style>'
-    + 'body{font-family:"Meiryo","MS Gothic",sans-serif;font-size:11pt;margin:20mm;color:#000}'
-    + 'h1{font-size:14pt;text-align:center;margin-bottom:6px}'
-    + 'h2{font-size:11pt;margin:0}'
-    + '.meta{text-align:right;font-size:9pt;color:#555;margin-bottom:16px}'
-    + '.intro{font-size:9pt;background:#f5f5f5;padding:8px;margin-bottom:14px;border:1px solid #ddd}'
-    + 'table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:14px}'
-    + 'th,td{border:1px solid #999;padding:5px 7px}'
+    + 'body{font-family:"Meiryo","MS Gothic",sans-serif;font-size:10pt;margin:15mm;color:#000}'
+    + 'h1{font-size:13pt;text-align:center;margin-bottom:4px}'
+    + '.meta{text-align:right;font-size:8.5pt;color:#555;margin-bottom:10px}'
+    + '.intro{font-size:8.5pt;background:#f5f5f5;padding:6px 10px;margin-bottom:10px;border:1px solid #ddd;border-radius:4px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:10px}'
+    + 'th,td{border:1px solid #aaa;padding:3px 6px}'
     + 'th{background:#e8e8e8;font-weight:700}'
-    + '.cat-row td{background:#f0f0f0;font-weight:700}'
-    + '.score-4{color:#28a745;font-weight:700}'
-    + '.score-3{color:#17a2b8;font-weight:700}'
-    + '.score-2{color:#fd7e14;font-weight:700}'
-    + '.score-1{color:#dc3545;font-weight:700}'
-    + '.summary-box{border:2px solid #333;padding:12px;margin-top:16px;min-height:80px}'
-    + '.footer{text-align:right;font-size:9pt;color:#666;margin-top:20px}'
-    + '@media print{@page{margin:15mm}}'
+    + '.cat-row td{background:#d0e8d0;font-weight:700}'
+    + '.score-4{color:#28a745;font-weight:700}.score-3{color:#17a2b8;font-weight:700}'
+    + '.score-2{color:#fd7e14;font-weight:700}.score-1{color:#dc3545;font-weight:700}'
+    + '.bottom-wrap{display:flex;gap:16px;margin-top:10px;align-items:flex-start}'
+    + '.score-summary{flex:0 0 220px;border:1px solid #aaa;border-radius:4px;overflow:hidden}'
+    + '.score-summary th{font-size:8.5pt;padding:4px 6px}'
+    + '.score-summary td{font-size:8.5pt;padding:4px 6px}'
+    + '.summary-box{flex:1;border:2px solid #333;padding:8px;min-height:100px;font-size:9pt}'
+    + '.footer{text-align:right;font-size:8.5pt;color:#666;margin-top:12px}'
+    + '@media print{@page{size:A4;margin:12mm}.bottom-wrap{display:flex}}'
     + '</style></head><body>'
     + '<h1>' + year + '年度　保育所の自己点検・自己評価</h1>'
     + '<div class="meta">' + garden + '　作成日：' + new Date().toLocaleDateString('ja-JP') + '</div>'
     + '<div class="intro">'
-    + '<strong>【評価基準】</strong>　4：達成している　／　3：おおむね達成している　／　2：やや不十分　／　1：改善（検討）を要する'
-    + '<span style="margin-left:24px">平均点：<strong>' + avgScore + '</strong>　（' + totalCount + '項目中）</span>'
+    + '<strong>【評価基準】</strong>　4：達成している　3：おおむね達成している　2：やや不十分　1：改善を要する'
+    + (score100 !== null ? '　　<strong>総合スコア：<span style="font-size:11pt;color:'+scoreColor(score100)+'">'+score100+'点</span>／100点</strong>（'+totalCount+'項目）' : '')
     + '</div>'
-    + '<table><thead><tr><th style="width:5%">No</th><th style="width:40%">内容</th><th style="width:8%">評価</th><th>意見・改善策</th></tr></thead><tbody>';
+    + '<table><thead><tr>'
+    + '<th style="width:4%">No</th><th style="width:38%">内容</th>'
+    + '<th style="width:6%">評価</th><th>意見・改善策</th>'
+    + '</tr></thead><tbody>';
 
   JISSHI_ITEMS.forEach(function(cat, ci) {
-    html += '<tr class="cat-row"><td colspan="4">' + (ci + 1) + '. ' + cat.cat + '</td></tr>';
+    var cs = catScores[ci];
+    html += '<tr class="cat-row"><td colspan="4">'
+          + (ci+1) + '. ' + cat.cat
+          + (cs !== null ? '　<span style="font-weight:400;font-size:8.5pt;color:'+scoreColor(cs)+'">（'+cs+'点／100点）</span>' : '')
+          + '</td></tr>';
     cat.items.forEach(function(item, ii) {
       var key = ci + '_' + ii;
-      var sc = scores[key] || '';
-      var scClass = sc ? 'score-' + sc : '';
-      html += '<tr><td style="text-align:center">' + (ii + 1) + '</td>'
+      var sc  = scores[key] || '';
+      html += '<tr>'
+            + '<td style="text-align:center">' + (ii+1) + '</td>'
             + '<td>' + escHtml(item) + '</td>'
-            + '<td class="' + scClass + '" style="text-align:center">' + (sc || '－') + '</td>'
-            + '<td>' + (ii === 0 ? escHtml(opinions[ci] || '') : '') + '</td></tr>';
+            + '<td class="score-'+sc+'" style="text-align:center">' + (sc||'－') + '</td>'
+            + '<td>' + (ii===0 ? escHtml(opinions[ci]||'') : '') + '</td>'
+            + '</tr>';
     });
   });
 
-  html += '</tbody></table>'
-        + '<div class="summary-box"><strong>【総評】</strong><br>' + escHtml(summary).replace(/\n/g,'<br>') + '</div>'
-        + '<div class="footer">社会福祉法人育保の杜　' + garden + '</div>'
+  html += '</tbody></table>';
+
+  // 下部：カテゴリ別100点換算表 と 総評を横並び
+  html += '<div class="bottom-wrap">'
+
+        // 左：カテゴリ別スコア表
+        + '<div class="score-summary">'
+        + '<table style="margin-bottom:0"><thead><tr>'
+        + '<th style="text-align:left">カテゴリ</th><th style="width:70px">100点換算</th>'
+        + '</tr></thead><tbody>';
+  JISSHI_ITEMS.forEach(function(cat, ci) {
+    var cs = catScores[ci];
+    var col = cs !== null ? scoreColor(cs) : '#aaa';
+    html += '<tr>'
+          + '<td style="font-size:8pt">' + (ci+1) + '. ' + cat.cat + '</td>'
+          + '<td style="text-align:center;font-weight:700;color:'+col+'">'
+          + (cs !== null ? cs+'点' : '－') + '</td>'
+          + '</tr>';
+  });
+  // 合計行
+  html += '<tr style="background:#f0f0f0">'
+        + '<td style="font-weight:700;font-size:8pt">総合スコア</td>'
+        + '<td style="text-align:center;font-weight:700;font-size:10pt;color:'+(score100!==null?scoreColor(score100):'#aaa')+'">'
+        + (score100!==null?score100+'点':'－') + '</td>'
+        + '</tr>';
+  html += '</tbody></table></div>'
+
+        // 右：総評
+        + '<div class="summary-box">'
+        + '<strong style="font-size:9pt">【総評】</strong><br>'
+        + escHtml(summary).replace(/\n/g,'<br>')
+        + '</div>'
+
+        + '</div>'; // bottom-wrap
+
+  html += '<div class="footer">社会福祉法人育保の杜　' + garden + '</div>'
         + '</body></html>';
 
   var w = window.open('', '_blank', 'width=900,height=700');
