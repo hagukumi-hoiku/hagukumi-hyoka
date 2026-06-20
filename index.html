@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.96</title>
+<title>はぐくみ評価 Ver.1.97</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.96',
+    description:'育保の杜 職員評価システム Ver.1.97',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.96</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.97</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -3721,8 +3721,7 @@ function openHistoryPrint(year) {
     var targets = r.list.filter(function(x){ return String(x.year) === String(year); });
     if (!targets.length) { toast(year + '年度のデータがありません','error'); return; }
 
-    var w = window.open('','_blank','width=860,height=700');
-    w.document.open();
+    var _printHtml = '';
     var css = 'body{font-family:sans-serif;font-size:13px;color:#222;padding:20px;max-width:840px;margin:0 auto}'
       + 'h1{font-size:17px;border-bottom:2px solid #2e5549;padding-bottom:6px;color:#2e5549;margin-bottom:12px}'
       + 'h2{font-size:13px;color:#2e5549;margin:14px 0 4px;border-left:3px solid #2e5549;padding-left:6px}'
@@ -3825,8 +3824,8 @@ function openHistoryPrint(year) {
       body += '<div style="margin-top:16px;display:flex;gap:32px;font-size:.75rem;color:#888"><span>本人確認：_______________</span><span>管理者確認：_______________</span><span>印刷日：' + new Date().toLocaleDateString('ja-JP') + '</span></div>';
     });
 
-    w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>' + year + '年度 評価シート</title><style>' + css + '</style></head><body>' + body + '</body></html>');
-    w.document.close();
+    _printHtml = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>' + year + '年度 評価シート</title><style>' + css + '</style></head><body>' + body + '</body></html>';
+    openPrintModal('🖨️ ' + year + '年度 評価シート', _printHtml);
   });
 }
 
@@ -4740,25 +4739,33 @@ function buildPrintSheet(d) {
 
 function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
 
+// 共通印刷モーダル表示ヘルパー
+function openPrintModal(title, htmlContent) {
+  document.getElementById('printModalTitle').textContent = title || '🖨️ 印刷プレビュー';
+  // iframeで独立したスタイルとして表示
+  var body = document.getElementById('printModalBody');
+  body.innerHTML = '';
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'width:100%;height:70vh;border:none;display:block';
+  body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(htmlContent);
+  iframe.contentDocument.close();
+  // 印刷ボタンをiframe対応に差し替え
+  var printBtn = document.querySelector('#printModal .btn-primary');
+  if (printBtn) {
+    printBtn.onclick = function() { iframe.contentWindow.focus(); iframe.contentWindow.print(); };
+  }
+  document.getElementById('printModal').classList.add('open');
+}
+
 function doPrint() {
   var c = document.getElementById('printSheetContent').innerHTML;
+  var iframe = document.querySelector('#printModal iframe');
+  if (iframe) { iframe.contentWindow.focus(); iframe.contentWindow.print(); return; }
+  // fallback
   var w = window.open('', '_blank', 'width=900,height=700');
-  var css = [
-    'body{font-family:sans-serif;padding:20px;font-size:12px;color:#2c2c2c}',
-    '.print-score-table{width:100%;border-collapse:collapse}',
-    '.print-score-table th{background:#4a7c6f;color:#fff;padding:7px 10px;text-align:left}',
-    '.print-score-table td{padding:6px 10px;border-bottom:1px solid #e0e0e0;vertical-align:top}',
-    '.print-score-table tr.cat-row td{background:#eef5f3;font-weight:700;color:#2e5549}',
-    '.print-score-circle{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#4a7c6f;color:#fff;font-weight:700}',
-    '.print-total-row{background:#eef5f3;font-weight:700}',
-    '.print-goal-box{background:#f8f8f6;border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:12px;line-height:1.7}',
-    '.print-label{font-size:.72rem;font-weight:700;color:#666;margin-bottom:3px}',
-    '.print-meta{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:.82rem}',
-    '.print-meta strong{color:#2c2c2c}',
-    '@media print{body{padding:0}}'
-  ].join('');
-  w.document.open();
-  w.document.write('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>はぐくみ評価 印刷</title><style>' + css + '</style></head><body>' + c + '</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:20px}</style></head><body>' + c + '</body></html>');
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); }, 500);
 }
@@ -5343,10 +5350,7 @@ function openJisshiPrint() {
   html += '<div class="footer">社会福祉法人育保の杜　' + garden + '</div>'
         + '</body></html>';
 
-  var w = window.open('', '_blank', 'width=900,height=700');
-  w.document.write(html);
-  w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 600);
+  openPrintModal('🖨️ 印刷プレビュー', html);
 }
 // ============================================================
 //  保育士の自己チェックシート
@@ -6336,9 +6340,7 @@ function openJikoCheckPrint() {
   html+='</tbody></table>';
   html+='<div style="text-align:right;font-size:8.5pt;color:#666;margin-top:8px">社会福祉法人育保の杜　'+garden+'</div>'
       +'</body></html>';
-  var w=window.open('','_blank','width=1000,height=800');
-  w.document.write(html); w.document.close();
-  setTimeout(function(){w.focus();w.print();},600);
+  openPrintModal('🖨️ 印刷プレビュー', html);
 }
 
 
