@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.97</title>
+<title>はぐくみ評価 Ver.1.99</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.97',
+    description:'育保の杜 職員評価システム Ver.1.99',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.97</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.99</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -779,7 +779,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
               </div>
             </div>
             <div style="margin-top:16px;text-align:right;">
-              <button class="btn btn-primary" onclick="evalStep(2)">次へ →</button>
+              <button class="btn btn-primary" onclick="evalNext(1)">次へ →</button>
             </div>
           </div>
         </div>
@@ -802,7 +802,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
               <button class="btn btn-outline" onclick="evalStep(1)">← 戻る</button>
               <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfTotal" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
-              <button class="btn btn-primary" onclick="evalStep(3)">次へ →</button>
+              <button class="btn btn-primary" onclick="evalNext(2)">次へ →</button>
             </div>
           </div>
         </div>
@@ -853,7 +853,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
               </div>
             </div>
             <div style="margin-top:16px;text-align:right;">
-              <button class="btn btn-primary" onclick="evalStepH2(2)">次へ →</button>
+              <button class="btn btn-primary" onclick="evalNextH2(1)">次へ →</button>
             </div>
           </div>
         </div>
@@ -876,7 +876,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
               <button class="btn btn-outline" onclick="evalStepH2(1)">← 戻る</button>
               <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfH2Total" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
-              <button class="btn btn-primary" onclick="evalStepH2(3)">次へ →</button>
+              <button class="btn btn-primary" onclick="evalNextH2(2)">次へ →</button>
             </div>
           </div>
         </div>
@@ -2377,6 +2377,22 @@ function evalStep(step) {
   if (step === 3) buildEvalConfirm();
 }
 
+// 「次へ」押下時：現在のステップの入力内容を検証してから遷移する
+// （戻るボタン（evalStep直接呼び出し）は検証しない）
+function evalNext(fromStep) {
+  if (fromStep === 1) {
+    const reflect = document.getElementById('reflectH1Input').value.trim();
+    const goal    = document.getElementById('goalH2Input').value.trim();
+    if (!reflect) { toast('上半期の振り返りを入力してください', 'error'); return; }
+    if (!goal)    { toast('下半期の個人目標を入力してください', 'error'); return; }
+    evalStep(2);
+  } else if (fromStep === 2) {
+    const unset = selfScores.filter(s => !s).length;
+    if (unset > 0) { toast(unset + '項目が未入力です。すべての項目を評価してください', 'error'); return; }
+    evalStep(3);
+  }
+}
+
 function buildEvalConfirm() {
   const evalType = getEvalType(SESSION.jobType);
   const items = EVAL_ITEMS[evalType];
@@ -2436,6 +2452,20 @@ function evalStepH2(step) {
     }
   });
   if (step === 3) buildEvalConfirmH2();
+}
+
+// 「次へ」押下時：現在のステップの入力内容を検証してから遷移する（下半期）
+function evalNextH2(fromStep) {
+  if (fromStep === 1) {
+    const reflectEl = document.getElementById('reflectH2Input');
+    const reflect = reflectEl ? reflectEl.value.trim() : '';
+    if (!reflect) { toast('下半期の振り返りを入力してください', 'error'); return; }
+    evalStepH2(2);
+  } else if (fromStep === 2) {
+    const unset = selfScoresH2.filter(s => !s).length;
+    if (unset > 0) { toast(unset + '項目が未入力です。すべての項目を評価してください', 'error'); return; }
+    evalStepH2(3);
+  }
 }
 
 async function loadEvalSelfH2() {
@@ -3664,20 +3694,26 @@ function buildHistoryTable(list, isAdmin, selectorOrder) {
       // 夏季・冬季 合計/ランク
       var bs = e ? e.bonusSummer : null;
       var bw = e ? e.bonusWinter : null;
-      function termCell(td, bg) {
-        if (!td || !td.bonusGrand) return '<td style="text-align:center;padding:6px 8px;background:' + bg + '"><span style="color:#bbb">-</span></td>';
+      function termCell(td, bg, excluded) {
+        if (!td || !td.bonusGrand) {
+          if (excluded) {
+            return '<td style="text-align:center;padding:6px 8px;background:' + bg + '"><span style="color:#999;font-size:.75rem;font-weight:600">対象外</span></td>';
+          }
+          return '<td style="text-align:center;padding:6px 8px;background:' + bg + '"><span style="color:#bbb">-</span></td>';
+        }
         return '<td style="text-align:center;padding:6px 8px;background:' + bg + '">'
           + '<span style="font-weight:700;color:var(--clr-primary-d)">' + td.bonusGrand + '点</span>'
           + (td.bonusGrandRank ? '<br>' + rk(td.bonusGrandRank) : '')
           + '</td>';
       }
-      html += termCell(bs, '#fdf0e8');
-      html += termCell(bw, '#e8f0fd');
+      html += termCell(bs, '#fdf0e8', e ? e.exclSummer : false);
+      html += termCell(bw, '#e8f0fd', e ? e.exclWinter : false);
+      var aTotalExcluded = e && e.exclSummer && e.exclWinter; // 年間を通して賞与評価除外設定の場合
       html += '<td style="text-align:center;padding:6px 8px;background:#fffef8">'
             + (aTotal > 0
                 ? '<span style="font-weight:700;color:var(--clr-primary-d)">' + Math.round(aTotal) + '点</span>'
                   + (bTerm ? '<br><span style="font-size:.68rem;color:#aaa">' + bTerm + '</span>' : '')
-                : '<span style="color:#bbb">-</span>')
+                : (aTotalExcluded ? '<span style="color:#999;font-size:.75rem;font-weight:600">対象外</span>' : '<span style="color:#bbb">-</span>'))
             + '</td>';
       html += '<td style="text-align:center;padding:6px 8px;background:#fffef8">'
             + (bVal > 0 ? '<span style="font-weight:600">' + bVal + '点</span>'
@@ -3692,8 +3728,9 @@ function buildHistoryTable(list, isAdmin, selectorOrder) {
   });
 
   html += '</tbody></table></div>';
+  html += '<p style="margin-top:8px;font-size:.75rem;color:var(--clr-text-s)">※「<span style="color:#999;font-weight:600">対象外</span>」は賞与評価等設定でその期の評価対象から除外されていたことを示します（未入力とは異なります）。</p>';
   if (!isAdmin) {
-    html += '<p style="margin-top:8px;font-size:.75rem;color:var(--clr-text-s)">🖨️ ボタンで各年度の評価内容（目標・振り返り・コメント）を印刷プレビューできます。</p>';
+    html += '<p style="margin-top:4px;font-size:.75rem;color:var(--clr-text-s)">🖨️ ボタンで各年度の評価内容（目標・振り返り・コメント）を印刷プレビューできます。</p>';
   }
   return html;
 }
@@ -3735,8 +3772,13 @@ function openHistoryPrint(year) {
     var body = '<button onclick="window.print()" style="float:right;padding:5px 12px;background:#2e5549;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-bottom:10px">🖨️ 印刷</button>';
 
     // 賞与評価 1期分のHTMLを生成（夏季/冬季 共通）
-    function bonusPeriodHtml(bd, label) {
-      if (!bd || !bd.bonusGrand) return '';
+    function bonusPeriodHtml(bd, label, excluded) {
+      if (!bd || !bd.bonusGrand) {
+        if (excluded) {
+          return '<h2>' + label + '賞与評価</h2><p style="color:#888;font-size:.85rem">対象外（賞与評価等設定によりこの期の評価対象から除外されています）</p>';
+        }
+        return '';
+      }
       var h = '<h2>' + label + '賞与評価</h2>';
       // 評価項目テーブル
       if ((bd.bonusScores1 && bd.bonusScores1.length) || (bd.bonusScores2 && bd.bonusScores2.length)) {
@@ -3806,8 +3848,8 @@ function openHistoryPrint(year) {
       }
 
       // ── 賞与評価（夏季・冬季） ────────────────────────────────────────
-      body += bonusPeriodHtml(e.bonusSummer, '夏季');
-      body += bonusPeriodHtml(e.bonusWinter, '冬季');
+      body += bonusPeriodHtml(e.bonusSummer, '夏季', e.exclSummer);
+      body += bonusPeriodHtml(e.bonusWinter, '冬季', e.exclWinter);
       // 夏季・冬季 両方なく、主キーにデータがある場合（後方互換）
       if (!e.bonusSummer && !e.bonusWinter && e.bonusATotal > 0) {
         body += bonusPeriodHtml({
@@ -4070,7 +4112,7 @@ async function loadBonusList() {
     var useMax = getBonusRawMax(evalType).total;
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
     // A: 70点満点換算（四捨五入）
-    var aTotal70 = (has1||has2) ? Math.round((rawTotal / useMax) * 70) : null;
+    var aTotal70 = (has1||has2) ? Math.floor((rawTotal / useMax) * 70) : null;
     var bVal  = b ? (b.bBonus||0) : null;
     var cVal  = b ? (b.cAdj||0)  : null;
     // 確定合計 = A（70点）+ B加算 + C加減 → 100点満点
@@ -5119,7 +5161,7 @@ function updateJisshiScore(prevData) {
   if (count === 0) { bar.style.display='none'; return; }
 
   bar.style.display = '';
-  var score100 = Math.round(total / (count * 4) * 100);
+  var score100 = Math.floor(total / (count * 4) * 100);
   var col = score100>=75?'#28a745':score100>=50?'#17a2b8':score100>=25?'#fd7e14':'#dc3545';
   curEl.textContent = score100;
   curEl.style.color = col;
@@ -5142,7 +5184,7 @@ function updateJisshiScore(prevData) {
     var ps=prevData.scores||{}, pt=0, pc=0;
     Object.keys(ps).forEach(function(k){ pt+=parseInt(ps[k])||0; pc++; });
     if (pc>0) {
-      var prev100=Math.round(pt/(pc*4)*100);
+      var prev100=Math.floor(pt/(pc*4)*100);
       var diff=score100-prev100;
       document.getElementById('jisshiScorePrev').textContent=prev100;
       var diffEl=document.getElementById('jisshiScoreDiff');
@@ -5264,7 +5306,7 @@ function openJisshiPrint() {
   function calc100(sc) {
     var sum=0, cnt=0;
     Object.keys(sc).forEach(function(k){ if(sc[k]){sum+=sc[k];cnt++;} });
-    return cnt>0 ? Math.round(sum/(cnt*4)*100) : null;
+    return cnt>0 ? Math.floor(sum/(cnt*4)*100) : null;
   }
   var score100  = calc100(scores);
 
@@ -5887,7 +5929,7 @@ function _calcJikoScores(answers) {
     });
   });
   return sums.map(function(s,i){
-    return cnts[i] ? Math.round(s / (cnts[i] * 4) * 100) : null;
+    return cnts[i] ? Math.floor(s / (cnts[i] * 4) * 100) : null;
   });
 }
 
@@ -5917,7 +5959,7 @@ function _renderJikoSummary(data) {
       var sc = _calcJikoScores(rec.answers);
       sc.forEach(function(v,i){ if(v!==null) gAvg[i] += v; });
     });
-    gAvg = gAvg.map(function(s){ return Math.round(s/gN); });
+    gAvg = gAvg.map(function(s){ return Math.floor(s/gN); });
   }
   // 印刷プレビュー用にグローバル保存
   var gardenSecAbcd = JIKOCHECK_SECTION_NAMES.map(function(){ return {A:0,B:0,C:0,D:0,t:0}; });
