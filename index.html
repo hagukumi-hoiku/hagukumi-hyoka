@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.1.99</title>
+<title>はぐくみ評価 Ver.2.00</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.1.99',
+    description:'育保の杜 職員評価システム Ver.2.00',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.1.99</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.00</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -3971,26 +3971,33 @@ async function loadAdminBonusSummary() {
   var term = document.getElementById('bonusTermSel') ? document.getElementById('bonusTermSel').value : '';
   var r = await api({ action:'calcAdminBonus', year, term });
   if (!r.ok) return;
+  function rkBadgeSm(rank) {
+    return rank ? '<span class="rank-badge rank-' + escHtml(rank) + '" style="width:22px;height:22px;font-size:.72rem">' + escHtml(rank) + '</span>' : '<span style="color:#ccc">-</span>';
+  }
   var html = '<div style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:6px">はぐくみ保育園 ／ 園長・主任・統括リーダー ' + r.count + '名の平均から算出</div>';
   if (r.details && r.details.length) {
     html += '<table style="font-size:.8rem;border-collapse:collapse;width:100%;margin-bottom:8px">'
       + '<thead><tr style="background:var(--clr-bg2)">'
       + '<th style="padding:4px 8px;text-align:left">職種</th><th style="padding:4px 8px;text-align:left">氏名</th>'
       + '<th style="padding:4px 8px;text-align:center">A合計</th><th style="padding:4px 8px;text-align:center">B加算</th>'
+      + '<th style="padding:4px 8px;text-align:center">合計</th><th style="padding:4px 8px;text-align:center">ランク</th>'
       + '</tr></thead><tbody>';
     r.details.forEach(function(d) {
       html += '<tr><td style="padding:3px 8px">' + escHtml(d.jobType) + '</td>'
         + '<td style="padding:3px 8px">' + escHtml(d.name) + '</td>'
         + '<td style="text-align:center;padding:3px 8px">' + d.aTotal + '点</td>'
         + '<td style="text-align:center;padding:3px 8px">' + d.bBonus + '点</td>'
+        + '<td style="text-align:center;padding:3px 8px;font-weight:600">' + d.grandTotal + '点</td>'
+        + '<td style="text-align:center;padding:3px 8px">' + rkBadgeSm(d.grandRank) + '</td>'
         + '</tr>';
     });
     html += '</tbody></table>';
   }
-  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;font-size:.9rem;font-weight:600">'
+  html += '<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;font-size:.9rem;font-weight:600">'
     + '<span>A平均: <span style="color:var(--clr-primary-d);font-size:1.1rem">' + r.aAvg + '点</span></span>'
     + '<span>B平均: <span style="color:var(--clr-primary-d);font-size:1.1rem">' + r.bAvg + '点</span></span>'
     + '<span style="border-left:2px solid var(--clr-border);padding-left:16px">A+B合計: <span style="color:var(--clr-primary-d);font-size:1.2rem;font-weight:700">' + r.grandAvg + '点</span></span>'
+    + '<span style="display:flex;align-items:center;gap:6px">総合評価ランク：' + rkBadgeSm(r.grandRank) + '</span>'
     + '</div>';
   document.getElementById('adminBonusContent').innerHTML = html;
 }
