@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.03</title>
+<title>はぐくみ評価 Ver.2.04</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.03',
+    description:'育保の杜 職員評価システム Ver.2.04',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.03</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.04</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -4118,7 +4118,20 @@ async function loadBonusList() {
   var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
   var maxAll = max1 + max2; // 220
 
+  // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
+  var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
+  var bandKey = bandGarden || '__default__';
+  if (!bonusBandCache[bandKey]) {
+    var bandRes = await api({ action:'getBonusRankBands', garden: bandGarden });
+    bonusBandCache[bandKey] = {
+      bands: (bandRes.ok && bandRes.bands) ? bandRes.bands : DEFAULT_BONUS_RANK_BANDS_JS,
+      includeEncho: !!(bandRes.ok && bandRes.includeEncho)
+    };
+  }
+  var bandSettings = bonusBandCache[bandKey];
+
   // 評価ランク分布集計（相対評価の偏りチェック用。SSはSに統合してカウント）
+  // 園長評価を含めるかは目安設定（既定：含めない）に従う
   var rankCounts = { S:0, A:0, B:0, C:0, D:0, E:0 };
   var rankTotal = 0;
 
@@ -4142,8 +4155,9 @@ async function loadBonusList() {
       : null;
     var gRank = grand !== null ? calcRankJS(grand, 100) : '';
 
-    // ランク分布集計（主任ユーザーの表示には含めない。SS→Sに統合）
-    if (!isSyuninUser && gRank) {
+    // ランク分布集計（主任ユーザーの表示には含めない。SS→Sに統合。
+    // 園長評価は目安設定の includeEncho が true の場合のみ含める（既定：含めない）
+    if (!isSyuninUser && gRank && (bandSettings.includeEncho || s.jobType !== '園長')) {
       var effRank = (gRank === 'SS') ? 'S' : gRank;
       if (rankCounts[effRank] !== undefined) { rankCounts[effRank]++; rankTotal++; }
     }
@@ -4198,14 +4212,7 @@ async function loadBonusList() {
       + '</tr>';
   }).join('');
 
-  // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
-  var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
-  var bandKey = bandGarden || '__default__';
-  if (!bonusBandCache[bandKey]) {
-    var bandRes = await api({ action:'getBonusRankBands', garden: bandGarden });
-    bonusBandCache[bandKey] = (bandRes.ok && bandRes.bands) ? bandRes.bands : DEFAULT_BONUS_RANK_BANDS_JS;
-  }
-  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bonusBandCache[bandKey]);
+  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bandSettings.bands);
 }
 
 // ============================================================
@@ -4759,9 +4766,9 @@ var bonusBandCache = {}; // garden(またはキー'') → bands
 
 function openBonusBandModal() {
   var gardenSel = document.getElementById('bandModalGardenSel');
-  // 現在賞与一覧で選んでいる園があれば初期選択に反映
-  var curGarden = document.getElementById('bonusGardenSel') ? document.getElementById('bonusGardenSel').value : '';
-  if (curGarden) gardenSel.value = curGarden;
+  // 現在賞与一覧で選んでいる園（「全園」選択中も含む）を初期選択に反映
+  var gardenSelEl = document.getElementById('bonusGardenSel');
+  if (gardenSelEl) gardenSel.value = gardenSelEl.value;
   loadBonusBandModalData();
   document.getElementById('bonusBandModal').classList.add('open');
 }
@@ -4772,6 +4779,7 @@ async function loadBonusBandModalData() {
   var r = await api({ action:'getBonusRankBands', garden: garden });
   var bands = (r.ok && r.bands) ? r.bands : DEFAULT_BONUS_RANK_BANDS_JS;
   renderBandModalTable(bands);
+  document.getElementById('bandModalIncludeEncho').checked = !!(r.ok && r.includeEncho);
 }
 
 function renderBandModalTable(bands) {
@@ -4788,10 +4796,12 @@ function renderBandModalTable(bands) {
 
 function resetBonusBandModalDefaults() {
   renderBandModalTable(DEFAULT_BONUS_RANK_BANDS_JS);
+  document.getElementById('bandModalIncludeEncho').checked = false; // 既定：園長評価は含めない
 }
 
 async function saveBonusBandSettings() {
   var garden = document.getElementById('bandModalGardenSel').value;
+  var includeEncho = document.getElementById('bandModalIncludeEncho').checked;
   var bands = {};
   var rows = document.querySelectorAll('#bandModalBody tr');
   var invalid = false;
@@ -4805,7 +4815,7 @@ async function saveBonusBandSettings() {
   });
   if (invalid) { toast('入力値が不正です（0〜100で、下限≦上限にしてください）', 'error'); return; }
 
-  var r = await api({ action:'saveBonusRankBands', staffId: SESSION.staffId, garden: garden, bands: bands });
+  var r = await api({ action:'saveBonusRankBands', staffId: SESSION.staffId, garden: garden, bands: bands, includeEncho: includeEncho });
   if (!r.ok) { toast(r.msg || '保存に失敗しました', 'error'); return; }
   toast('目安設定を保存しました');
   bonusBandCache = {}; // キャッシュをクリアして再取得させる
@@ -6639,7 +6649,11 @@ function openJikoCheckPrint() {
         各ランクの割合の目安（％）を設定します。実績がこの上限を超えると分布チェックで警告表示されます。<br>
         必ずしも全ランクに評価対象者がいる必要はなく、中央（B・C）が多く両端（S・E）が少ない「ひし形」に近い分布が理想です。
       </p>
-      <table style="width:100%;font-size:.85rem;border-collapse:collapse" id="bandModalTable">
+      <div class="fgroup" style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="checkbox" id="bandModalIncludeEncho" style="width:16px;height:16px">
+        <label for="bandModalIncludeEncho" style="font-size:.85rem;cursor:pointer">園長の評価をこの分布チェックに含める（既定：含めない）</label>
+      </div>
+      <table style="width:100%;font-size:.85rem;border-collapse:collapse;margin-top:10px" id="bandModalTable">
         <thead><tr style="background:var(--clr-bg2)">
           <th style="padding:6px 8px;text-align:left">ランク</th>
           <th style="padding:6px 8px;text-align:center">下限（％）</th>
