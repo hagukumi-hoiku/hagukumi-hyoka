@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.01</title>
+<title>はぐくみ評価 Ver.2.02</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.01',
+    description:'育保の杜 職員評価システム Ver.2.02',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.01</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.02</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1139,7 +1139,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
           </div>
           <!-- 評価ランク分布チェック（相対評価の偏りチェック） -->
           <div id="bonusRankDistPanel" style="display:none;margin-bottom:16px;padding:14px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border)">
-            <div style="font-size:.82rem;font-weight:700;color:var(--clr-primary-d);margin-bottom:8px">📈 評価ランク分布チェック（相対評価の偏り確認）</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+              <div style="font-size:.82rem;font-weight:700;color:var(--clr-primary-d)">📈 評価ランク分布チェック（相対評価の偏り確認）</div>
+              <button class="btn btn-outline btn-sm admin-only-ctrl" style="display:none" onclick="openBonusBandModal()">⚙ 目安設定</button>
+            </div>
             <div id="bonusRankDistContent"></div>
           </div>
           <div class="table-wrap">
@@ -4195,22 +4198,31 @@ async function loadBonusList() {
       + '</tr>';
   }).join('');
 
-  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser);
+  // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
+  var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
+  var bandKey = bandGarden || '__default__';
+  if (!bonusBandCache[bandKey]) {
+    var bandRes = await api({ action:'getBonusRankBands', garden: bandGarden });
+    bonusBandCache[bandKey] = (bandRes.ok && bandRes.bands) ? bandRes.bands : DEFAULT_BONUS_RANK_BANDS_JS;
+  }
+  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bonusBandCache[bandKey]);
 }
 
 // ============================================================
 //  評価ランク分布チェック（相対評価の偏りを可視化）
-//  目安分布: S 10%未満 / A 15%前後 / B 30〜70% / C 30〜70% / D 15〜20% / E 10%未満
+//  「ひし形」（中央のB・Cが多く、両端のS・Eが少ない）分布が理想。
+//  各ランクに必ず対象者がいる必要はないため、判定は上限超過のみで行う。
+//  目安の割合（％）は admin が園ごとに設定可能（bonusBandCache経由）。
 //  （SSはSに統合してカウント）
 // ============================================================
-function renderBonusRankDist(counts, total, hide) {
+function renderBonusRankDist(counts, total, hide, bands) {
   var panel = document.getElementById('bonusRankDistPanel');
   if (!panel) return;
   if (hide || !total) { panel.style.display = 'none'; return; }
   panel.style.display = '';
 
   var RANKS  = ['S','A','B','C','D','E'];
-  var BANDS  = { S:{min:0,max:10}, A:{min:10,max:20}, B:{min:30,max:70}, C:{min:30,max:70}, D:{min:15,max:20}, E:{min:0,max:10} };
+  bands = bands || DEFAULT_BONUS_RANK_BANDS_JS;
   var COLORS = { S:'#9e9e9e', A:'#cd7f32', B:'#43a047', C:'#fbc02d', D:'#fb8c00', E:'#ad1457' };
 
   var scaleMax = 80;                 // グラフの目盛り上限（%）
@@ -4226,16 +4238,15 @@ function renderBonusRankDist(counts, total, hide) {
   RANKS.forEach(function(rk, idx) {
     var count = counts[rk] || 0;
     var pct   = total ? (count / total * 100) : 0;
-    var band  = BANDS[rk];
+    var band  = bands[rk] || DEFAULT_BONUS_RANK_BANDS_JS[rk];
     var y     = padTop + idx * rowH;
     var barH  = rowH - 14;
     var bandX = xPos(band.min), bandW = xPos(band.max) - xPos(band.min);
     var barX  = xPos(0), barW = pct > 0 ? Math.max(xPos(pct) - xPos(0), 2) : 0;
 
-    var status = 'ok';
-    if (pct > band.max) status = 'high';
-    else if (band.min > 0 && pct < band.min) status = 'low';
-    var barColor = (status === 'ok') ? COLORS[rk] : '#e53935';
+    // 判定は上限超過のみ（各ランクに必ず対象者がいる必要はないため下限未達は警告しない）
+    var isHigh = pct > band.max;
+    var barColor = isHigh ? '#e53935' : COLORS[rk];
 
     rows += '<g>'
       + '<text x="2" y="' + (y + barH / 2 + 4) + '" font-size="13" font-weight="700" fill="#555">' + rk + '</text>'
@@ -4246,7 +4257,7 @@ function renderBonusRankDist(counts, total, hide) {
       + '<text x="' + (chartW - rightW + 6) + '" y="' + (y + barH / 2 + 4) + '" font-size="12" fill="#444">' + count + '名（' + Math.round(pct) + '%）</text>'
       + '</g>';
 
-    if (status === 'high') {
+    if (isHigh) {
       if (rk === 'S' || rk === 'A') {
         adviceLines.push(rk + '評価が目安上限（' + band.max + '%）を超えています（実績' + Math.round(pct) + '%）。僅差の対象者はC加減で-1〜-3点調整すると、より実態に近い分布になります。');
       } else if (rk === 'D' || rk === 'E') {
@@ -4254,8 +4265,6 @@ function renderBonusRankDist(counts, total, hide) {
       } else {
         adviceLines.push(rk + '評価が目安上限（' + band.max + '%）を超えています（実績' + Math.round(pct) + '%）。評価が中位に集中しすぎていないか確認してください。');
       }
-    } else if (status === 'low') {
-      adviceLines.push(rk + '評価が目安下限（' + band.min + '%）を下回っています（実績' + Math.round(pct) + '%）。評価が上下に偏っている可能性があります。');
     }
   });
 
@@ -4265,7 +4274,12 @@ function renderBonusRankDist(counts, total, hide) {
       + '</ul>'
     : '<p style="margin:10px 0 0;font-size:.82rem;color:var(--clr-success)">✅ 全体的にバランスの取れた評価分布になっています。</p>';
 
-  var html = '<div style="font-size:.76rem;color:var(--clr-text-s);margin-bottom:6px">評価確定済み ' + total + '名が対象／緑の帯が目安範囲（S10%未満・A15%前後・B30〜70%・C30〜70%・D15〜20%・E10%未満）</div>'
+  var bandDesc = RANKS.map(function(rk) {
+    var b = bands[rk] || DEFAULT_BONUS_RANK_BANDS_JS[rk];
+    return rk + (b.max) + '%まで';
+  }).join('・');
+
+  var html = '<div style="font-size:.76rem;color:var(--clr-text-s);margin-bottom:6px">評価確定済み ' + total + '名が対象／緑の帯が目安範囲（上限：' + bandDesc + '）／中央（B・C）が多く両端（S・E）が少ない「ひし形」分布が理想です</div>'
     + '<svg viewBox="0 0 ' + chartW + ' ' + svgH + '" style="width:100%;max-width:600px;height:auto;display:block">' + rows + '</svg>'
     + adviceHtml;
 
@@ -4700,6 +4714,70 @@ async function saveBonusEval() {
 }
 
 function closeBonusModal() { document.getElementById('bonusModal').classList.remove('open'); }
+
+// ============================================================
+//  賞与評価 ランク分布 目安設定モーダル（admin専用）
+// ============================================================
+const DEFAULT_BONUS_RANK_BANDS_JS = {
+  S:{min:0,max:10}, A:{min:10,max:20}, B:{min:30,max:70}, C:{min:30,max:70}, D:{min:15,max:20}, E:{min:0,max:10}
+};
+var bonusBandCache = {}; // garden(またはキー'') → bands
+
+function openBonusBandModal() {
+  var gardenSel = document.getElementById('bandModalGardenSel');
+  // 現在賞与一覧で選んでいる園があれば初期選択に反映
+  var curGarden = document.getElementById('bonusGardenSel') ? document.getElementById('bonusGardenSel').value : '';
+  if (curGarden) gardenSel.value = curGarden;
+  loadBonusBandModalData();
+  document.getElementById('bonusBandModal').classList.add('open');
+}
+function closeBonusBandModal() { document.getElementById('bonusBandModal').classList.remove('open'); }
+
+async function loadBonusBandModalData() {
+  var garden = document.getElementById('bandModalGardenSel').value;
+  var r = await api({ action:'getBonusRankBands', garden: garden });
+  var bands = (r.ok && r.bands) ? r.bands : DEFAULT_BONUS_RANK_BANDS_JS;
+  renderBandModalTable(bands);
+}
+
+function renderBandModalTable(bands) {
+  var RANKS = ['S','A','B','C','D','E'];
+  var html = RANKS.map(function(rk) {
+    var b = bands[rk] || DEFAULT_BONUS_RANK_BANDS_JS[rk];
+    return '<tr><td style="padding:5px 8px;font-weight:700">' + rk + '</td>'
+      + '<td style="padding:5px 8px;text-align:center"><input type="number" class="finput band-min" data-rank="' + rk + '" value="' + b.min + '" min="0" max="100" style="width:70px;text-align:center"></td>'
+      + '<td style="padding:5px 8px;text-align:center"><input type="number" class="finput band-max" data-rank="' + rk + '" value="' + b.max + '" min="0" max="100" style="width:70px;text-align:center"></td>'
+      + '</tr>';
+  }).join('');
+  document.getElementById('bandModalBody').innerHTML = html;
+}
+
+function resetBonusBandModalDefaults() {
+  renderBandModalTable(DEFAULT_BONUS_RANK_BANDS_JS);
+}
+
+async function saveBonusBandSettings() {
+  var garden = document.getElementById('bandModalGardenSel').value;
+  var bands = {};
+  var rows = document.querySelectorAll('#bandModalBody tr');
+  var invalid = false;
+  rows.forEach(function(tr) {
+    var minEl = tr.querySelector('.band-min');
+    var maxEl = tr.querySelector('.band-max');
+    var rk = minEl.dataset.rank;
+    var min = Number(minEl.value), max = Number(maxEl.value);
+    if (isNaN(min) || isNaN(max) || min < 0 || max > 100 || min > max) invalid = true;
+    bands[rk] = { min: min, max: max };
+  });
+  if (invalid) { toast('入力値が不正です（0〜100で、下限≦上限にしてください）', 'error'); return; }
+
+  var r = await api({ action:'saveBonusRankBands', staffId: SESSION.staffId, garden: garden, bands: bands });
+  if (!r.ok) { toast(r.msg || '保存に失敗しました', 'error'); return; }
+  toast('目安設定を保存しました');
+  bonusBandCache = {}; // キャッシュをクリアして再取得させる
+  closeBonusBandModal();
+  loadBonusList(); // 分布チェックを最新設定で再描画
+}
 
 function openBonusPrint() {
   if (!currentBonusStaff) return;
@@ -6502,6 +6580,46 @@ function openJikoCheckPrint() {
       <div style="display:flex;gap:8px">
         <button class="btn btn-outline" onclick="closeBonusModal()">閉じる</button>
         <button class="btn btn-primary" onclick="saveBonusEval()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 賞与評価 ランク分布 目安設定モーダル（admin専用） -->
+<div class="modal-overlay" id="bonusBandModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ 評価ランク分布 目安設定</div>
+      <button class="modal-close" onclick="closeBonusBandModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgroup">
+        <label class="flabel">対象園</label>
+        <select class="fselect" id="bandModalGardenSel" style="width:100%" onchange="loadBonusBandModalData()">
+          <option value="はぐくみ保育園">はぐくみ保育園</option>
+          <option value="第2はぐくみ保育園">第2はぐくみ保育園</option>
+          <option value="">全園共通（園別設定がない場合のデフォルト）</option>
+        </select>
+      </div>
+      <p style="font-size:.78rem;color:var(--clr-text-s);margin:8px 0 12px;line-height:1.6">
+        各ランクの割合の目安（％）を設定します。実績がこの上限を超えると分布チェックで警告表示されます。<br>
+        必ずしも全ランクに評価対象者がいる必要はなく、中央（B・C）が多く両端（S・E）が少ない「ひし形」に近い分布が理想です。
+      </p>
+      <table style="width:100%;font-size:.85rem;border-collapse:collapse" id="bandModalTable">
+        <thead><tr style="background:var(--clr-bg2)">
+          <th style="padding:6px 8px;text-align:left">ランク</th>
+          <th style="padding:6px 8px;text-align:center">下限（％）</th>
+          <th style="padding:6px 8px;text-align:center">上限（％）</th>
+        </tr></thead>
+        <tbody id="bandModalBody"></tbody>
+      </table>
+      <p style="font-size:.75rem;color:var(--clr-text-s);margin-top:10px">※下限は目安の参考値としてのみ使用し、警告判定には上限のみを使用します。</p>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="resetBonusBandModalDefaults()">デフォルトに戻す</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeBonusBandModal()">閉じる</button>
+        <button class="btn btn-primary" onclick="saveBonusBandSettings()">💾 保存</button>
       </div>
     </div>
   </div>
