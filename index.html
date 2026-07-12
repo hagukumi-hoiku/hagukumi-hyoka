@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.12</title>
+<title>はぐくみ評価 Ver.2.16</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -579,7 +579,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.12',
+    description:'育保の杜 職員評価システム Ver.2.16',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -608,7 +608,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.12</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.16</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -5700,8 +5700,8 @@ const JIKOCHECK_PAGES = [
     '①-17　あなたは、一人ひとりの子どもに目が行き届いていたか振り返り、これからの保育の課題を見つけることができますか。'
   ]},
   { id:'p2', title:'②-1　保育計画・指導計画', sectionIdx:1, questions:[
-    '②-1　あなたは、指導計画を作成するとき、「保育所保育指針」を読み、参考にしていますか。',
-    '②-2　あなたは、保育園の方針である理念等をもとにして、指導計画を作成していますか。',
+    '②-1　あなたは、保育所保育指針を参考に園方針等を考慮した全体の計画、指導計画等を作成していますか。また、その内容を理解し他の職員に説明できますか。',
+    '②-2　あなたは、保育園全体の0歳から小学校までの一貫した発達の連続性を考慮して、指導計画を作成していますか。',
     '②-3　保育には指導計画（年・月・週・日案など）の作成という、あらかじめ見通しをもった計画性の必要性を踏まえ、実際に見通しをもった指導計画を作成できていますか。',
     '②-4　あなたの月・週案などには、教育的側面（五領域の視点）だけでなく、養護的側面（基礎的事項）もしっかり盛り込まれていますか。',
     '②-5　あなたは、指導計画を作成するときに、地域の実態や保護者の意向・希望などを考慮していますか。',
@@ -5820,7 +5820,7 @@ const JIKOCHECK_PAGES = [
     '④-4　保護者が育児の悩みや心配事を話してみたくなり、一緒に考えてくれる存在であると思えるよう、こちらからすすんで触れ合うことを心がけていますか。',
     '④-5　例えあなたの保育に批判的な保護者であっても、対立せずに受容し、意見や要求を聞こうとする姿勢がもてますか。',
     '④-6　あなたは、保育に関する保護者の考えや提案を積極的に聞き、適切と思うものについては、園長等と話し合ったうえで受け入れるよう努めていますか。',
-    '④-7　保育園が保護者に保育参加（保育に直接加わる）をしてもらう方針を決めた場合、協力できますか。',
+    '④-7　保育園が保護者に保育参加（保育に直接加わる）をしてもらう方針を決めた場合、積極的に協力しますか。',
     '④-8　あなたは、連絡帳を、保護者がその内容をよく理解でき、楽しみにするような書き方をしていますか。',
     '④-9　保護者同士が相談相手になれるよう、お互いをよく知り合う機会を多く設ける努力をしていますか。',
     '④-10　地域の人たちによるボランティア活動などをどのように保育に取り入れたらよいか、職員間で話し合うとともに、あなた自身も具体的な見通しを説明できますか。',
@@ -5834,9 +5834,9 @@ const JIKOCHECK_PAGES = [
     '⑤-1　あなたは、日頃の保育内容・子どもたちへの保育方法のすべてが、地域の子育て支援につながることを自覚し、日々の保育の中でどう意識して実践しているか説明できますか。',
     '⑤-2　あなたは、保育園には子育ての相談などの「地域の子育て支援」という役割が求められていることを受け止め、実際に積極的にかかわっていますか。',
     '⑤-3　あなたは、相談の基本原理（受容・相互信頼関係・個別性・自己決定・秘密保持）について理解し、実際の子育て相談の場面で生かせていますか。',
-    '⑤-4　あなたは、本来業務の保育に支障がない限り、電話相談などの子育て支援を行いたいと思いますか。',
+    '⑤-4　あなたは、本来業務の保育に支障がない限り、園が行う子育て支援に率先して参加しますか。',
     '⑤-5　あなたは、子育て相談を実施する際に連携すべき機関等（保健センター・児童相談所・福祉事務所・医療機関等）の機能について理解し、必要な場面で保護者に説明できますか。',
-    '⑤-6　あなたは、子育てサークル・子育てボランティアの育成・支援に関心があり、勤務園が実施するときには、協力するつもりですか。',
+    '⑤-6　あなたは、子育てサークル・子育てボランティアの育成・支援に関心があり、勤務園が実施するときには、率先して参加しますか。',
     '⑤-7　保育園が発信元になって、園の保護者以外にも子育ての大切さや喜びを伝える役割を担っていることを理解し、その具体的な取組を説明できますか。',
     '⑤-8　地域と良好な関係を築けるように、挨拶をしたり行事に誘ったりして地域の方が気軽に保育園を利用できるようにしていますか。'
   ]},
@@ -5866,7 +5866,7 @@ const JIKOCHECK_PAGES = [
     '⑦-8　あなたは、他のクラスの保育について、疑問や感想・意見をお互いの向上のために、言葉に配慮しながら素直に述べることができますか。',
     '⑦-9　あなたは研修で得た内容・成果は、園の職員にわかるように丁寧に説明し、意見交換をするために役立てていますか。',
     '⑦-10　あなたは、積極的に研究グループやサークルに参加して独自に勉強していますか。',
-    '⑦-11　あなたは、研修会の機会があれば、自費でも参加したいと思いますか。',
+    '⑦-11　あなたは、研修会の機会があれば、自費でも積極的に参加しますか。',
     '⑦-12　あなたの保育実践について、園長はじめ他の職員が把握できる保育日誌などの記録が書けていますか。'
   ]}
 ];
