@@ -5005,7 +5005,7 @@ function openPrintPreview(mode) {
     const goalH2Val = document.getElementById('goalH2Input') ? document.getElementById('goalH2Input').value : (currentRecord && currentRecord.goalH2 || '');
     html = buildPrintSheet({ title:'自己評価シート', year, name:SESSION.name, jobType:SESSION.jobType, garden:SESSION.garden,
       goalH1:(currentRecord&&currentRecord.goalH1)||'', reflectH1:reflectVal, goalH2:goalH2Val,
-      scores:selfScores, items, mode:'self', submitDate:currentRecord?(currentRecord.evalSubmitDate||''):'' });
+      scores:(currentRecord && currentRecord.selfScoresH1 && currentRecord.selfScoresH1.length ? currentRecord.selfScoresH1 : selfScores), items, mode:'self', submitDate:currentRecord?(currentRecord.evalSubmitDate||''):'' });
   } else if (mode === 'mgr') {
     const mgrItems = EVAL_ITEMS[mgrEvalType];
     const detail = window._mgrDetail || {};
