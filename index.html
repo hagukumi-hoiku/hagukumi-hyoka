@@ -5001,8 +5001,10 @@ function openPrintPreview(mode) {
   const year = currentYear();
   let html = '';
   if (mode === 'self') {
-    const reflectVal = document.getElementById('reflectH1Input') ? document.getElementById('reflectH1Input').value : (currentRecord && currentRecord.reflectH1 || '');
-    const goalH2Val = document.getElementById('goalH2Input') ? document.getElementById('goalH2Input').value : (currentRecord && currentRecord.goalH2 || '');
+    const reflectH1El = document.getElementById('reflectH1Input');
+    const reflectVal = (currentRecord && currentRecord.reflectH1) ? currentRecord.reflectH1 : (reflectH1El ? reflectH1El.value : '');
+    const goalH2El = document.getElementById('goalH2Input');
+    const goalH2Val = (currentRecord && currentRecord.goalH2) ? currentRecord.goalH2 : (goalH2El ? goalH2El.value : '');
     html = buildPrintSheet({ title:'自己評価シート', year, name:SESSION.name, jobType:SESSION.jobType, garden:SESSION.garden,
       goalH1:(currentRecord&&currentRecord.goalH1)||'', reflectH1:reflectVal, goalH2:goalH2Val,
       scores:(currentRecord && currentRecord.selfScoresH1 && currentRecord.selfScoresH1.length ? currentRecord.selfScoresH1 : selfScores), items, mode:'self', submitDate:currentRecord?(currentRecord.evalSubmitDate||''):'' });
