@@ -888,6 +888,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div id="evalH2ConfirmContent"></div>
             <div style="margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
               <button class="btn btn-outline" onclick="evalStepH2(2)">← 戻る</button>
+              <button class="btn btn-outline" onclick="openPrintPreview('selfH2')">🖨️ 印刷プレビュー</button>
               <button class="btn btn-primary btn-lg" id="submitEvalH2Btn" onclick="submitSelfEvalH2()">📨 下半期自己評価を提出する</button>
             </div>
           </div>
@@ -2446,14 +2447,18 @@ function buildEvalConfirm() {
   const items = EVAL_ITEMS[evalType];
   const total = selfScores.reduce((a, b) => a + b, 0);
   const rank = calcRankJS(total, MAX_SCORE[evalType]);
+  const reflectH1El = document.getElementById('reflectH1Input');
+  const reflectH1Display = (currentRecord && currentRecord.reflectH1) ? currentRecord.reflectH1 : (reflectH1El ? reflectH1El.value : '');
+  const goalH2El = document.getElementById('goalH2Input');
+  const goalH2Display = (currentRecord && currentRecord.goalH2) ? currentRecord.goalH2 : (goalH2El ? goalH2El.value : '');
   let html = `
     <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
       <div class="flabel">上半期 振り返り</div>
-      <p style="font-size:.88rem;line-height:1.6">${escHtml(document.getElementById('reflectH1Input').value)}</p>
+      <p style="font-size:.88rem;line-height:1.6">${escHtml(reflectH1Display)}</p>
     </div>
     <div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
       <div class="flabel">下半期 個人目標</div>
-      <p style="font-size:.88rem;line-height:1.6">${escHtml(document.getElementById('goalH2Input').value)}</p>
+      <p style="font-size:.88rem;line-height:1.6">${escHtml(goalH2Display)}</p>
     </div>
     <div style="display:flex;gap:20px;align-items:center;margin-bottom:16px;">
       <div><span class="flabel">自己評価合計</span><div style="font-size:1.8rem;font-weight:700;color:var(--clr-primary)">${total}<span style="font-size:.85rem;color:var(--clr-text-s)"> / ${MAX_SCORE[evalType]}点</span></div></div>
@@ -5008,6 +5013,12 @@ function openPrintPreview(mode) {
     html = buildPrintSheet({ title:'自己評価シート', year, name:SESSION.name, jobType:SESSION.jobType, garden:SESSION.garden,
       goalH1:(currentRecord&&currentRecord.goalH1)||'', reflectH1:reflectVal, goalH2:goalH2Val,
       scores:(currentRecord && currentRecord.selfScoresH1 && currentRecord.selfScoresH1.length ? currentRecord.selfScoresH1 : selfScores), items, mode:'self', submitDate:currentRecord?(currentRecord.evalSubmitDate||''):'' });
+  } else if (mode === 'selfH2') {
+    const reflectH2El = document.getElementById('reflectH2Input');
+    const reflectH2Val = (currentRecord && currentRecord.reflectH2) ? currentRecord.reflectH2 : (reflectH2El ? reflectH2El.value : '');
+    html = buildPrintSheet({ title:'下半期自己評価シート', year, name:SESSION.name, jobType:SESSION.jobType, garden:SESSION.garden,
+      goalH1:(currentRecord&&currentRecord.goalH1)||'', goalH2:(currentRecord&&currentRecord.goalH2)||'', reflectH2:reflectH2Val,
+      scores:(currentRecord && currentRecord.selfScoresH2 && currentRecord.selfScoresH2.length ? currentRecord.selfScoresH2 : selfScoresH2), items, mode:'selfH2', submitDate:currentRecord?(currentRecord.evalSubmitDateH2||''):'' });
   } else if (mode === 'mgr') {
     const mgrItems = EVAL_ITEMS[mgrEvalType];
     const detail = window._mgrDetail || {};
@@ -5056,6 +5067,7 @@ function buildPrintSheet(d) {
     + '<div class="print-goal-box"><div class="print-label">上半期 個人目標</div>'+escHtml(d.goalH1||'（未記入）')+'</div>'
     + (d.reflectH1 ? '<div class="print-goal-box"><div class="print-label">上半期 振り返り</div>'+escHtml(d.reflectH1)+'</div>' : '')
     + (d.goalH2 ? '<div class="print-goal-box"><div class="print-label">下半期 個人目標</div>'+escHtml(d.goalH2)+'</div>' : '')
+    + (d.reflectH2 ? '<div class="print-goal-box"><div class="print-label">下半期 振り返り</div>'+escHtml(d.reflectH2)+'</div>' : '')
     + '<table class="print-score-table"><thead><tr>'+hcols+'</tr></thead><tbody>'+rows+'</tbody></table>'
     + commentBlock
     + '<div style="margin-top:20px;display:flex;gap:40px;font-size:.8rem;color:#888"><span>本人確認：_______________</span><span>管理者確認：_______________</span><span>印刷日：'+new Date().toLocaleDateString('ja-JP')+'</span></div>';
