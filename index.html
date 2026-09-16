@@ -590,6 +590,21 @@ tr:hover td { background: rgba(74,124,111,.04); }
   document.getElementById('pwa-manifest').href = encoded;
 })();
 </script>
+<script>
+/**
+ * 日付フォーマット関数（修正: 2026-09-16）
+ * ISO 8601 または YYYY-MM-DD → YYYY-MM-DD に統一
+ * <input type="date"> が YYYY-MM-DD 形式のみを認識するため必須
+ */
+function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  // ISO 8601: "1967-05-21T15:00:00.000Z" → "1967-05-21"
+  if (typeof dateStr === 'string' && dateStr.includes('T')) {
+    return dateStr.split('T')[0];
+  }
+  return dateStr || '';
+}
+</script>
 </head>
 <body>
 
@@ -3253,13 +3268,15 @@ async function openStaffModal(staffId = null) {
     if (staff) {
       document.getElementById('fm_id').value = staff.staffId;
       document.getElementById('fm_name').value = staff.name;
-      document.getElementById('fm_birth').value = staff.birthdate;
+      // 修正（2026-09-16）：日付フォーマット処理を追加
+      document.getElementById('fm_birth').value = formatDateForInput(staff.birthdate);
       document.getElementById('fm_job').value = staff.jobType;
       document.getElementById('fm_emp').value = staff.employment;
       document.getElementById('fm_garden').value = staff.garden;
-      document.getElementById('fm_hire').value = staff.hireDate;
-      document.getElementById('fm_otherY').value = staff.otherYears || 0;
-      document.getElementById('fm_otherM').value = staff.otherMonths || 0;
+      document.getElementById('fm_hire').value = formatDateForInput(staff.hireDate);
+      // 修正：他園勤務歴のフォールバック対応（worker.js が両方のキーを返さない場合のため）
+      document.getElementById('fm_otherY').value = staff.otherYears || staff.otherGardenYears || 0;
+      document.getElementById('fm_otherM').value = staff.otherMonths || staff.otherGardenMonths || 0;
       document.getElementById('fm_loginId').value = staff.loginId;
       document.getElementById('fm_role').value = staff.role;
       document.getElementById('fm_status').value = staff.status;
