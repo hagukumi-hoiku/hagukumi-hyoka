@@ -590,21 +590,6 @@ tr:hover td { background: rgba(74,124,111,.04); }
   document.getElementById('pwa-manifest').href = encoded;
 })();
 </script>
-<script>
-/**
- * 日付フォーマット関数（修正: 2026-09-16）
- * ISO 8601 または YYYY-MM-DD → YYYY-MM-DD に統一
- * <input type="date"> が YYYY-MM-DD 形式のみを認識するため必須
- */
-function formatDateForInput(dateStr) {
-  if (!dateStr) return '';
-  // ISO 8601: "1967-05-21T15:00:00.000Z" → "1967-05-21"
-  if (typeof dateStr === 'string' && dateStr.includes('T')) {
-    return dateStr.split('T')[0];
-  }
-  return dateStr || '';
-}
-</script>
 </head>
 <body>
 
@@ -1553,7 +1538,8 @@ function formatDateForInput(dateStr) {
       <button class="btn btn-outline" onclick="openPrintPreview('mgr')">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
-        <button class="btn btn-primary" id="mgrDraftBtn" onclick="saveMgrEval()">💾 一時保存</button>
+        <button class="btn btn-outline" id="mgrDraftBtn" onclick="saveMgrEval()">💾 一時保存</button>
+        <button class="btn btn-primary" id="mgrSubmitBtn" onclick="submitMgrEval()">✅ 提出（確定）</button>
       </div>
     </div>
   </div>
@@ -3117,20 +3103,36 @@ async function bulkSubmitEvals() {
   );
 }
 
-async function saveMgrEval() {  const unset = mgrScores.filter(s => !s).length;
+async function saveMgrEval() {
+  const unset = mgrScores.filter(s => !s).length;
   if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
   const comment = document.getElementById('mgrComment').value.trim();
   const half    = (mgrEditRecord && mgrEditRecord.half) || 'h1';
   const r = await api({
     action:         'saveManagerEval',
-    recordId:       mgrEditRecord.recordId,
-    targetStaffId:  mgrEditRecord.staffId,   // api()のstaffId上書き回避
-    staffName:      mgrEditRecord.name,
-    jobType:        mgrEditRecord.jobType,
-    garden:         mgrEditRecord.garden,
+    targetStaffId:  mgrEditRecord.staffId,
     year:           mgrEditRecord.year,
     half:           half,
     draft:          true,
+    gardenScores:   mgrScores,
+    managerComment: comment
+  });
+  if (r.ok) { toast(r.msg, 'success'); closeMgrModal(); loadEvalList(); }
+  else toast(r.msg, 'error');
+}
+
+async function submitMgrEval() {
+  const unset = mgrScores.filter(s => !s).length;
+  if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
+  const comment = document.getElementById('mgrComment').value.trim();
+  const half    = (mgrEditRecord && mgrEditRecord.half) || 'h1';
+  if (!confirm((half === 'h1' ? '上半期' : '下半期') + '評価を提出してもよろしいですか？\n提出後は変更できません。')) return;
+  const r = await api({
+    action:         'saveManagerEval',
+    targetStaffId:  mgrEditRecord.staffId,
+    year:           mgrEditRecord.year,
+    half:           half,
+    draft:          false,
     gardenScores:   mgrScores,
     managerComment: comment
   });
@@ -3268,15 +3270,13 @@ async function openStaffModal(staffId = null) {
     if (staff) {
       document.getElementById('fm_id').value = staff.staffId;
       document.getElementById('fm_name').value = staff.name;
-      // 修正（2026-09-16）：日付フォーマット処理を追加
-      document.getElementById('fm_birth').value = formatDateForInput(staff.birthdate);
+      document.getElementById('fm_birth').value = staff.birthdate;
       document.getElementById('fm_job').value = staff.jobType;
       document.getElementById('fm_emp').value = staff.employment;
       document.getElementById('fm_garden').value = staff.garden;
-      document.getElementById('fm_hire').value = formatDateForInput(staff.hireDate);
-      // 修正：他園勤務歴のフォールバック対応（worker.js が両方のキーを返さない場合のため）
-      document.getElementById('fm_otherY').value = staff.otherYears || staff.otherGardenYears || 0;
-      document.getElementById('fm_otherM').value = staff.otherMonths || staff.otherGardenMonths || 0;
+      document.getElementById('fm_hire').value = staff.hireDate;
+      document.getElementById('fm_otherY').value = staff.otherYears || 0;
+      document.getElementById('fm_otherM').value = staff.otherMonths || 0;
       document.getElementById('fm_loginId').value = staff.loginId;
       document.getElementById('fm_role').value = staff.role;
       document.getElementById('fm_status').value = staff.status;
