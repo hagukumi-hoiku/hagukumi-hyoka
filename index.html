@@ -4817,9 +4817,14 @@ async function saveBonusEval() {
   } else {
     mode = isEncho ? 'second' : (isBonusFirstEvaluator(currentBonusStaff.jobType) ? 'first' : 'second');
   }
-  var r = await api({
+  // saveBonusEval だけ Worker に直送（D1保存）
+  var r;
+  const WORKER_URL = 'https://hagukumi-hyoka-prod.hagukumi-hoiku-cf2026.workers.dev';
+  
+  var payload = {
     action: 'saveBonusEval',
-    targetStaffId: currentBonusStaff.staffId,  // api()のstaffId上書き回避
+    staffId: SESSION.staffId,  // 権限判定用
+    targetStaffId: currentBonusStaff.staffId,
     name: currentBonusStaff.name,
     jobType: currentBonusStaff.jobType,
     garden: currentBonusStaff.garden,
@@ -4828,7 +4833,19 @@ async function saveBonusEval() {
     bBonus, cAdj,
     comment1: c1El ? c1El.value : '',
     comment2: c2El ? c2El.value : ''
-  });
+  };
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    r = await res.json();
+  } catch (e) {
+    r = { ok: false, msg: 'Worker通信失敗: ' + e.message };
+  }
+  
   if (r.ok) {
     toast(r.msg, 'success');
     closeBonusModal();
