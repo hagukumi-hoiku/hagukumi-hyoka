@@ -1566,7 +1566,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 // ============================================================
 //  設定
 // ============================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0LNNaJchcPzsEdVCCPztwGYlb1b3QKjoqOJbaatRNdY9wXAWfiO47_pIWH_HxsCpZ/exec';
+const WORKER_URL = 'https://hagukumi-hyoka-prod.hagukumi-hoiku-cf2026.workers.dev';
 
 // ============================================================
 //  評価項目定義
@@ -1848,8 +1848,9 @@ async function api(payload) {
   if (SESSION) { payload.token = SESSION.token; payload.staffId = SESSION.staffId; }
   showLoading(true);
   try {
-    const r = await fetch(GAS_URL, {
+    const r = await fetch(WORKER_URL, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     return await r.json();
@@ -4819,7 +4820,6 @@ async function saveBonusEval() {
   }
   // saveBonusEval だけ Worker に直送（D1保存）
   var r;
-  const WORKER_URL = 'https://hagukumi-hyoka-prod.hagukumi-hoiku-cf2026.workers.dev';
   
   var payload = {
     action: 'saveBonusEval',
