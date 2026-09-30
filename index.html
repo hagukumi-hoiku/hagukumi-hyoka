@@ -3557,7 +3557,7 @@ async function loadStaffHistoryTab(staffId) {
 //  マイプロフィール
 // ============================================================
 async function loadProfile() {
-  var r = await api({ action:'getStaffDetail', staffId: SESSION.staffId });
+  var r = await api({ action:'getStaffDetail', targetStaffId: SESSION.staffId });
   if (!r.ok) { toast('プロフィール取得失敗', 'error'); return; }
   var s = r.data;
   var typeNames = {general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者'};
