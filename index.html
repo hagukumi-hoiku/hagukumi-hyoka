@@ -3212,7 +3212,7 @@ async function loadStaffList() {
   tbody.innerHTML = list.map(s => `
     <tr>
       <td style="font-size:.8rem;font-weight:600">${escHtml(s.staffId)}</td>
-      <td style="font-size:.8rem">${escHtml(s.username)}</td>
+      <td style="font-size:.8rem">${escHtml(s.loginId)}</td>
       <td style="font-weight:500">${escHtml(s.name)}</td>
       <td><span style="font-size:.8rem">${escHtml(s.jobType)}</span></td>
       <td style="font-size:.8rem">${escHtml(s.className || '-')}</td>
