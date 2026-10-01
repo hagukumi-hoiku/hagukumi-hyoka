@@ -1566,7 +1566,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
 // ============================================================
 //  設定
 // ============================================================
-const WORKER_URL = 'https://hagukumi-hyoka-prod.hagukumi-hoiku-cf2026.workers.dev';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0LNNaJchcPzsEdVCCPztwGYlb1b3QKjoqOJbaatRNdY9wXAWfiO47_pIWH_HxsCpZ/exec';
 
 // ============================================================
 //  評価項目定義
@@ -1848,9 +1848,8 @@ async function api(payload) {
   if (SESSION) { payload.token = SESSION.token; payload.staffId = SESSION.staffId; }
   showLoading(true);
   try {
-    const r = await fetch(WORKER_URL, {
+    const r = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     return await r.json();
@@ -3212,10 +3211,8 @@ async function loadStaffList() {
   tbody.innerHTML = list.map(s => `
     <tr>
       <td style="font-size:.8rem;font-weight:600">${escHtml(s.staffId)}</td>
-      <td style="font-size:.8rem">${escHtml(s.loginId)}</td>
       <td style="font-weight:500">${escHtml(s.name)}</td>
       <td><span style="font-size:.8rem">${escHtml(s.jobType)}</span></td>
-      <td style="font-size:.8rem">${escHtml(s.className || '-')}</td>
       <td><span style="font-size:.8rem">${escHtml(s.garden)}</span></td>
       <td><span class="badge ${s.employment === '正規' ? 'badge-info' : 'badge-muted'}">${escHtml(s.employment)}</span></td>
       <td style="text-align:center">${s.age || '-'}</td>
@@ -3559,7 +3556,7 @@ async function loadStaffHistoryTab(staffId) {
 //  マイプロフィール
 // ============================================================
 async function loadProfile() {
-  var r = await api({ action:'getStaffDetail', targetStaffId: SESSION.staffId });
+  var r = await api({ action:'getStaffDetail', staffId: SESSION.staffId });
   if (!r.ok) { toast('プロフィール取得失敗', 'error'); return; }
   var s = r.data;
   var typeNames = {general_hoiku:'一般職（保育士）', cooking:'一般職（調理員）', yakushoku:'役職者', kanrisha:'管理者'};
@@ -4820,14 +4817,9 @@ async function saveBonusEval() {
   } else {
     mode = isEncho ? 'second' : (isBonusFirstEvaluator(currentBonusStaff.jobType) ? 'first' : 'second');
   }
-  // saveBonusEval だけ Worker に直送（D1保存）
-  var r;
-  const WORKER_URL = 'https://hagukumi-hyoka-prod.hagukumi-hoiku-cf2026.workers.dev';
-  
-  var payload = {
+  var r = await api({
     action: 'saveBonusEval',
-    staffId: SESSION.staffId,  // 権限判定用
-    targetStaffId: currentBonusStaff.staffId,
+    targetStaffId: currentBonusStaff.staffId,  // api()のstaffId上書き回避
     name: currentBonusStaff.name,
     jobType: currentBonusStaff.jobType,
     garden: currentBonusStaff.garden,
@@ -4836,19 +4828,7 @@ async function saveBonusEval() {
     bBonus, cAdj,
     comment1: c1El ? c1El.value : '',
     comment2: c2El ? c2El.value : ''
-  };
-  
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    r = await res.json();
-  } catch (e) {
-    r = { ok: false, msg: 'Worker通信失敗: ' + e.message };
-  }
-  
+  });
   if (r.ok) {
     toast(r.msg, 'success');
     closeBonusModal();
