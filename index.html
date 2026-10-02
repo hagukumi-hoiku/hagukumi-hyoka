@@ -2163,6 +2163,20 @@ async function loadHome() {
     tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
   }
 
+
+  // 保育士自己チェック（全フェーズで表示）
+  var checkDl = SETTINGS['check_deadline'] || '';
+  if (checkDl) {
+    var today = new Date();
+    var checkDate = new Date(checkDl);
+    var isCheckOverDeadline = today > checkDate;
+    
+    if (isCheckOverDeadline) {
+      tasks.push({name:'✅ 保育士自己チェック　期限終了', deadline:checkDl, badge:'muted', action:null});
+    } else {
+      tasks.push({name:'📝 保育士自己チェック　提出', deadline:checkDl + ' まで', badge:'info', action:'jikocheck'});
+    }
+  }
   // 管理者向けタスク（理事長は上のブロックで処理済み）
   if (evalType !== 'none' && perm.canEval && mode !== 'closed') {
     if (!perm.isAdmin) {
