@@ -2160,7 +2160,11 @@ async function loadHome() {
   } else if (mode === 'mgr_h2') {
     tasks.push({name:'🔍 下半期 管理者評価フェーズです（' + h2EvalYear() + '年度）。評価結果をお待ちください。', deadline:'', badge:'muted', action:null});
   } else {
-    tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
+    // check_deadline が設定されていない場合のみ「提出受付期間外」と表示
+    var checkDlElse = SETTINGS['check_deadline'] || '';
+    if (!checkDlElse) {
+      tasks.push({name:'現在、提出受付期間外です', deadline:'', badge:'muted', action:null});
+    }
   }
 
 
