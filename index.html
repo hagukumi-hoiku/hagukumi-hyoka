@@ -1757,10 +1757,10 @@ function updatePhaseLabel() {
   }
 
   var phaseMap = {
-    goal:    { label:'📝 目標記入フェーズ',   bg:'#e8f4e8', color:'#2e6b3e', activeNav:['evalGoal'],    lockNav:['evalSelf','evalSelfH2'] },
-    eval:    { label:'✏️ 上半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelf'],    lockNav:['evalSelfH2'] },
+    goal:    { label:'📝 目標記入フェーズ',   bg:'#e8f4e8', color:'#2e6b3e', activeNav:['evalGoal'],    lockNav:['evalSelf','evalSelfH2','jikocheck'] },
+    eval:    { label:'✏️ 上半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelf'],    lockNav:['evalGoal','evalSelfH2','jikocheck'] },
     mgr:     { label:'🔍 上半期 管理者評価',   bg:'#fff3e0', color:'#8a5c00', activeNav:['evalMgr'],     lockNav:[] },
-    eval_h2: { label:'✏️ 下半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelfH2'],  lockNav:['evalGoal','evalSelf'] },
+    eval_h2: { label:'✏️ 下半期評価フェーズ', bg:'#e8f0fa', color:'#2a4fa8', activeNav:['evalSelfH2'],  lockNav:['evalGoal','evalSelf','jikocheck'] },
     mgr_h2:  { label:'🔍 下半期 管理者評価',   bg:'#fff3e0', color:'#8a5c00', activeNav:['evalMgr'],     lockNav:[] },
     closed:  { label:'⏸ 評価期間外',          bg:'#f0f0f0', color:'#888',    activeNav:[],              lockNav:['evalGoal','evalSelf','evalSelfH2'] }
   };
@@ -1779,6 +1779,12 @@ function updatePhaseLabel() {
     if (!btn) return;
     var isActive = ph.activeNav.indexOf(s) !== -1;
     var isLocked = ph.lockNav.indexOf(s) !== -1;
+    
+    // 保育士自己チェックは提出期限が設定されていない場合ロック
+    if (s === 'jikocheck' && SETTINGS && !SETTINGS.checkDeadline) {
+      isLocked = true;
+    }
+    
     if (isActive) {
       btn.style.borderLeft   = '3px solid ' + ph.color;
       btn.style.opacity      = '1';
