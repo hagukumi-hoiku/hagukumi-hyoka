@@ -1780,9 +1780,14 @@ function updatePhaseLabel() {
     var isActive = ph.activeNav.indexOf(s) !== -1;
     var isLocked = ph.lockNav.indexOf(s) !== -1;
     
-    // 保育士自己チェックは提出期限が設定されていない場合ロック
-    if (s === 'jikocheck' && SETTINGS && !SETTINGS.check_deadline) {
-      isLocked = true;
+    
+    // 保育士自己チェック: check_deadline が設定されていればアンロック（フェーズロック優先度を下げる）
+    if (s === 'jikocheck') {
+      if (SETTINGS && SETTINGS.check_deadline) {
+        isLocked = false;  // check_deadline があればアンロック
+      } else {
+        isLocked = true;   // check_deadline がなければロック
+      }
     }
     
     if (isActive) {
