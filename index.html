@@ -1758,6 +1758,9 @@ const GARDEN_CODE_TO_LABEL = {
 let SESSION = null;
 let SETTINGS = {};
 
+// 雇用区分が「パート」: 保育士自己チェックのみ対象（目標・振り返り・自己評価は行わない）
+function isPartTimeUser() { return !!(SESSION && String(SESSION.employment || '').trim() === 'パート'); }
+
 // フェーズバッジを最新の SETTINGS['eval_mode'] で更新する
 function updatePhaseLabel() {
   var phaseInfo  = document.getElementById('nav-phaseInfo');
@@ -1786,7 +1789,7 @@ function updatePhaseLabel() {
   };
   var ph = phaseMap[mode] || phaseMap['closed'];
 
-  if (phaseInfo) phaseInfo.style.display = '';
+  if (phaseInfo) phaseInfo.style.display = isPartTimeUser() ? 'none' : '';  // パートは評価フェーズ表示なし
   phaseLabel.textContent = ph.label;
   phaseLabel.style.background = ph.bg;
   phaseLabel.style.color = ph.color;
@@ -1836,7 +1839,16 @@ function updatePhaseLabel() {
     closed:  '現在は評価期間外です。'
   };
   var sub = document.getElementById('homeSubText');
-  if (sub) sub.textContent = actionMap[now] || '';
+  if (sub) {
+    if (isPartTimeUser()) {
+      // パート: 保育士自己チェックの提出期限が設定されている場合のみ案内
+      sub.textContent = SETTINGS['check_deadline']
+        ? '📝 今すること: 保育士自己チェックを期限（' + fmtDl(String(SETTINGS['check_deadline'])) + '）までに提出してください。'
+        : '現在のタスクはありません。';
+    } else {
+      sub.textContent = actionMap[now] || '';
+    }
+  }
 }
 
 function currentYear() {  var y = SETTINGS['current_year'];
@@ -2050,6 +2062,16 @@ function showPage(id) {
 const SECTIONS = ['home','profile','history','evalGoal','evalSelf','evalSelfH2','evalMgr','bonus','jisshi','jikocheck','staff','settings'];
 
 async function showSection(name) {
+  // パート職員: 目標・自己評価の画面には入れない / 保育士自己チェックは提出期限が設定されている間のみ
+  if (isPartTimeUser()) {
+    if (['evalGoal', 'evalSelf', 'evalSelfH2'].indexOf(name) >= 0) {
+      toast('パート職員は目標・自己評価の対象外です', 'error');
+      name = 'home';
+    } else if (name === 'jikocheck' && !SETTINGS['check_deadline']) {
+      toast('現在、保育士自己チェックの提出受付期間外です', 'error');
+      name = 'home';
+    }
+  }
   closeSidebar();
   SECTIONS.forEach(s => {
     const el = document.getElementById('sec-' + s);
@@ -2098,7 +2120,7 @@ async function loadHome() {
   var ageStr = SESSION.age ? ('　' + SESSION.age + '歳') : '';
   document.getElementById('homeProfileName').textContent = SESSION.name + ageStr;
   var subText = SESSION.jobType + '　' + SESSION.employment;
-  if (evalType !== 'none') subText += '　評価タイプ: ' + typeNames[evalType];
+  if (evalType !== 'none' && !isPartTimeUser()) subText += '　評価タイプ: ' + typeNames[evalType];
   document.getElementById('homeProfileSub').textContent = subText;
   var setEl = function(id, val) {
     var el = document.getElementById(id);
@@ -2130,7 +2152,7 @@ async function loadHome() {
   // eval_h2 / mgr_h2 モード時は前年度（h2EvalYear）のレコードを参照
   var recordYear = (mode === 'eval_h2' || mode === 'mgr_h2') ? h2EvalYear() : year;
   var excludedThisYear = false;
-  if (evalType !== 'none') {
+  if (evalType !== 'none' && !isPartTimeUser()) {   // パートは自己評価レコードを取得しない
     var pf = window._loginPrefetch; window._loginPrefetch = null; // 一度だけ使用
     var r2 = (pf && pf.ok && String(pf.year) === String(recordYear))
       ? pf
@@ -2173,7 +2195,9 @@ async function loadHome() {
   var status = currentRecord ? currentRecord.status : '未提出';
   var tasks = [];
 
-  if (evalType === 'none') {
+  if (isPartTimeUser()) {
+    // パート: 目標・自己評価タスクは出さない（保育士自己チェックのみ。下で期限設定時のみ追加）
+  } else if (evalType === 'none') {
     // 理事長: 賞与管理タスクのみ
     tasks.push({name:'✏️ 賞与評価の入力・C調整（理事長）', deadline:'', badge:'info', action:'bonus'});
     tasks.push({name:'📊 評価履歴の確認', deadline:'', badge:'info', action:'history'});
@@ -2247,6 +2271,11 @@ async function loadHome() {
     if (perm.canBonus) {
       tasks.push({name:'✏️ 賞与評価の入力・確認', deadline:'', badge:'info', action:'bonus'});
     }
+  }
+
+  // パートで保育士自己チェックの期限が未設定 → タスクなし
+  if (isPartTimeUser() && !tasks.length) {
+    tasks.push({name:'ℹ️ 現在のタスクはありません', deadline:'', badge:'muted', action:null});
   }
 
   var tl = document.getElementById('taskList');
