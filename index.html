@@ -441,6 +441,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
 .score-table th { background: var(--clr-primary); color: #fff; padding: 10px 12px; font-size: .82rem; }
 .score-table td { padding: 8px 10px; border-bottom: 1px solid var(--clr-bg2); vertical-align: top; }
 .score-table tr:hover td { background: rgba(74,124,111,.04); }
+/* 自己評価と園評価のランク差が2以上の行（admin/園長のみ）: 文字が読める薄い赤 */
+tr.rank-gap-row > td { background: #fdecec; }
+.score-table tr.rank-gap-row:hover > td { background: #fadada; }
+.rank-gap-badge { display:inline-block; margin-left:6px; padding:2px 9px; border-radius:10px; background:var(--clr-danger); color:#fff; font-size:.72rem; font-weight:700; white-space:nowrap; vertical-align:middle; cursor:help; }
 .score-cat-row td { background: var(--clr-bg2); font-weight: 600; font-size: .82rem; color: var(--clr-primary-d); }
 .score-item-name { font-size: .83rem; line-height: 1.4; }
 .score-item-hint { font-size: .74rem; color: var(--clr-text-s); margin-top: 2px; }
@@ -756,6 +760,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div class="step" id="step3"><div class="step-num">3</div><div class="step-label">確認・提出</div></div>
         </div>
 
+        <div id="evalDraftNote" style="font-size:.8rem;color:var(--clr-text-s);margin:0 0 8px;min-height:1em"></div>
+
         <!-- ステップ1：振り返り -->
         <div id="evalStep1">
           <div class="card">
@@ -778,7 +784,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
                 <textarea class="ftextarea" id="goalH2Input" rows="4" placeholder="下半期の個人目標を記入してください"></textarea>
               </div>
             </div>
-            <div style="margin-top:16px;text-align:right;">
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-outline js-evalDraftBtn" onclick="saveEvalDraft()">💾 一時保存</button>
               <button class="btn btn-primary" onclick="evalNext(1)">次へ →</button>
             </div>
           </div>
@@ -788,7 +795,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div id="evalStep2" style="display:none">
           <div class="card">
             <div class="card-title">🌟 評価項目・自己評価点の入力</div>
-            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:16px;">各項目について 1〜5点 で自己評価を入力してください（5点：とても良い、1点：課題あり）</p>
+            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:6px;">各項目について 1〜5点 で自己評価を入力してください。</p>
+            <div style="font-size:.8rem;color:var(--clr-text-s);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:4px 18px;line-height:1.6;"><span><strong style="color:var(--clr-primary)">【5】</strong>常にできている（ほぼ10割）</span><span><strong style="color:var(--clr-primary)">【4】</strong>おおむねできている（8割以上）</span><span><strong style="color:var(--clr-primary)">【3】</strong>まずまずできている（6割以上）</span><span><strong style="color:var(--clr-primary)">【2】</strong>一部できている（3割以上）</span><span><strong style="color:var(--clr-primary)">【1】</strong>ほとんどできていない（3割未満）</span></div>
             <div class="table-wrap">
               <table class="score-table" id="selfScoreTable">
                 <thead><tr>
@@ -802,7 +810,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
               <button class="btn btn-outline" onclick="evalStep(1)">← 戻る</button>
               <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfTotal" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
-              <button class="btn btn-primary" onclick="evalNext(2)">次へ →</button>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-outline js-evalDraftBtn" onclick="saveEvalDraft()">💾 一時保存</button>
+                <button class="btn btn-primary" onclick="evalNext(2)">次へ →</button>
+              </div>
             </div>
           </div>
         </div>
@@ -815,6 +826,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
               <button class="btn btn-outline" onclick="evalStep(2)">← 戻る</button>
               <button class="btn btn-outline" onclick="openPrintPreview('self')">🖨️ 印刷プレビュー</button>
+              <button class="btn btn-outline js-evalDraftBtn" onclick="saveEvalDraft()">💾 一時保存</button>
               <button class="btn btn-primary btn-lg" id="submitEvalBtn" onclick="submitSelfEval()">📨 自己評価を提出する</button>
             </div>
           </div>
@@ -836,6 +848,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
           <div class="step" id="h2step3"><div class="step-num">3</div><div class="step-label">確認・提出</div></div>
         </div>
 
+        <div id="evalH2DraftNote" style="font-size:.8rem;color:var(--clr-text-s);margin:0 0 8px;min-height:1em"></div>
+
         <!-- ステップ1：下半期振り返り -->
         <div id="evalH2Step1">
           <div class="card">
@@ -852,7 +866,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
                 <textarea class="ftextarea" id="reflectH2Input" rows="4" placeholder="下半期の振り返りを記入してください"></textarea>
               </div>
             </div>
-            <div style="margin-top:16px;text-align:right;">
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-outline js-evalDraftBtnH2" onclick="saveEvalDraftH2()">💾 一時保存</button>
               <button class="btn btn-primary" onclick="evalNextH2(1)">次へ →</button>
             </div>
           </div>
@@ -862,7 +877,8 @@ tr:hover td { background: rgba(74,124,111,.04); }
         <div id="evalH2Step2" style="display:none">
           <div class="card">
             <div class="card-title">🌟 評価項目・自己評価点の入力（下半期）</div>
-            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:16px;">各項目について 1〜5点 で自己評価を入力してください</p>
+            <p style="font-size:.82rem;color:var(--clr-text-s);margin-bottom:6px;">各項目について 1〜5点 で自己評価を入力してください。</p>
+            <div style="font-size:.8rem;color:var(--clr-text-s);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:4px 18px;line-height:1.6;"><span><strong style="color:var(--clr-primary)">【5】</strong>常にできている（ほぼ10割）</span><span><strong style="color:var(--clr-primary)">【4】</strong>おおむねできている（8割以上）</span><span><strong style="color:var(--clr-primary)">【3】</strong>まずまずできている（6割以上）</span><span><strong style="color:var(--clr-primary)">【2】</strong>一部できている（3割以上）</span><span><strong style="color:var(--clr-primary)">【1】</strong>ほとんどできていない（3割未満）</span></div>
             <div class="table-wrap">
               <table class="score-table" id="selfH2ScoreTable">
                 <thead><tr>
@@ -876,7 +892,10 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
               <button class="btn btn-outline" onclick="evalStepH2(1)">← 戻る</button>
               <div style="font-size:.9rem;font-weight:600">自己評価合計: <span id="selfH2Total" style="color:var(--clr-primary);font-size:1.1rem;font-weight:700">0</span> 点</div>
-              <button class="btn btn-primary" onclick="evalNextH2(2)">次へ →</button>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-outline js-evalDraftBtnH2" onclick="saveEvalDraftH2()">💾 一時保存</button>
+                <button class="btn btn-primary" onclick="evalNextH2(2)">次へ →</button>
+              </div>
             </div>
           </div>
         </div>
@@ -889,6 +908,7 @@ tr:hover td { background: rgba(74,124,111,.04); }
             <div style="margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
               <button class="btn btn-outline" onclick="evalStepH2(2)">← 戻る</button>
               <button class="btn btn-outline" onclick="openPrintPreview('selfH2')">🖨️ 印刷プレビュー</button>
+              <button class="btn btn-outline js-evalDraftBtnH2" onclick="saveEvalDraftH2()">💾 一時保存</button>
               <button class="btn btn-primary btn-lg" id="submitEvalH2Btn" onclick="submitSelfEvalH2()">📨 下半期自己評価を提出する</button>
             </div>
           </div>
@@ -1855,20 +1875,41 @@ let mgrEditRecord = null;
 // ============================================================
 //  API通信
 // ============================================================
+const SCORE_LEGEND_HTML = (function() {
+  var items = [
+    ['5', '常にできている（ほぼ10割）'],
+    ['4', 'おおむねできている（8割以上）'],
+    ['3', 'まずまずできている（6割以上）'],
+    ['2', '一部できている（3割以上）'],
+    ['1', 'ほとんどできていない（3割未満）']
+  ];
+  return '<div style="font-size:.8rem;color:var(--clr-text-s);margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px 18px;line-height:1.6;">'
+    + items.map(function(it) {
+        return '<span><strong style="color:var(--clr-primary)">【' + it[0] + '】</strong>' + it[1] + '</span>';
+      }).join('')
+    + '</div>';
+})();
+let _apiPending = 0; // 同時進行中のAPI数（並列呼び出し対応）
 async function api(payload) {
   if (SESSION) { payload.token = SESSION.token; payload.staffId = SESSION.staffId; }
+  _apiPending++;
   showLoading(true);
   try {
+    const _t0 = performance.now();
     const r = await fetch(GAS_URL, {
       method: 'POST',
       body: JSON.stringify(payload)
     });
-    return await r.json();
+    const _data = await r.json();
+    // 計測: total=通信込みの全体 / server=GAS内の処理時間。差分が GAS 側の起動・転送オーバーヘッド
+    console.log('[api] ' + payload.action + '  total=' + Math.round(performance.now() - _t0) + 'ms  server=' + (_data && _data._ms !== undefined ? _data._ms : '?') + 'ms  gas=' + (_data && _data._ver ? _data._ver : '旧版?'));
+    return _data;
   } catch(e) {
     toast('通信エラー: ' + e.message, 'error');
     return { ok: false, msg: e.message };
   } finally {
-    showLoading(false);
+    _apiPending = Math.max(0, _apiPending - 1);
+    if (_apiPending === 0) showLoading(false); // 全リクエスト完了時のみ消す
   }
 }
 
@@ -1882,6 +1923,13 @@ async function doLogin() {
 
   const r = await api({ action: 'login', loginId, password });
   if (!r.ok) { document.getElementById('loginErr').textContent = r.msg; return; }
+
+  // login レスポンスに同梱された設定・自己評価を取り込む（往復回数の削減）
+  window._settingsFromLogin = !!(r.settings && typeof r.settings === 'object');
+  if (window._settingsFromLogin) SETTINGS = r.settings;
+  window._loginPrefetch = r.prefetchSelfEval || null;
+  delete r.settings;
+  delete r.prefetchSelfEval;
 
   SESSION = r;
   document.getElementById('loginErr').textContent = '';
@@ -1963,8 +2011,12 @@ async function initApp() {
   _nav('nav-jikocheck', canViewJikoCheck);
 
   // 設定取得（← フェーズバッジはここで取得した最新設定を使って更新する）
-  var sr = await api({ action: 'getSettings' });
-  if (sr.ok) SETTINGS = sr.settings;
+  if (window._settingsFromLogin) {
+    window._settingsFromLogin = false; // login で取得済み（以降の画面遷移では通常どおり取得）
+  } else {
+    var sr = await api({ action: 'getSettings' });
+    if (sr.ok) SETTINGS = sr.settings;
+  }
 
   // 園セレクター制御: admin のみドロップダウン、encho/syunin は自園固定表示
   document.querySelectorAll('.admin-only-ctrl').forEach(function(el) {
@@ -2079,7 +2131,10 @@ async function loadHome() {
   var recordYear = (mode === 'eval_h2' || mode === 'mgr_h2') ? h2EvalYear() : year;
   var excludedThisYear = false;
   if (evalType !== 'none') {
-    var r2 = await api({action:'getSelfEval', year: recordYear, staffId:SESSION.staffId});
+    var pf = window._loginPrefetch; window._loginPrefetch = null; // 一度だけ使用
+    var r2 = (pf && pf.ok && String(pf.year) === String(recordYear))
+      ? pf
+      : await api({action:'getSelfEval', year: recordYear, staffId:SESSION.staffId});
     currentRecord = (r2.ok && r2.data) ? r2.data : null;
     excludedThisYear = !!(r2.ok && r2.excluded);
   } else {
@@ -2356,8 +2411,10 @@ async function loadEvalSelf() {
   // テキストエリアに既存データを反映・提出済みなら無効化
   const reflectEl = document.getElementById('reflectH1Input');
   const goalH2El  = document.getElementById('goalH2Input');
-  reflectEl.value    = (currentRecord && currentRecord.reflectH1) || '';
-  goalH2El.value     = (currentRecord && currentRecord.goalH2) || '';
+  // 一時保存データがあれば反映（提出済みの場合は提出内容を表示）
+  const dH1 = (!submitted && currentRecord && currentRecord.draft && currentRecord.draft.h1) || null;
+  reflectEl.value    = (dH1 && dH1.reflectH1) || (currentRecord && currentRecord.reflectH1) || '';
+  goalH2El.value     = (dH1 && dH1.goalH2) || (currentRecord && currentRecord.goalH2) || '';
   reflectEl.disabled = submitted;
   goalH2El.disabled  = submitted;
   reflectEl.style.background = submitted ? 'var(--clr-bg2)' : '';
@@ -2382,7 +2439,13 @@ async function loadEvalSelf() {
 
   const evalType = getEvalType(SESSION.jobType);
   const items = EVAL_ITEMS[evalType];
-  selfScores = items.map((_, i) => (currentRecord && currentRecord.selfScores && currentRecord.selfScores[i]) || 0);
+  selfScores = items.map((_, i) =>
+    (dH1 && dH1.selfScores && dH1.selfScores[i]) ||
+    (currentRecord && currentRecord.selfScores && currentRecord.selfScores[i]) || 0);
+
+  // 一時保存ボタン: 提出済み・期限超過では非表示 / 保存日時の表示
+  document.querySelectorAll('.js-evalDraftBtn').forEach(function(b) { b.style.display = (submitted || overDeadline) ? 'none' : ''; });
+  setDraftNote('evalDraftNote', dH1 && dH1.savedAt);
 
   // 提出済みなら読み取り専用テーブル
   renderScoreTable(items, selfScores, 'self', submitted);
@@ -2510,6 +2573,63 @@ function buildEvalConfirm() {
   document.getElementById('evalConfirmContent').innerHTML = html;
 }
 
+// ============================================================
+//  一時保存（自己評価: 上半期／下半期）
+//  ・下書きは専用列に保存し、提出扱いにはならない（提出状況・ランクは変わらない）
+//  ・保存後も同じステップに留まる。戻る／再読み込みで保存内容が復元される
+// ============================================================
+function setDraftNote(elId, savedAt) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  if (!savedAt) { el.textContent = ''; return; }
+  var d = new Date(savedAt);
+  var t = isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  el.innerHTML = '💾 一時保存済み' + (t ? '（' + escHtml(t) + '）' : '') + '　<span style="color:var(--clr-warning)">※ 提出はまだ完了していません</span>';
+}
+
+async function saveEvalDraft() {
+  const reflect = document.getElementById('reflectH1Input').value.trim();
+  const goalH2  = document.getElementById('goalH2Input').value.trim();
+  const hasScore = selfScores.some(function(v) { return v > 0; });
+  if (!reflect && !goalH2 && !hasScore) { toast('保存する内容がありません', 'error'); return; }
+  const r = await api({
+    action: 'saveSelfEval', mode: 'draftEval',
+    year: currentYear(), staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden,
+    evalType: getEvalType(SESSION.jobType),
+    goalH1: currentRecord ? currentRecord.goalH1 : '',
+    reflectH1: reflect, goalH2: goalH2, selfScores: selfScores
+  });
+  if (r.ok) {
+    toast('一時保存しました', 'success');
+    if (currentRecord) {
+      currentRecord.draft = currentRecord.draft || {};
+      currentRecord.draft.h1 = { reflectH1: reflect, goalH2: goalH2, selfScores: selfScores.slice(), savedAt: r.savedAt };
+    }
+    setDraftNote('evalDraftNote', r.savedAt);
+  } else toast(r.msg, 'error');
+}
+
+async function saveEvalDraftH2() {
+  const reflectEl = document.getElementById('reflectH2Input');
+  const reflect = reflectEl ? reflectEl.value.trim() : '';
+  const hasScore = selfScoresH2.some(function(v) { return v > 0; });
+  if (!reflect && !hasScore) { toast('保存する内容がありません', 'error'); return; }
+  const r = await api({
+    action: 'saveSelfEval', mode: 'draftEvalH2',
+    year: h2EvalYear(), staffId: SESSION.staffId, name: SESSION.name, jobType: SESSION.jobType, garden: SESSION.garden,
+    evalType: getEvalType(SESSION.jobType),
+    reflectH2: reflect, selfScoresH2: selfScoresH2
+  });
+  if (r.ok) {
+    toast('一時保存しました', 'success');
+    if (currentRecord) {
+      currentRecord.draft = currentRecord.draft || {};
+      currentRecord.draft.h2 = { reflectH2: reflect, selfScoresH2: selfScoresH2.slice(), savedAt: r.savedAt };
+    }
+    setDraftNote('evalH2DraftNote', r.savedAt);
+  } else toast(r.msg, 'error');
+}
+
 async function submitSelfEval() {
   const evalType = getEvalType(SESSION.jobType);
   const unset = selfScores.filter(s => !s).length;
@@ -2606,10 +2726,13 @@ async function loadEvalSelfH2() {
     }
   }
 
+  // 一時保存データ（未提出のときのみ反映）
+  const dH2 = (!submittedH2 && currentRecord && currentRecord.draft && currentRecord.draft.h2) || null;
+
   // 振り返り入力エリア
   const reflectEl = document.getElementById('reflectH2Input');
   if (reflectEl) {
-    reflectEl.value    = (currentRecord && currentRecord.reflectH2) || '';
+    reflectEl.value    = (dH2 && dH2.reflectH2) || (currentRecord && currentRecord.reflectH2) || '';
     reflectEl.disabled = submittedH2;
     reflectEl.style.background = submittedH2 ? 'var(--clr-bg2)' : '';
   }
@@ -2634,7 +2757,11 @@ async function loadEvalSelfH2() {
   // スコアテーブル
   const evalType = getEvalType(SESSION.jobType);
   const items = EVAL_ITEMS[evalType];
-  selfScoresH2 = items.map((_, i) => (currentRecord && currentRecord.selfScoresH2 && currentRecord.selfScoresH2[i]) || 0);
+  selfScoresH2 = items.map((_, i) =>
+    (dH2 && dH2.selfScoresH2 && dH2.selfScoresH2[i]) ||
+    (currentRecord && currentRecord.selfScoresH2 && currentRecord.selfScoresH2[i]) || 0);
+  document.querySelectorAll('.js-evalDraftBtnH2').forEach(function(b) { b.style.display = (submittedH2 || overDeadline) ? 'none' : ''; });
+  setDraftNote('evalH2DraftNote', dH2 && dH2.savedAt);
   renderScoreTable(items, selfScoresH2, 'selfH2', submittedH2);
   updateSelfH2Total();
 
@@ -2756,7 +2883,10 @@ async function loadEvalList() {
 
   // admin（理事長）は全園・全職員を取得できるようgarden指定なし
   var apiGarden = SESSION.role === 'admin' ? '' : SESSION.garden;
-  var sr = await api({ action: 'getStaffList', role: SESSION.role, garden: apiGarden, evalYear: year });
+  // 職員一覧と評価一覧は互いに依存しないので同時に発行する
+  var pStaffList = api({ action: 'getStaffList', role: SESSION.role, garden: apiGarden, evalYear: year });
+  var pEvalList  = api({ action: 'getEvalList', year, role: SESSION.role, garden: apiGarden });
+  var sr = await pStaffList;
   if (!sr.ok) return;
   var allStaff = sr.list.filter(function(s) {
     return s.status !== '退職' && s.employment === '正規' && s.jobType !== '理事長';
@@ -2780,13 +2910,15 @@ async function loadEvalList() {
   allStaff.sort(staffSortFn);
 
   // 評価データ取得（admin は全園）
-  var r = await api({ action: 'getEvalList', year, role: SESSION.role, garden: apiGarden });
+  var r = await pEvalList;
   var evalMap = {};
   if (r.ok) r.list.forEach(function(e) { evalMap[String(e.staffId).trim()] = e; });
 
   var tbody = document.getElementById('evalListBody-self');
   if (!tbody) return;
 
+  var canSeeRankGap = (SESSION.role === 'admin' || SESSION.role === 'encho'); // 園長・理事長のみ
+  var gapCount = 0;
   tbody.innerHTML = allStaff.length ? allStaff.map(function(s) {
     var e = evalMap[String(s.staffId).trim()];
     var rid = String(year) + '-' + String(s.staffId).trim();
@@ -2798,11 +2930,18 @@ async function loadEvalList() {
     var submitDate  = e ? (isH1 ? (e.evalSubmitDateH1 || e.evalSubmitDate || '') : (e.evalSubmitDateH2 || '')) : '';
     var statusVal   = e ? (e.status || '未提出') : '未提出';
 
+    // ランク差2以上の要注意判定（admin・園長のみ。園評価の保存後に表示）
+    var gapInfo = canSeeRankGap ? rankGapInfo(selfRank, gardenRank) : null;
+    if (gapInfo) gapCount++;
+    var gapBadge = gapInfo
+      ? '<span class="rank-gap-badge" title="自己 ' + escHtml(selfRank) + ' ／ 園 ' + escHtml(gardenRank) + '（' + gapInfo.dir + '）">⚠ ' + gapInfo.gap + 'ランク差</span>'
+      : '';
+
     function rkBadge(rank) {
       return rank ? '<span class="rank-badge rank-' + escHtml(rank) + '" style="width:26px;height:26px;font-size:.75rem">' + escHtml(rank) + '</span>' : '-';
     }
 
-    return '<tr>'
+    return '<tr' + (gapInfo ? ' class="rank-gap-row"' : '') + '>'
       + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
@@ -2812,7 +2951,7 @@ async function loadEvalList() {
       + '<td style="text-align:center;font-weight:600">' + (gardenTotal !== '-' && gardenTotal ? gardenTotal : '-') + '</td>'
       + '<td style="text-align:center">' + rkBadge(gardenRank) + '</td>'
       + (SESSION.role === 'admin' ? '<td style="text-align:center;font-weight:600;color:var(--clr-primary-d)">' + (bonusVal > 0 ? bonusVal + '点' : '-') + '</td>' : '<td style="display:none"></td>')
-      + '<td><span class="badge ' + statusBadge(statusVal) + '">' + escHtml(statusVal) + '</span></td>'
+      + '<td><span class="badge ' + statusBadge(statusVal) + '">' + escHtml(statusVal) + '</span>' + gapBadge + '</td>'
       + '<td><button class="btn btn-outline btn-sm" data-rid="' + escHtml(rid) + '" data-sid="' + escHtml(s.staffId) + '" data-half="' + half + '" onclick="openMgrModal2(this.dataset.rid,this.dataset.sid,this.dataset.half)">評価入力</button></td>'
       + '</tr>';
   }).join('') : noData;
@@ -2830,7 +2969,8 @@ async function loadEvalList() {
   var statusCountEl = document.getElementById('evalMgrStatusCount');
   var bulkBtn = document.getElementById('bulkSubmitBtn');
   if (statusCountEl) {
-    statusCountEl.textContent = '一時保存: ' + draftCount + '件　提出済: ' + submittedCount + '件';
+    statusCountEl.textContent = '一時保存: ' + draftCount + '件　提出済: ' + submittedCount + '件'
+      + (canSeeRankGap && gapCount > 0 ? '　⚠ ランク差2以上: ' + gapCount + '件' : '');
   }
   if (bulkBtn) {
     // 一時保存中が1件以上あれば一括提出ボタンを表示
@@ -2839,6 +2979,16 @@ async function loadEvalList() {
   }
 }
 
+// 自己評価と園評価のランク差（SS>S>A>B>C>D>E の7段階）。2ランク以上で要注意。両方そろっていない場合は null
+var RANK_ORDER = ['SS', 'S', 'A', 'B', 'C', 'D', 'E']; // GASのcalcRankと同じ7段階（高い順）
+function rankGapInfo(selfRank, gardenRank) {
+  var a = RANK_ORDER.indexOf(String(selfRank || '').trim());
+  var b = RANK_ORDER.indexOf(String(gardenRank || '').trim());
+  if (a < 0 || b < 0) return null;
+  var gap = Math.abs(a - b);
+  if (gap < 2) return null;
+  return { gap: gap, dir: a < b ? '自己評価が園評価より高い' : '自己評価が園評価より低い' };
+}
 function calcBonusRankFromRaw(raw, maxRaw) {
   // 70点満点換算してランク
   var a70 = Math.round((raw / maxRaw) * 70 * 10) / 10;
@@ -2959,6 +3109,7 @@ async function openMgrModal2(recordId, staffId, half) {
   html += '</div>';
 
   // 評価テーブル
+  html += SCORE_LEGEND_HTML;
   html += '<div class="table-wrap"><table class="score-table">'
     + '<thead><tr>'
     + '<th style="width:150px">評価項目</th>'
@@ -3061,6 +3212,7 @@ async function openMgrModal(recordId) {
       <strong>上半期目標：</strong>${escHtml(mgrEditRecord.goalH1 || '未記入')}<br>
       ${detail && detail.reflectH1 ? '<strong>振り返り：</strong>' + escHtml(detail.reflectH1) : ''}
     </div>
+    ${SCORE_LEGEND_HTML}
     <div class="table-wrap">
     <table class="score-table">
       <thead><tr><th>カテゴリ</th><th>評価項目</th><th style="min-width:80px;text-align:center">自己評価</th><th style="min-width:220px">園評価</th></tr></thead>
@@ -4129,8 +4281,18 @@ async function loadBonusList() {
   var term   = document.getElementById('bonusTermSel').value;
   var garden = document.getElementById('bonusGardenSel').value;
 
+  // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
+  var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
+  var bandKey = bandGarden || '__default__';
+  var needBand = !bonusBandCache[bandKey];
+
+  // 互いに依存しない3リクエストを同時に発行する（従来は直列で3往復）
   // evalYear と evalTerm を渡してサーバー側で評価除外・退職者を除外
-  var sr = await api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden, evalYear: year, evalTerm: term });
+  var pStaffList = api({ action:'getStaffList', role:SESSION.role, garden:SESSION.garden, evalYear: year, evalTerm: term });
+  var pBonusList = api({ action:'getBonusList', year, term, role:SESSION.role, garden:SESSION.garden });
+  var pBands     = needBand ? api({ action:'getBonusRankBands', garden: bandGarden }) : null;
+
+  var sr = await pStaffList;
   if (!sr.ok) return;
 
   // ① 在籍中・正規のみ・理事長除外（退職者はサーバー側でも除外済み、ここで追加フィルター）
@@ -4224,7 +4386,7 @@ async function loadBonusList() {
     return;
   }
 
-  var br = await api({ action:'getBonusList', year, term, role:SESSION.role, garden:SESSION.garden });
+  var br = await pBonusList;
   var bonusMap = {};
   if (br.ok) br.list.forEach(function(b){ bonusMap[String(b.staffId).trim()] = b; });
 
@@ -4232,11 +4394,8 @@ async function loadBonusList() {
   var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
   var maxAll = max1 + max2; // 220
 
-  // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
-  var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
-  var bandKey = bandGarden || '__default__';
-  if (!bonusBandCache[bandKey]) {
-    var bandRes = await api({ action:'getBonusRankBands', garden: bandGarden });
+  if (needBand && !bonusBandCache[bandKey]) {
+    var bandRes = await pBands;
     bonusBandCache[bandKey] = {
       bands: (bandRes.ok && bandRes.bands) ? bandRes.bands : DEFAULT_BONUS_RANK_BANDS_JS,
       includeEncho: !!(bandRes.ok && bandRes.includeEncho)
