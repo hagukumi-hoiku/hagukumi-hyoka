@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.00</title>
+<title>はぐくみ評価 Ver.2.01</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.00',
+    description:'育保の杜 職員評価システム Ver.2.01',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.00</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.01</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1574,7 +1574,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="modal-title" id="confirmTitle">確認</div>
       <button class="modal-close" onclick="closeConfirm()">✕</button>
     </div>
-    <div class="modal-body"><p id="confirmMsg" style="line-height:1.7"></p></div>
+    <div class="modal-body"><p id="confirmMsg" style="line-height:1.7;white-space:pre-line"></p></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeConfirm()">キャンセル</button>
       <button class="btn btn-primary" id="confirmOkBtn">OK</button>
@@ -2958,6 +2958,11 @@ async function loadEvalList() {
     var bonusVal    = e ? (isH1 ? (e.bonusH1 || e.bonus || 0) : (e.bonusH2 || 0)) : 0;
     var submitDate  = e ? (isH1 ? (e.evalSubmitDateH1 || e.evalSubmitDate || '') : (e.evalSubmitDateH2 || '')) : '';
     var statusVal   = e ? (e.status || '未提出') : '未提出';
+    // 園評価が「一時保存止まり（全項目が未入力）」かどうか → 一括提出では弾かれる
+    var partialInfo = mgrDraftPartial(e, isH1);
+    var partialBadge = partialInfo
+      ? '<span class="badge badge-danger" style="margin-left:4px" title="未入力の項目があるため、一括提出の対象外です">入力途中 ' + partialInfo.filled + '/' + partialInfo.need + '</span>'
+      : '';
 
     // ランク差2以上の要注意判定（admin・園長のみ。園評価の保存後に表示）
     var gapInfo = canSeeRankGap ? rankGapInfo(selfRank, gardenRank) : null;
@@ -2980,7 +2985,7 @@ async function loadEvalList() {
       + '<td style="text-align:center;font-weight:600">' + (gardenTotal !== '-' && gardenTotal ? gardenTotal : '-') + '</td>'
       + '<td style="text-align:center">' + rkBadge(gardenRank) + '</td>'
       + (SESSION.role === 'admin' ? '<td style="text-align:center;font-weight:600;color:var(--clr-primary-d)">' + (bonusVal > 0 ? bonusVal + '点' : '-') + '</td>' : '<td style="display:none"></td>')
-      + '<td><span class="badge ' + statusBadge(statusVal) + '">' + escHtml(statusVal) + '</span>' + gapBadge + '</td>'
+      + '<td><span class="badge ' + statusBadge(statusVal) + '">' + escHtml(statusVal) + '</span>' + partialBadge + gapBadge + '</td>'
       + '<td><button class="btn btn-outline btn-sm" data-rid="' + escHtml(rid) + '" data-sid="' + escHtml(s.staffId) + '" data-half="' + half + '" onclick="openMgrModal2(this.dataset.rid,this.dataset.sid,this.dataset.half)">評価入力</button></td>'
       + '</tr>';
   }).join('') : noData;
@@ -2988,24 +2993,39 @@ async function loadEvalList() {
   // 一時保存件数カウント → 一括提出ボタンの表示切替
   var draftStatus   = isH1 ? '管理者評価入力中' : '下半期管理者評価入力中';
   var submitStatus  = isH1 ? '管理者評価済'     : '下半期管理者評価済';
-  var draftCount    = 0, submittedCount = 0;
+  var draftCount    = 0, submittedCount = 0, partialCount = 0;
   allStaff.forEach(function(s) {
     var e = evalMap[String(s.staffId).trim()];
     var st = e ? (e.status || '未提出') : '未提出';
-    if (st === draftStatus)  draftCount++;
+    if (st === draftStatus) {
+      if (mgrDraftPartial(e, isH1)) partialCount++;   // 入力途中は提出対象に数えない
+      else draftCount++;
+    }
     if (st === submitStatus) submittedCount++;
   });
   var statusCountEl = document.getElementById('evalMgrStatusCount');
   var bulkBtn = document.getElementById('bulkSubmitBtn');
   if (statusCountEl) {
     statusCountEl.textContent = '一時保存: ' + draftCount + '件　提出済: ' + submittedCount + '件'
+      + (partialCount > 0 ? '　⚠ 入力途中（提出不可）: ' + partialCount + '件' : '')
       + (canSeeRankGap && gapCount > 0 ? '　⚠ ランク差2以上: ' + gapCount + '件' : '');
   }
   if (bulkBtn) {
-    // 一時保存中が1件以上あれば一括提出ボタンを表示
+    // 全項目入力済みの一時保存が1件以上あれば一括提出ボタンを表示（入力途中のみの場合は出さない）
     bulkBtn.style.display = draftCount > 0 ? '' : 'none';
     bulkBtn.textContent = '📤 全員分を理事長へ提出（' + draftCount + '件）';
   }
+}
+
+// 園評価が一時保存止まり（項目の一部だけ入力）かを判定。該当すれば {filled, need}、そうでなければ null
+function mgrDraftPartial(e, isH1) {
+  if (!e) return null;
+  var draftSt = isH1 ? '管理者評価入力中' : '下半期管理者評価入力中';
+  if ((e.status || '') !== draftSt) return null;
+  var need = e.gardenNeed || 0;
+  var filled = isH1 ? (e.gardenFilledH1 || 0) : (e.gardenFilledH2 || 0);
+  if (!need || filled >= need) return null;
+  return { filled: filled, need: need };
 }
 
 // 自己評価と園評価のランク差（SS>S>A>B>C>D>E の7段階）。2ランク以上で要注意。両方そろっていない場合は null
@@ -3304,19 +3324,20 @@ async function bulkSubmitEvals() {
   var halfLabel = half === 'h1' ? '上半期' : '下半期';
   showConfirm(
     '一括提出の確認',
-    year + '年度 ' + halfLabel + 'の一時保存中の園評価を、全員分まとめて理事長へ提出します。提出後は個別に変更できなくなります。よろしいですか？',
+    year + '年度 ' + halfLabel + 'の一時保存中の園評価を、全員分まとめて理事長へ提出します。\n※全項目が入力済みの職員のみ提出されます（入力途中の一時保存は提出されず、そのまま残ります）。\n提出後は個別に変更できなくなります。よろしいですか？',
     async function() {
       var r = await api({ action: 'bulkSubmitManagerEvals', year, half, garden });
-      if (r.ok) { toast(r.msg, 'success'); loadEvalList(); }
-      else toast(r.msg, 'error');
+      if (r.ok) { toast(r.msg, (r.incomplete && r.incomplete.length) ? 'error' : 'success'); loadEvalList(); }
+      else { toast(r.msg, 'error'); loadEvalList(); }
     }
   );
 }
 
 async function saveMgrEval() {
-  const unset = mgrScores.filter(s => !s).length;
-  if (unset > 0) { toast(unset + '項目が未入力です', 'error'); return; }
+  // 一時保存: 評価が1項目でも、コメントのみでも保存できる（全項目入力は「提出」でのみ必須）
   const comment = document.getElementById('mgrComment').value.trim();
+  const filled = mgrScores.filter(s => s > 0).length;
+  if (!filled && !comment) { toast('保存する内容がありません（評価かコメントを入力してください）', 'error'); return; }
   const half    = (mgrEditRecord && mgrEditRecord.half) || 'h1';
   const r = await api({
     action:         'saveManagerEval',
@@ -3651,7 +3672,7 @@ function toast(msg, type = 'info') {
   el.className = 'toast-item ' + type;
   el.textContent = msg;
   box.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  setTimeout(() => el.remove(), Math.min(12000, Math.max(3500, String(msg).length * 130)));  // 長いメッセージは長めに表示
 }
 
 // 確認モーダル
@@ -4369,21 +4390,25 @@ async function loadBonusList() {
       lbl1 = '主任';     // 一般職・リーダーの1次評価者＝主任
       lbl2 = '園長';     // 一般職・リーダーの2次評価者＝園長
     }
-    function dot(done) {
-      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;background:' + (done ? '#28a745' : '#d0d0d0') + '"></span>';
+    var draft1 = !!(bonusRec && bonusRec.draft1 && !has1);   // 一時保存止まり（未提出）
+    var draft2 = !!(bonusRec && bonusRec.draft2 && !has2);
+    function dot(done, draft) {
+      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;background:' + (done ? '#28a745' : (draft ? '#f0a500' : '#d0d0d0')) + '"></span>';
     }
-    function lbl(label, done) {
-      return '<div style="white-space:nowrap">' + dot(done)
+    function lbl(label, done, draft) {
+      var txt = done ? '済' : (draft ? '一時保存中' : '未');
+      var col = done ? '#28a745' : (draft ? '#c77d00' : '#aaa');
+      return '<div style="white-space:nowrap">' + dot(done, draft)
         + '<span style="font-size:.72rem;color:#666">' + label + ':&thinsp;</span>'
-        + '<span style="font-size:.75rem;font-weight:700;color:' + (done ? '#28a745' : '#aaa') + '">' + (done ? '済' : '未') + '</span></div>';
+        + '<span style="font-size:.75rem;font-weight:700;color:' + col + '">' + txt + '</span></div>';
     }
     if (isSyuninUser) {
       // 主任ユーザーは自分の担当（1次）のみ表示
-      return '<td style="padding:4px 8px">' + lbl(lbl1 || '1次', has1) + '</td>';
+      return '<td style="padding:4px 8px">' + lbl(lbl1 || '1次', has1, draft1) + '</td>';
     }
     var html = '<td style="padding:4px 8px">';
-    if (lbl1) html += lbl(lbl1 + '(1次)', has1);
-    html += lbl(lbl2 + '(2次)', has2);
+    if (lbl1) html += lbl(lbl1 + '(1次)', has1, draft1);
+    html += lbl(lbl2 + '(2次)', has2, draft2);
     html += '</td>';
     return html;
   }
@@ -4440,10 +4465,14 @@ async function loadBonusList() {
   tbody.innerHTML = list.map(function(s) {
     var b = bonusMap[String(s.staffId).trim()];
     var raw1 = 0, raw2 = 0;
-    if (b && b.scores1) b.scores1.forEach(function(v,i){ raw1 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w1:0); });
-    if (b && b.scores2) b.scores2.forEach(function(v,i){ raw2 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w2:0); });
-    var has1 = b && b.scores1 && b.scores1.some(Boolean);
-    var has2 = b && b.scores2 && b.scores2.some(Boolean);
+    // 提出済み（評価日あり）の側だけを集計する。一時保存中の点数は合計・ランクに混ぜない
+    var sub1 = !!(b && b.submitted1), sub2 = !!(b && b.submitted2);
+    var hasDraft = !!(b && ((b.draft1 && !sub1) || (b.draft2 && !sub2)));
+    if (b && b.scores1 && sub1) b.scores1.forEach(function(v,i){ raw1 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w1:0); });
+    if (b && b.scores2 && sub2) b.scores2.forEach(function(v,i){ raw2 += (v||0)*(BONUS_WEIGHTS[i]?BONUS_WEIGHTS[i].w2:0); });
+    var has1 = b && sub1 && b.scores1 && b.scores1.some(Boolean);
+    var has2 = b && sub2 && b.scores2 && b.scores2.some(Boolean);
+    var draftMark = '<span style="color:#c77d00;font-size:.72rem;font-weight:600">一時保存中</span>';
     var evalType = getBonusEvalType(s.jobType);
     var useMax = getBonusRawMax(evalType).total;
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
@@ -4455,6 +4484,8 @@ async function loadBonusList() {
     var grand = aTotal70 !== null && bVal !== null
       ? Math.round((aTotal70 + (bVal||0) + (cVal||0)) * 10) / 10
       : null;
+    // 一時保存中（未提出）の側が残っている職員は、確定合計・ランクを出さず分布集計にも含めない
+    if (hasDraft) { grand = null; }
     var gRank = grand !== null ? calcRankJS(grand, 100) : '';
 
     // ランク分布集計（主任ユーザーの表示には含めない。SS→Sに統合。
@@ -4479,7 +4510,7 @@ async function loadBonusList() {
         + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
         + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
         + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
-          + (has1 ? raw1 + '点' : '<span style="color:#ccc">未入力</span>') + '</td>'
+          + (has1 ? raw1 + '点' : ((b && b.draft1 && !sub1) ? draftMark : '<span style="color:#ccc">未入力</span>')) + '</td>'
         + evalStatusCell(s.jobType, b)
         + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">一次評価入力</button></td>'
         + '</tr>';
@@ -4491,10 +4522,10 @@ async function loadBonusList() {
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
       // 一次評価（合計）
       + '<td style="text-align:center;font-weight:600;background:#f7fcff;color:#3a7a9a">'
-        + (has1 ? raw1 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+        + (has1 ? raw1 + '点' : ((b && b.draft1 && !sub1) ? draftMark : '<span style="color:#ccc">-</span>')) + '</td>'
       // 二次評価（合計）
       + '<td style="text-align:center;font-weight:600;background:#f5fbf8;color:#3a8060">'
-        + (has2 ? raw2 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+        + (has2 ? raw2 + '点' : ((b && b.draft2 && !sub2) ? draftMark : '<span style="color:#ccc">-</span>')) + '</td>'
       // A合計（70点満点）
       + '<td style="text-align:center;font-weight:700;background:#f0f8fd;color:var(--clr-primary-d)">'
         + (aTotal70 !== null ? aTotal70 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
@@ -4680,7 +4711,10 @@ async function openBonusModal(staffId) {
     + '<span><span style="color:var(--clr-text-s)">評価タイプ：</span><strong>' + escHtml(evalType==='encho'?'園長用':evalType==='syunin'?'主任用':evalType==='leader'?'リーダー用':'一般職用') + '</strong></span>'
     + '<span><span style="color:var(--clr-text-s)">A合計: 生点÷満点×70：</span><strong>' + maxRaw + '点生点 → 70点満点換算</strong></span>'
     + (SESSION.role === 'admin' ? '<span><span style="color:var(--clr-text-s)">B加算（自己評価より）：</span><strong>' + bBonus + '点</strong></span>' : '')
-    + '</div></div>';
+    + '</div>'
+    + ((currentBonusRecord && ((currentBonusRecord.draft1 && !currentBonusRecord.submitted1) || (currentBonusRecord.draft2 && !currentBonusRecord.submitted2)))
+        ? '<div style="margin-top:8px;color:var(--clr-warning);font-weight:600">💾 一時保存中の入力があります（未提出）。提出するには全項目を入力して「✅ 提出」を押してください。</div>' : '')
+    + '</div>';
 
   // ── 参照情報パネル（職員評価の目標・振り返り・園長コメント） ─────────────
   var refHalf = term === '夏季' ? '下半期' : '上半期';
@@ -4983,7 +5017,9 @@ function updateBonusTotal(evalType) {
   }
 }
 
-async function saveBonusEval() {
+// isDraft=true: 一時保存（何か入力があれば可・未提出扱い） / false: 提出（全項目の入力が必須）
+async function saveBonusEval(isDraft) {
+  isDraft = (isDraft === true);
   if (!currentBonusStaff) return;
   // コンテキスト判定（evalMgr or bonus section）
   var bonusSec = document.getElementById('sec-bonus');
@@ -5000,9 +5036,9 @@ async function saveBonusEval() {
   var isEnchoFirstMode2 = SESSION.role === 'encho' && isBonusFirstEvaluator(currentBonusStaff.jobType);
   var isFirstOnlySave   = SESSION.role === 'syunin' || isEnchoFirstMode2;
 
-  // 評価漏れチェック（役割に応じて対象スコアを検証）
+  // 評価漏れチェック（役割に応じて対象スコアを検証）。一時保存のときは行わない
   var unselected = [];
-  BONUS_WEIGHTS.forEach(function(w, i) {
+  if (!isDraft) BONUS_WEIGHTS.forEach(function(w, i) {
     if (isFirstOnlySave) {
       // 主任ユーザー or 園長→主任評価: 一次評価のみチェック
       if (!bonusScores1[i]) unselected.push(w.item + '（一次）');
@@ -5022,6 +5058,15 @@ async function saveBonusEval() {
 
   var c1El = document.getElementById('bonusComment1');
   var c2El = document.getElementById('bonusComment2');
+  if (isDraft) {
+    // 一時保存: 評価が1項目でも、コメントのみでも保存できる（担当する側の入力だけを見る）
+    var myScores = isFirstOnlySave ? bonusScores1
+                 : (SESSION.role === 'encho') ? bonusScores2
+                 : bonusScores1.concat(bonusScores2);
+    var hasAny = myScores.some(function(v) { return v > 0; })
+      || !!(c1El && c1El.value.trim()) || !!(c2El && c2El.value.trim()) || cAdj !== 0;
+    if (!hasAny) { toast('保存する内容がありません（評価かコメントを入力してください）', 'error'); return; }
+  }
   // 評価者ロール別の保存モード
   var mode;
   if (SESSION.role === 'syunin') {
@@ -5040,7 +5085,7 @@ async function saveBonusEval() {
     name: currentBonusStaff.name,
     jobType: currentBonusStaff.jobType,
     garden: currentBonusStaff.garden,
-    year, term, evalType, mode,
+    year, term, evalType, mode, draft: isDraft,
     scores1: bonusScores1, scores2: bonusScores2,
     bBonus, cAdj,
     comment1: c1El ? c1El.value : '',
@@ -6934,7 +6979,8 @@ function openJikoCheckPrint() {
       <button class="btn btn-outline" onclick="openBonusPrint()">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-outline" onclick="closeBonusModal()">閉じる</button>
-        <button class="btn btn-primary" onclick="saveBonusEval()">💾 保存</button>
+        <button class="btn btn-outline" onclick="saveBonusEval(true)">💾 一時保存</button>
+        <button class="btn btn-primary" onclick="saveBonusEval(false)">✅ 提出</button>
       </div>
     </div>
   </div>
