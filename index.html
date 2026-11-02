@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.01</title>
+<title>はぐくみ評価 Ver.2.02</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.01',
+    description:'育保の杜 職員評価システム Ver.2.02',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.01</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.02</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1078,6 +1078,18 @@ tr.rank-gap-row > td { background: #fdecec; }
             </div>
           </div>
           <div class="frow">
+            <div class="fcol">
+              <label class="flabel">📅 夏季賞与 管理者評価 提出期限</label>
+              <input type="date" class="finput" id="setBonusSummerDeadline">
+              <p class="fhelp">賞与評価（夏季）を管理者が提出する期日。設定すると、賞与評価を開いたとき夏季賞与の一覧が表示されます。</p>
+            </div>
+            <div class="fcol">
+              <label class="flabel">📅 冬季賞与 管理者評価 提出期限</label>
+              <input type="date" class="finput" id="setBonusWinterDeadline">
+              <p class="fhelp">賞与評価（冬季）を管理者が提出する期日。設定すると、賞与評価を開いたとき冬季賞与の一覧が表示されます。両方設定した場合は、期限が近い方を表示します。</p>
+            </div>
+          </div>
+          <div class="frow">
             <div class="fcol" style="flex:2">
               <label class="flabel">📢 アナウンス</label>
               <textarea class="ftextarea" id="setAnnounce" rows="3" placeholder="全職員ホームに表示するお知らせ（空白で非表示）"></textarea>
@@ -1153,6 +1165,8 @@ tr.rank-gap-row > td { background: #fdecec; }
               <span class="non-admin-garden-label" id="bonusGardenLabel" style="display:none;padding:6px 12px;background:var(--clr-bg);border-radius:var(--radius-s);font-size:.85rem;font-weight:600;color:var(--clr-primary-d)"></span>
             </div>
           </div>
+          <!-- 賞与評価 管理者評価の提出期限（設定されている場合のみ表示） -->
+          <div id="bonusDeadlineNote" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border);font-size:.85rem"></div>
           <!-- 理事長（admin）の賞与サマリー -->
           <div id="adminBonusSummary" style="display:none;margin-bottom:16px;padding:14px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border)">
             <div style="font-size:.82rem;font-weight:700;color:var(--clr-primary-d);margin-bottom:8px">📊 理事長 賞与評価（対象職員平均）</div>
@@ -2269,7 +2283,9 @@ async function loadHome() {
       tasks.push({name:'📝 職員の目標・自己評価への園評価入力', deadline:mgrDlLabel, badge:'info', action:'evalMgr'});
     }
     if (perm.canBonus) {
-      tasks.push({name:'✏️ 賞与評価の入力・確認', deadline:'', badge:'info', action:'bonus'});
+      var bdefHome = pickDefaultBonusTerm();
+      var bdlHome  = bonusDeadlineOf(bdefHome.term);
+      tasks.push({name:'✏️ 賞与評価の入力・確認' + (bdlHome ? '（' + bdefHome.term + '）' : ''), deadline: bdlHome ? bdlHome + ' まで' : '', badge:'info', action:'bonus'});
     }
   }
 
@@ -3596,6 +3612,8 @@ async function loadSettings() {
   document.getElementById('setH2EvalDeadline').value = normDate(SETTINGS['h2_eval_deadline']);
   document.getElementById('setH2MgrDeadline').value  = normDate(SETTINGS['h2_mgr_deadline']);
   document.getElementById('setCheckDeadline').value   = normDate(SETTINGS['check_deadline']);
+  document.getElementById('setBonusSummerDeadline').value = normDate(SETTINGS['bonus_summer_deadline']);
+  document.getElementById('setBonusWinterDeadline').value = normDate(SETTINGS['bonus_winter_deadline']);
   document.getElementById('setCheckPublish').checked  = (SETTINGS['check_publish'] === 'true');
   updatePhaseLabel();   // 設定画面を開いた時点でバッジを最新化
 }
@@ -3632,6 +3650,8 @@ async function saveSettings() {
     h2_eval_deadline: document.getElementById('setH2EvalDeadline').value,
     h2_mgr_deadline:  document.getElementById('setH2MgrDeadline').value,
     check_deadline:   document.getElementById('setCheckDeadline').value,
+    bonus_summer_deadline: document.getElementById('setBonusSummerDeadline').value,
+    bonus_winter_deadline: document.getElementById('setBonusWinterDeadline').value,
     check_publish:    document.getElementById('setCheckPublish').checked ? 'true' : 'false'
   };
   const r = await api({ action: 'saveSettings', settings });
@@ -4268,6 +4288,61 @@ function isBonusSecondEvaluator(targetJobType) {
   return false;
 }
 
+// ── 賞与評価 管理者評価の提出期限（設定: bonus_summer_deadline / bonus_winter_deadline） ──
+function bonusDeadlineOf(term) {
+  var v = SETTINGS[term === '冬季' ? 'bonus_winter_deadline' : 'bonus_summer_deadline'];
+  if (!v) return '';
+  var s = String(v).trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.substring(0, 10) : '';
+}
+
+// 賞与評価を開いたとき最初に表示する「賞与期・年度」を決める
+//  ・夏季だけ設定 → 夏季 ／ 冬季だけ設定 → 冬季
+//  ・両方設定 → 期限が過ぎていない方のうち近い方（両方過ぎていれば新しい方）
+//  ・どちらも未設定 → 今日の日付から直近の賞与期（11月以降=冬季 / 5〜10月=夏季 / 1〜4月=前年の冬季）
+function pickDefaultBonusTerm() {
+  var sDl = bonusDeadlineOf('夏季'), wDl = bonusDeadlineOf('冬季');
+  function endOf(dl) { return new Date(dl + 'T23:59:59'); }
+  function yOf(dl)   { return parseInt(dl.substring(0, 4)); }
+  var now = new Date();
+  if (sDl && !wDl) return { term: '夏季', year: yOf(sDl) };
+  if (wDl && !sDl) return { term: '冬季', year: yOf(wDl) };
+  if (sDl && wDl) {
+    var sEnd = endOf(sDl), wEnd = endOf(wDl);
+    var sOpen = sEnd >= now, wOpen = wEnd >= now;
+    var pick;
+    if (sOpen && wOpen) pick = (sEnd <= wEnd) ? '夏季' : '冬季';
+    else if (sOpen)     pick = '夏季';
+    else if (wOpen)     pick = '冬季';
+    else                pick = (sEnd >= wEnd) ? '夏季' : '冬季';
+    return { term: pick, year: yOf(pick === '夏季' ? sDl : wDl) };
+  }
+  var m = now.getMonth() + 1, cy = now.getFullYear();
+  if (m >= 11) return { term: '冬季', year: cy };
+  if (m >= 5)  return { term: '夏季', year: cy };
+  return { term: '冬季', year: cy - 1 };
+}
+
+// 一覧上部に、選択中の賞与期の提出期限を表示（未設定なら非表示）
+function updateBonusDeadlineNote() {
+  var el = document.getElementById('bonusDeadlineNote');
+  var tsel = document.getElementById('bonusTermSel');
+  if (!el || !tsel) return;
+  var term = tsel.value;
+  var dl = bonusDeadlineOf(term);
+  if (!dl) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  var t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  var days = Math.round((new Date(dl + 'T00:00:00') - t0) / 86400000);
+  var label, color;
+  if (days < 0)       { label = '期限超過（' + (-days) + '日経過）'; color = 'var(--clr-danger)'; }
+  else if (days === 0){ label = '本日が期限です';                    color = 'var(--clr-warning)'; }
+  else if (days <= 7) { label = 'あと' + days + '日';                color = 'var(--clr-warning)'; }
+  else                { label = 'あと' + days + '日';                color = 'var(--clr-text-s)'; }
+  el.innerHTML = '📅 ' + escHtml(term) + '賞与 管理者評価の提出期限：<strong>' + escHtml(dl.replace(/-/g, '/')) + '</strong>'
+    + ' <span style="font-weight:600;color:' + color + '">' + label + '</span>';
+  el.style.display = '';
+}
+
 async function loadBonusSection() {
   // 年度セレクト初期化
   var sel = document.getElementById('bonusYearSel');
@@ -4275,6 +4350,13 @@ async function loadBonusSection() {
   sel.innerHTML = '';
   for (var i = y; i >= y-2; i--) {
     var o = document.createElement('option'); o.value=i; o.textContent=i+'年度'; sel.appendChild(o);
+  }
+  // 提出期限の設定に応じて、開いたときの賞与期・年度を切り替える
+  var defBonus = pickDefaultBonusTerm();
+  var termSelEl = document.getElementById('bonusTermSel');
+  if (termSelEl) termSelEl.value = defBonus.term;
+  if (Array.prototype.some.call(sel.options, function(op){ return String(op.value) === String(defBonus.year); })) {
+    sel.value = String(defBonus.year);
   }
   // 理事長サマリーは admin のみ表示
   var adminSummaryEl = document.getElementById('adminBonusSummary');
@@ -4330,6 +4412,7 @@ async function loadBonusList() {
   var year   = document.getElementById('bonusYearSel').value || currentYear();
   var term   = document.getElementById('bonusTermSel').value;
   var garden = document.getElementById('bonusGardenSel').value;
+  updateBonusDeadlineNote();
 
   // 評価ランク分布の目安設定（園ごと。adminが全園表示中は共通デフォルトを使用）
   var bandGarden = SESSION.role === 'admin' ? garden : SESSION.garden;
@@ -4443,6 +4526,8 @@ async function loadBonusList() {
   var br = await pBonusList;
   var bonusMap = {};
   if (br.ok) br.list.forEach(function(b){ bonusMap[String(b.staffId).trim()] = b; });
+  // 自己評価の園評価ランク由来のB加算（冬季=当年度上半期 / 夏季=前年度下半期）。賞与DBにレコードが無くても表示できる
+  var autoBMap = (br.ok && br.autoB) ? br.autoB : {};
 
   var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max1; }, 0); // 85
   var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
@@ -4478,7 +4563,18 @@ async function loadBonusList() {
     var rawTotal = (evalType === 'encho' ? 0 : raw1) + raw2;
     // A: 70点満点換算（四捨五入）
     var aTotal70 = (has1||has2) ? Math.floor((rawTotal / useMax) * 70) : null;
-    var bVal  = b ? (b.bBonus||0) : null;
+    // B加算: 一次・二次とも提出済みの確定レコードは保存値を優先。
+    // それ以外（未評価・一時保存・片側のみ提出）は自己評価由来の値を表示（個別入力画面と同じ値）
+    var sidKey  = String(s.staffId).trim();
+    var autoBv  = Object.prototype.hasOwnProperty.call(autoBMap, sidKey) ? autoBMap[sidKey] : null;
+    var recB    = b ? (Number(b.bBonus) || 0) : 0;
+    var complete = !!(b && (evalType === 'encho' ? sub2 : (sub1 && sub2)));
+    var bVal;
+    if (complete)                          bVal = recB;
+    else if (autoBv !== null && autoBv > 0) bVal = autoBv;
+    else if (recB > 0)                     bVal = recB;
+    else if (autoBv !== null)              bVal = 0;
+    else                                   bVal = b ? 0 : null;
     var cVal  = b ? (b.cAdj||0)  : null;
     // 確定合計 = A（70点）+ B加算 + C加減 → 100点満点
     var grand = aTotal70 !== null && bVal !== null
@@ -5183,9 +5279,10 @@ function openBonusPrint() {
   var term = document.getElementById('bonusTermSel').value;
   var bBonus = parseInt(document.getElementById('bonusBVal').value)||0;
   var cAdj   = parseInt(document.getElementById('bonusCVal').value)||0;
-  var rank   = calcRankJS(total, maxScore);
-  var aBonus = {SS:30,S:25,A:20,B:15,C:10,D:5,E:0}[rank]||0;
-  var grand  = aBonus + bBonus + cAdj;
+  // A合計 = 一次＋二次の合計生点を70点満点に換算（保存処理・一覧と同じ計算式：切り捨て）
+  var aTotal70  = Math.floor((total / maxScore) * 70);
+  // 総合 = A合計(70点満点) + B加算 + C加減 → 100点満点、ランクはその総合点で判定
+  var grand     = Math.round(aTotal70 + bBonus + cAdj);
   var grandRank = calcRankJS(grand, 100);
   var c1 = document.getElementById('bonusComment1') ? document.getElementById('bonusComment1').value : '';
   var c2 = document.getElementById('bonusComment2') ? document.getElementById('bonusComment2').value : '';
@@ -5214,8 +5311,7 @@ function openBonusPrint() {
     + '<div class="print-meta"><span>氏名：<strong>' + escHtml(currentBonusStaff.name) + '</strong></span><span>職種：<strong>' + escHtml(currentBonusStaff.jobType) + '</strong></span><span>所属：<strong>' + escHtml(currentBonusStaff.garden) + '</strong></span></div>'
     + '<table class="print-score-table"><thead><tr><th style="width:140px">評価項目</th>' + (isEncho?'':'<th style="width:80px;text-align:center">1次評価</th>') + '<th style="width:80px;text-align:center">2次評価</th><th style="width:70px;text-align:center">小計</th></tr></thead><tbody>' + rows + '</tbody></table>'
     + '<div style="display:flex;gap:24px;flex-wrap:wrap;margin:14px 0;padding:12px;background:#f8f8f6;border-radius:4px;font-size:.85rem">'
-    + '<span>Aランク：<strong><span class="print-score-circle">' + rank + '</span></strong></span>'
-    + '<span>A加算：<strong>' + aBonus + '点</strong></span>'
+    + '<span>A合計（70点満点換算）：<strong>' + aTotal70 + '点</strong></span>'
     + '<span>B加算：<strong>' + bBonus + '点</strong></span>'
     + '<span>C加減：<strong>' + cAdj + '点</strong></span>'
     + '<span style="font-size:1rem;font-weight:700;color:#2e5549">総合：' + grand + '点 → <span class="print-score-circle">' + grandRank + '</span></span>'
