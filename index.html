@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.04</title>
+<title>はぐくみ評価 Ver.2.05</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.04',
+    description:'育保の杜 職員評価システム Ver.2.05',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.04</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.05</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -4990,6 +4990,11 @@ async function openBonusModal(staffId) {
   document.getElementById('bonusModalBody').innerHTML = html;
   renderBonusScoreTable(evalType);
   updateBonusTotal(evalType);
+  // 理事長のみ: 提出済みの側（一次／二次）の提出を解除できる
+  var ub1 = document.getElementById('bonusUnlock1Btn'), ub2 = document.getElementById('bonusUnlock2Btn');
+  var isAdminBonus = SESSION.role === 'admin';
+  if (ub1) ub1.style.display = (isAdminBonus && !isEncho && currentBonusRecord && currentBonusRecord.submitted1) ? '' : 'none';
+  if (ub2) ub2.style.display = (isAdminBonus && currentBonusRecord && currentBonusRecord.submitted2) ? '' : 'none';
   document.getElementById('bonusModal').classList.add('open');
   } catch(err) {
     showLoading(false);
@@ -5219,6 +5224,28 @@ async function saveBonusEval(isDraft) {
     else loadEvalList();
   }
   else toast(r.msg, 'error');
+}
+
+// 理事長のみ: 賞与評価の提出済み（一次／二次）を一時保存の状態に戻す（点数・コメントは残る）
+function unlockBonusEvalSide(side) {
+  if (!SESSION || SESSION.role !== 'admin' || !currentBonusStaff) return;
+  var year = document.getElementById('bonusYearSel').value || currentYear();
+  var term = (document.getElementById('bonusTermSel') || {value:'夏季'}).value;
+  var label = side === 'first' ? '一次評価' : '二次評価';
+  var staffId = currentBonusStaff.staffId;
+  showConfirm(
+    '提出の解除',
+    currentBonusStaff.name + '（' + currentBonusStaff.jobType + '）の' + year + '年度 ' + term + '賞与「' + label + '」の提出を解除し、一時保存の状態に戻します。\n解除後は点数・コメントの両方を修正できます（現在の入力値はそのまま残ります）。\n解除中は、この評価は総合点・ランクの集計から外れます。修正したら「✅ 提出」で再提出してください。よろしいですか？',
+    async function() {
+      var r = await api({ action: 'unlockBonusEval', targetStaffId: staffId, year: year, term: term, side: side });
+      if (r.ok) {
+        toast(r.msg, 'success');
+        loadBonusList();
+        loadAdminBonusSummary();
+        await openBonusModal(staffId);   // 編集可能な状態で開き直す
+      } else toast(r.msg, 'error');
+    }
+  );
 }
 
 function closeBonusModal() { document.getElementById('bonusModal').classList.remove('open'); }
@@ -7098,6 +7125,8 @@ function openJikoCheckPrint() {
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn btn-outline" onclick="openBonusPrint()">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" id="bonusUnlock1Btn" style="display:none" onclick="unlockBonusEvalSide('first')" title="理事長のみ。一次評価の提出を解除して再編集できるようにします">🔓 一次の提出を解除</button>
+        <button class="btn btn-outline" id="bonusUnlock2Btn" style="display:none" onclick="unlockBonusEvalSide('second')" title="理事長のみ。二次評価の提出を解除して再編集できるようにします">🔓 二次の提出を解除</button>
         <button class="btn btn-outline" onclick="closeBonusModal()">閉じる</button>
         <button class="btn btn-outline" onclick="saveBonusEval(true)">💾 一時保存</button>
         <button class="btn btn-primary" onclick="saveBonusEval(false)">✅ 提出</button>
