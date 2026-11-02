@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.02</title>
+<title>はぐくみ評価 Ver.2.04</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.02',
+    description:'育保の杜 職員評価システム Ver.2.04',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.02</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.04</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1571,6 +1571,7 @@ tr.rank-gap-row > td { background: #fdecec; }
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn btn-outline" onclick="openPrintPreview('mgr')">🖨️ 印刷プレビュー</button>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" id="mgrUnlockBtn" style="display:none" onclick="unlockMgrEval()" title="理事長のみ。提出済みを一時保存の状態に戻して再編集できるようにします">🔓 提出を解除</button>
         <button class="btn btn-outline" onclick="closeMgrModal()">閉じる</button>
         <button class="btn btn-outline" id="mgrDraftBtn" onclick="saveMgrEval()">💾 一時保存</button>
         <button class="btn btn-primary" id="mgrSubmitBtn" onclick="submitMgrEval()">✅ 提出（確定）</button>
@@ -3224,6 +3225,9 @@ async function openMgrModal2(recordId, staffId, half) {
   // 提出済み（一括提出後）はスコア操作不可にしてボタン無効
   var isSubmitted = (statusStr === '管理者評価済') || (statusStr === '下半期管理者評価済');
   var draftBtn2  = document.getElementById('mgrDraftBtn');
+  // 理事長のみ、提出済みを解除して再編集できる
+  var unlockBtn2 = document.getElementById('mgrUnlockBtn');
+  if (unlockBtn2) unlockBtn2.style.display = (isSubmitted && SESSION.role === 'admin') ? '' : 'none';
   if (isSubmitted) {
     if (draftBtn2)  { draftBtn2.disabled = true; draftBtn2.style.opacity = '.4'; draftBtn2.textContent = '✅ 提出済み（変更不可）'; }
     document.querySelectorAll('#mgrScoreBody input[type=radio]').forEach(function(inp){ inp.disabled = true; });
@@ -3345,6 +3349,26 @@ async function bulkSubmitEvals() {
       var r = await api({ action: 'bulkSubmitManagerEvals', year, half, garden });
       if (r.ok) { toast(r.msg, (r.incomplete && r.incomplete.length) ? 'error' : 'success'); loadEvalList(); }
       else { toast(r.msg, 'error'); loadEvalList(); }
+    }
+  );
+}
+
+// 理事長のみ: 提出済みの園評価を一時保存の状態に戻す（点数・コメントは残る）
+function unlockMgrEval() {
+  if (!SESSION || SESSION.role !== 'admin' || !mgrEditRecord) return;
+  var half = mgrEditRecord.half || 'h1';
+  var halfLabel = half === 'h1' ? '上半期' : '下半期';
+  showConfirm(
+    '提出の解除',
+    mgrEditRecord.name + '（' + mgrEditRecord.jobType + '）の' + halfLabel + '園評価の提出を解除し、一時保存の状態に戻します。\n解除後は点数・コメントの両方を修正できます（現在の入力値はそのまま残ります）。\n修正したら「一時保存」し、「✅ 提出（確定）」または「全員分を理事長へ提出」で再提出してください。よろしいですか？',
+    async function() {
+      var rec = mgrEditRecord;   // 解除後に同じ職員の画面を開き直すため控えておく
+      var r = await api({ action: 'unlockManagerEval', targetStaffId: rec.staffId, year: rec.year, half: half });
+      if (r.ok) {
+        toast(r.msg, 'success');
+        loadEvalList();                                   // 一覧の状態表示を更新
+        await openMgrModal2(rec.recordId, rec.staffId, half);   // 編集可能な状態で開き直す（点数・コメントとも入力可）
+      } else toast(r.msg, 'error');
     }
   );
 }
