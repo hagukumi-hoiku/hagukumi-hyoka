@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.06</title>
+<title>はぐくみ評価 Ver.2.08</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.06',
+    description:'育保の杜 職員評価システム Ver.2.08',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.06</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.08</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -1167,6 +1167,11 @@ tr.rank-gap-row > td { background: #fdecec; }
           </div>
           <!-- 賞与評価 管理者評価の提出期限（設定されている場合のみ表示） -->
           <div id="bonusDeadlineNote" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border);font-size:.85rem"></div>
+          <!-- 賞与評価の一括提出（一時保存の評価を、全体のバランスを見たあとまとめて提出） -->
+          <div id="bonusBulkBar" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border);align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <span id="bonusBulkInfo" style="font-size:.85rem"></span>
+            <button class="btn btn-accent" id="bonusBulkBtn" onclick="bulkSubmitBonus()" style="display:none"></button>
+          </div>
           <!-- 理事長（admin）の賞与サマリー -->
           <div id="adminBonusSummary" style="display:none;margin-bottom:16px;padding:14px;background:var(--clr-bg);border-radius:var(--radius-s);border:1px solid var(--clr-border)">
             <div style="font-size:.82rem;font-weight:700;color:var(--clr-primary-d);margin-bottom:8px">📊 理事長 賞与評価（対象職員平均）</div>
@@ -4432,6 +4437,30 @@ async function loadAdminBonusSummary() {
   document.getElementById('adminBonusContent').innerHTML = html;
 }
 
+// 一時保存中の点数から「暫定」のA合計・総合点・ランクを計算する（全体のバランス確認用）。
+// 一次・二次（園長タイプは二次のみ）の全項目が揃っている（提出済み or 一時保存）場合だけ計算し、
+// 入力途中・未入力の側がある場合は null を返す。確定値ではない（提出後に確定する）。
+function bonusProvisional(b, evalType, useMax, bVal, cVal) {
+  if (!b) return null;
+  var n = BONUS_WEIGHTS.length;
+  function full(a) {
+    if (!a || a.length < n) return false;
+    for (var k = 0; k < n; k++) { var v = parseInt(a[k], 10); if (!(v >= 1 && v <= 5)) return false; }
+    return true;
+  }
+  var isEnchoT = (evalType === 'encho');
+  var sc1 = b.scores1 || [], sc2 = b.scores2 || [];
+  if ((!isEnchoT && !full(sc1)) || !full(sc2)) return null;
+  var raw = 0;
+  BONUS_WEIGHTS.forEach(function(w, i) {
+    if (!isEnchoT) raw += (sc1[i] || 0) * w.w1;
+    raw += (sc2[i] || 0) * w.w2;
+  });
+  var a = Math.floor((raw / useMax) * 70);
+  var grand = Math.round((a + (bVal || 0) + (cVal || 0)) * 10) / 10;
+  return { a: a, grand: grand, rank: calcRankJS(grand, 100) };
+}
+
 async function loadBonusList() {
   var year   = document.getElementById('bonusYearSel').value || currentYear();
   var term   = document.getElementById('bonusTermSel').value;
@@ -4552,6 +4581,7 @@ async function loadBonusList() {
   if (br.ok) br.list.forEach(function(b){ bonusMap[String(b.staffId).trim()] = b; });
   // 自己評価の園評価ランク由来のB加算（冬季=当年度上半期 / 夏季=前年度下半期）。賞与DBにレコードが無くても表示できる
   var autoBMap = (br.ok && br.autoB) ? br.autoB : {};
+  updateBonusBulkBar(br.ok ? br.list : [], term);   // 一括提出ボタン（一時保存の評価がある場合）
 
   var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max1; }, 0); // 85
   var max2 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max2; }, 0); // 135
@@ -4570,6 +4600,7 @@ async function loadBonusList() {
   // 園長評価を含めるかは目安設定（既定：含めない）に従う
   var rankCounts = { S:0, A:0, B:0, C:0, D:0, E:0 };
   var rankTotal = 0;
+  var provCount = 0;   // 暫定（一時保存を含む）で集計に入れた人数
 
   tbody.innerHTML = list.map(function(s) {
     var b = bonusMap[String(s.staffId).trim()];
@@ -4604,17 +4635,24 @@ async function loadBonusList() {
     var grand = aTotal70 !== null && bVal !== null
       ? Math.round((aTotal70 + (bVal||0) + (cVal||0)) * 10) / 10
       : null;
-    // 一時保存中（未提出）の側が残っている職員は、確定合計・ランクを出さず分布集計にも含めない
+    // 一時保存中（未提出）の側が残っている職員は、確定合計・ランクは出さない（確定は提出後）。
+    // 代わりに、一時保存の点数から「暫定」の合計・ランクを計算し、全体のバランス確認（分布チェック）に含める
     if (hasDraft) { grand = null; }
     var gRank = grand !== null ? calcRankJS(grand, 100) : '';
+    var prov = (!isSyuninUser && hasDraft) ? bonusProvisional(b, evalType, useMax, bVal, cVal) : null;
 
     // ランク分布集計（主任ユーザーの表示には含めない。SS→Sに統合。
     // 園長評価は目安設定の includeEncho が true の場合のみ含める（既定：含めない）
-    if (!isSyuninUser && gRank && (bandSettings.includeEncho || s.jobType !== '園長')) {
-      var effRank = (gRank === 'SS') ? 'S' : gRank;
-      if (rankCounts[effRank] !== undefined) { rankCounts[effRank]++; rankTotal++; }
+    var distRank = gRank || (prov ? prov.rank : '');
+    if (!isSyuninUser && distRank && (bandSettings.includeEncho || s.jobType !== '園長')) {
+      var effRank = (distRank === 'SS') ? 'S' : distRank;
+      if (rankCounts[effRank] !== undefined) { rankCounts[effRank]++; rankTotal++; if (!gRank) provCount++; }
     }
 
+    // 暫定（一時保存の点数による仮の値）の表示
+    function provMark(txt) {
+      return '<span title="暫定（一時保存の点数による仮の値。提出後に確定）" style="color:#c77d00;font-style:italic">暫定 ' + txt + '</span>';
+    }
     function cell(v, bg) {
       return '<td style="text-align:center;font-weight:600;background:' + (bg||'transparent') + '">'
         + (v !== null && v !== undefined ? v : '<span style="color:#ccc">-</span>') + '</td>';
@@ -4648,7 +4686,7 @@ async function loadBonusList() {
         + (has2 ? raw2 + '点' : ((b && b.draft2 && !sub2) ? draftMark : '<span style="color:#ccc">-</span>')) + '</td>'
       // A合計（70点満点）
       + '<td style="text-align:center;font-weight:700;background:#f0f8fd;color:var(--clr-primary-d)">'
-        + (aTotal70 !== null ? aTotal70 + '点' : '<span style="color:#ccc">-</span>') + '</td>'
+        + (prov ? provMark(prov.a + '点') : (aTotal70 !== null ? aTotal70 + '点' : '<span style="color:#ccc">-</span>')) + '</td>'
       // B加算
       + '<td style="text-align:center;font-weight:600;background:#fffef5">'
         + (bVal !== null ? bVal + '点' : '<span style="color:#ccc">-</span>') + '</td>'
@@ -4657,15 +4695,21 @@ async function loadBonusList() {
         + (cVal ? (cVal > 0 ? '+' : '') + cVal : '<span style="color:#ccc">-</span>') + '</td>'
       // 確定合計
       + '<td style="text-align:center;font-weight:700;background:#fffef5;color:var(--clr-primary-d)">'
-        + (grand !== null ? grand + '点' : '<span style="color:#ccc">-</span>') + '</td>'
-      // 総合ランク
-      + '<td style="text-align:center">' + rkBadge(gRank) + '</td>'
+        + (grand !== null ? grand + '点' : (prov ? provMark(prov.grand + '点') : '<span style="color:#ccc">-</span>')) + '</td>'
+      // 総合ランク（一時保存分は暫定ランクを薄く表示）
+      + '<td style="text-align:center">' + (gRank ? rkBadge(gRank) : (prov ? '<span title="暫定ランク（一時保存の点数による仮の値）" style="opacity:.55;outline:1.5px dashed #c77d00;outline-offset:1px;border-radius:50%;display:inline-block">' + rkBadge(prov.rank) + '</span>' : rkBadge(''))) + '</td>'
       + evalStatusCell(s.jobType, b)
       + '<td><button class="btn btn-outline btn-sm" data-sid="' + escHtml(s.staffId) + '" onclick="openBonusModal(this.dataset.sid)">' + (SESSION.role==='encho' && s.jobType==='主任' ? '一次評価入力' : '評価入力') + '</button></td>'
       + '</tr>';
   }).join('');
 
   renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bandSettings.bands);
+  // 暫定（一時保存を含む）の人数を注記
+  if (provCount > 0) {
+    var distContentEl = document.getElementById('bonusRankDistContent');
+    if (distContentEl) distContentEl.insertAdjacentHTML('beforeend',
+      '<p style="margin:8px 0 0;font-size:.78rem;color:#c77d00;font-weight:600">※ 一時保存中の評価 ' + provCount + '名を「暫定」として含めて集計しています（提出すると確定します）。</p>');
+  }
 }
 
 // ============================================================
@@ -5225,6 +5269,69 @@ async function saveBonusEval(isDraft) {
     else loadEvalList();
   }
   else toast(r.msg, 'error');
+}
+
+// ── 賞与評価の一括提出 ──────────────────────────────────────────────
+// 自分の担当側の「一時保存」を数える（サーバー側 bulkSubmitBonusEvals と同じ条件）
+//   主任: 一般職・リーダーの一次 / 園長: 主任の一次・一般職・リーダーの二次 / 理事長: 自分の一時保存（確定入力中）
+function bonusBulkCount(list) {
+  var role = SESSION.role;
+  var syuninExcluded = ['主任', '園長', '理事長'];
+  var enchoSecond = ['保育補助','保育士','調理員','栄養士','乳児リーダー','幼児リーダー','統括リーダー'];
+  var n = BONUS_WEIGHTS.length;
+  function filled(a) { if (!a || a.length < n) return false; for (var k = 0; k < n; k++) { var v = parseInt(a[k], 10); if (!(v >= 1 && v <= 5)) return false; } return true; }
+  function cnt(a) { return (a || []).filter(function(v){ return parseInt(v, 10) >= 1; }).length; }
+  var ready = 0, partial = 0, submitted = 0;
+  (list || []).forEach(function(b) {
+    var jt = String(b.jobType || '').trim(), isEnchoT = (b.evalType === 'encho'), st = String(b.status || '');
+    var side;
+    if (role === 'syunin') { if (syuninExcluded.indexOf(jt) >= 0) return; side = 'first'; }
+    else if (role === 'encho') { if (jt === '主任') side = 'first'; else if (enchoSecond.indexOf(jt) >= 0) side = 'second'; else return; }
+    else if (role === 'admin') { side = 'final'; }
+    else return;
+    if (side === 'first' && isEnchoT) return;
+    if ((side === 'first') ? b.submitted1 : b.submitted2) { submitted++; return; }
+    var s1 = b.scores1 || [], s2 = b.scores2 || [], has, ok;
+    if (side === 'first')       { if (st === '確定入力中') return; has = cnt(s1) > 0; ok = filled(s1); }
+    else if (side === 'second') { if (st === '確定入力中') return; has = cnt(s2) > 0; ok = filled(s2); }
+    else                        { if (st !== '確定入力中') return; has = true; ok = filled(s2) && (isEnchoT || filled(s1)); }
+    if (!has) return;
+    if (ok) ready++; else partial++;
+  });
+  return { ready: ready, partial: partial, submitted: submitted };
+}
+
+function updateBonusBulkBar(list, term) {
+  var bar = document.getElementById('bonusBulkBar');
+  var info = document.getElementById('bonusBulkInfo');
+  var btn = document.getElementById('bonusBulkBtn');
+  if (!bar || !info || !btn) return;
+  if (['syunin', 'encho', 'admin'].indexOf(SESSION.role) < 0) { bar.style.display = 'none'; return; }
+  var c = bonusBulkCount(list);
+  var overDl = SESSION.role === 'admin' ? '' : bonusDeadlinePassedJS(term);
+  if (c.ready === 0 && c.partial === 0) { bar.style.display = 'none'; return; }
+  info.textContent = '一時保存: ' + c.ready + '件（提出可）'
+    + (c.partial > 0 ? '　⚠ 入力途中（提出不可）: ' + c.partial + '件' : '')
+    + '　提出済: ' + c.submitted + '件';
+  btn.textContent = '📤 一時保存分をまとめて提出（' + c.ready + '件）';
+  btn.style.display = (c.ready > 0 && !overDl) ? '' : 'none';
+  bar.style.display = 'flex';
+}
+
+async function bulkSubmitBonus() {
+  var year  = document.getElementById('bonusYearSel').value || currentYear();
+  var term  = document.getElementById('bonusTermSel').value;
+  var garden = document.getElementById('bonusGardenSel') ? document.getElementById('bonusGardenSel').value : '';
+  showConfirm(
+    '一括提出の確認',
+    year + '年度 ' + term + '賞与の、一時保存中の評価（自分の担当分）をまとめて提出します。\n※全項目が入力済みのものだけ提出されます（入力途中の一時保存は提出されず、そのまま残ります）。\n提出後は変更できなくなります（修正が必要な場合は理事長が提出を解除します）。よろしいですか？',
+    async function() {
+      var r = await api({ action: 'bulkSubmitBonusEvals', year: year, term: term, garden: garden });
+      toast(r.msg, (r.ok && !(r.incomplete && r.incomplete.length)) ? 'success' : 'error');
+      loadBonusList();
+      if (SESSION.role === 'admin') loadAdminBonusSummary();
+    }
+  );
 }
 
 // 賞与評価: 提出期限を過ぎているか（日本時間の日付で判定。理事長は対象外なので呼び出し側で除外する）
