@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.08</title>
+<title>はぐくみ評価 Ver.2.09</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.08',
+    description:'育保の杜 職員評価システム Ver.2.09',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.08</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.09</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -5301,6 +5301,11 @@ function bonusBulkCount(list) {
   return { ready: ready, partial: partial, submitted: submitted };
 }
 
+// 提出先の表示名（主任→園長 / 園長→理事長）
+function bonusBulkDest() {
+  return SESSION.role === 'syunin' ? '園長' : (SESSION.role === 'encho' ? '理事長' : '');
+}
+
 function updateBonusBulkBar(list, term) {
   var bar = document.getElementById('bonusBulkBar');
   var info = document.getElementById('bonusBulkInfo');
@@ -5308,13 +5313,22 @@ function updateBonusBulkBar(list, term) {
   if (!bar || !info || !btn) return;
   if (['syunin', 'encho', 'admin'].indexOf(SESSION.role) < 0) { bar.style.display = 'none'; return; }
   var c = bonusBulkCount(list);
+  var dest = bonusBulkDest();
   var overDl = SESSION.role === 'admin' ? '' : bonusDeadlinePassedJS(term);
-  if (c.ready === 0 && c.partial === 0) { bar.style.display = 'none'; return; }
-  info.textContent = '一時保存: ' + c.ready + '件（提出可）'
-    + (c.partial > 0 ? '　⚠ 入力途中（提出不可）: ' + c.partial + '件' : '')
-    + '　提出済: ' + c.submitted + '件';
-  btn.textContent = '📤 一時保存分をまとめて提出（' + c.ready + '件）';
-  btn.style.display = (c.ready > 0 && !overDl) ? '' : 'none';
+  var canSubmit = (c.ready > 0 && !overDl);
+
+  // 一時保存が無くても、バーとボタンは常に表示する（押せない理由を併記）
+  var reason = '';
+  if (overDl)                             reason = '提出期限（' + overDl.replace(/-/g, '/') + '）を過ぎているため提出できません';
+  else if (c.ready === 0 && c.partial > 0) reason = '全項目入力済みの一時保存がありません';
+  else if (c.ready === 0)                  reason = '一時保存した評価がありません';
+  info.innerHTML = '一時保存（提出可）: <strong>' + c.ready + '件</strong>'
+    + (c.partial > 0 ? '　<span style="color:#c77d00">⚠ 入力途中（提出不可）: ' + c.partial + '件</span>' : '')
+    + '　提出済: ' + c.submitted + '件'
+    + (reason ? '<div style="margin-top:3px;font-size:.78rem;color:var(--clr-text-s)">' + escHtml(reason) + '</div>' : '');
+  btn.textContent = '📤 ' + (dest ? dest + 'へ' : '') + '一括提出（' + c.ready + '件）';
+  btn.disabled = !canSubmit;
+  btn.style.display = '';
   bar.style.display = 'flex';
 }
 
@@ -5324,7 +5338,7 @@ async function bulkSubmitBonus() {
   var garden = document.getElementById('bonusGardenSel') ? document.getElementById('bonusGardenSel').value : '';
   showConfirm(
     '一括提出の確認',
-    year + '年度 ' + term + '賞与の、一時保存中の評価（自分の担当分）をまとめて提出します。\n※全項目が入力済みのものだけ提出されます（入力途中の一時保存は提出されず、そのまま残ります）。\n提出後は変更できなくなります（修正が必要な場合は理事長が提出を解除します）。よろしいですか？',
+    year + '年度 ' + term + '賞与の、一時保存中の評価（自分の担当分）を' + (bonusBulkDest() ? bonusBulkDest() + 'へ' : '') + 'まとめて提出します。\n※全項目が入力済みのものだけ提出されます（入力途中の一時保存は提出されず、そのまま残ります）。\n提出後は変更できなくなります（修正が必要な場合は理事長が提出を解除します）。よろしいですか？',
     async function() {
       var r = await api({ action: 'bulkSubmitBonusEvals', year: year, term: term, garden: garden });
       toast(r.msg, (r.ok && !(r.incomplete && r.incomplete.length)) ? 'success' : 'error');
