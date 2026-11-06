@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.09</title>
+<title>はぐくみ評価 Ver.2.11</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.09',
+    description:'育保の杜 職員評価システム Ver.2.11',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.09</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.11</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -4437,6 +4437,17 @@ async function loadAdminBonusSummary() {
   document.getElementById('adminBonusContent').innerHTML = html;
 }
 
+// ランク分布チェックの対象にするランクを決める。
+// 一次・二次（園長タイプは二次のみ）がそろった職員だけが対象。
+//  ・両方提出済み（complete）→ 確定ランク
+//  ・一時保存を含み、両方の全項目が揃っている（prov あり）→ 暫定ランク
+//  ・片方しか提出・入力されていない職員は対象外（片側だけの点数では低いランクに偏るため）
+function bonusDistRank(complete, gRank, prov) {
+  if (complete && gRank) return { rank: gRank, isProv: false };
+  if (prov && prov.rank)  return { rank: prov.rank, isProv: true };
+  return { rank: '', isProv: false };
+}
+
 // 一時保存中の点数から「暫定」のA合計・総合点・ランクを計算する（全体のバランス確認用）。
 // 一次・二次（園長タイプは二次のみ）の全項目が揃っている（提出済み or 一時保存）場合だけ計算し、
 // 入力途中・未入力の側がある場合は null を返す。確定値ではない（提出後に確定する）。
@@ -4643,10 +4654,11 @@ async function loadBonusList() {
 
     // ランク分布集計（主任ユーザーの表示には含めない。SS→Sに統合。
     // 園長評価は目安設定の includeEncho が true の場合のみ含める（既定：含めない）
-    var distRank = gRank || (prov ? prov.rank : '');
+    var dist = bonusDistRank(complete, gRank, prov);
+    var distRank = dist.rank;
     if (!isSyuninUser && distRank && (bandSettings.includeEncho || s.jobType !== '園長')) {
       var effRank = (distRank === 'SS') ? 'S' : distRank;
-      if (rankCounts[effRank] !== undefined) { rankCounts[effRank]++; rankTotal++; if (!gRank) provCount++; }
+      if (rankCounts[effRank] !== undefined) { rankCounts[effRank]++; rankTotal++; if (dist.isProv) provCount++; }
     }
 
     // 暫定（一時保存の点数による仮の値）の表示
@@ -4703,13 +4715,7 @@ async function loadBonusList() {
       + '</tr>';
   }).join('');
 
-  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bandSettings.bands);
-  // 暫定（一時保存を含む）の人数を注記
-  if (provCount > 0) {
-    var distContentEl = document.getElementById('bonusRankDistContent');
-    if (distContentEl) distContentEl.insertAdjacentHTML('beforeend',
-      '<p style="margin:8px 0 0;font-size:.78rem;color:#c77d00;font-weight:600">※ 一時保存中の評価 ' + provCount + '名を「暫定」として含めて集計しています（提出すると確定します）。</p>');
-  }
+  renderBonusRankDist(rankCounts, rankTotal, isSyuninUser, bandSettings.bands, provCount);
 }
 
 // ============================================================
@@ -4722,7 +4728,7 @@ async function loadBonusList() {
 //  目安の割合（％）は admin が園ごとに設定可能（bonusBandCache経由）。
 //  （SSはSに統合してカウント）
 // ============================================================
-function renderBonusRankDist(counts, total, hide, bands) {
+function renderBonusRankDist(counts, total, hide, bands, provCount) {
   var panel = document.getElementById('bonusRankDistPanel');
   if (!panel) return;
   if (hide || !total) { panel.style.display = 'none'; return; }
@@ -4816,7 +4822,11 @@ function renderBonusRankDist(counts, total, hide, bands) {
     return rk + (b.max) + '%まで';
   }).join('・');
 
-  var html = '<div style="font-size:.76rem;color:var(--clr-text-s);margin-bottom:6px">評価確定済み ' + total + '名が対象／緑の帯が目安範囲（上限：' + bandDesc + '）／点線の折れ線は各ランクの実績を結んだもので、中央（B・C）が高く両端（S・E）が低い、なめらかな山型（三角形に近い形）が理想です</div>'
+  var html = '<div style="font-size:.76rem;color:var(--clr-text-s);margin-bottom:6px">'
+    + (provCount > 0
+        ? '確定済み ' + (total - provCount) + '名＋<span style="color:#c77d00;font-weight:600">暫定（一時保存・提出すると確定）' + provCount + '名</span>（計 ' + total + '名）が対象'
+        : '評価確定済み ' + total + '名が対象')
+    + '（一次・二次がそろった職員のみ）／緑の帯が目安範囲（上限：' + bandDesc + '）／点線の折れ線は各ランクの実績を結んだもので、中央（B・C）が高く両端（S・E）が低い、なめらかな山型（三角形に近い形）が理想です</div>'
     + '<svg viewBox="0 0 ' + chartW + ' ' + chartH + '" style="width:100%;max-width:600px;height:auto;display:block">' + gridLines + bars + lineLayer + '</svg>'
     + shapeComment
     + adviceHtml;
