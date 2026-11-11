@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.18</title>
+<title>はぐくみ評価 Ver.2.19</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.18',
+    description:'育保の杜 職員評価システム Ver.2.19',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.18</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.19</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -7462,12 +7462,14 @@ function openJikoCheckPrint() {
             '<option value="">全園</option><option value="はぐくみ保育園">はぐくみ保育園</option>' +
             '<option value="第2はぐくみ保育園">第2はぐくみ保育園</option></select>' +
           '<label style="font-size:.78rem;color:var(--clr-text-s)">基準日 <input type="date" class="finput" id="ykAsOf" style="width:150px;display:inline-block" onchange="ykReload()"></label>' +
+          '<button class="btn btn-primary btn-sm yk-adm" onclick="ykOpenInit()">🚀 初回登録</button>' +
+          '<button class="btn btn-outline btn-sm yk-adm" onclick="ykOpenUsed()">📝 使用済み入力</button>' +
           '<button class="btn btn-primary btn-sm yk-adm" onclick="ykOpenDue()">📥 付与予定の一括登録</button>' +
           '<button class="btn btn-outline btn-sm" onclick="ykOpenLedgerSel()">📄 有給簿（選択した職員）</button>' +
           '<button class="btn btn-outline btn-sm yk-adm" onclick="ykOpenSettings()">⚙ 設定</button>' +
         '</div>' +
       '</div>' +
-      '<div id="ykAsOfWarn"></div><div class="yk-cards" id="ykCards"></div>' +
+      '<div id="ykAsOfWarn"></div><div id="ykBanner"></div><div class="yk-cards" id="ykCards"></div>' +
       '<div class="table-wrap"><table>' +
         '<thead><tr><th style="width:26px"><input type="checkbox" id="ykSelAll" title="全員を選択" onchange="ykSelAll(this.checked)"></th><th>氏名</th><th>所属園</th><th style="text-align:center">現在の残</th>' +
         '<th>直近の失効</th><th style="text-align:center">事前調整対象<span class="yk-sub">第41条9項</span></th>' +
@@ -7487,6 +7489,16 @@ function openJikoCheckPrint() {
       '<div class="modal-header"><div class="modal-title" id="ykDetailTitle">有給詳細</div>' +
       '<button class="modal-close" onclick="ykCloseDetail()">✕</button></div>' +
       '<div class="modal-body" id="ykDetailBody"></div></div></div>' +
+    '<div class="modal-overlay" id="ykInitModal"><div class="modal wide" style="max-width:1000px">' +
+      '<div class="modal-header"><div class="modal-title">🚀 初回登録（入職日から有効な付与を一括登録）</div><button class="modal-close" onclick="ykCloseInit()">✕</button></div>' +
+      '<div class="modal-body" id="ykInitBody"></div>' +
+      '<div class="modal-footer"><button class="btn btn-outline" onclick="ykCloseInit()">閉じる</button>' +
+      '<button class="btn btn-primary" onclick="ykInitSave()">チェックした付与を登録 → 使用済み入力へ</button></div></div></div>' +
+    '<div class="modal-overlay" id="ykUsedModal"><div class="modal wide" style="max-width:1000px">' +
+      '<div class="modal-header"><div class="modal-title">📝 使用済みの入力（運用開始前に取得済みの日数）</div><button class="modal-close" onclick="ykCloseUsed()">✕</button></div>' +
+      '<div class="modal-body" id="ykUsedBody"></div>' +
+      '<div class="modal-footer"><button class="btn btn-outline" onclick="ykCloseUsed()">閉じる</button>' +
+      '<button class="btn btn-primary" onclick="ykUsedSave()">変更を保存</button></div></div></div>' +
     '<div class="modal-overlay" id="ykLedgerModal"><div class="modal wide" style="max-width:1100px">' +
       '<div class="modal-header"><div class="modal-title">📄 有給簿プレビュー</div><button class="modal-close" onclick="ykCloseLedger()">✕</button></div>' +
       '<div class="modal-body" style="padding:0"><iframe id="ykLedgerFrame" style="width:100%;height:68vh;border:0;background:#fff"></iframe></div>' +
@@ -7571,6 +7583,12 @@ function openJikoCheckPrint() {
     if (!r.ok) { $('ykBody').innerHTML = '<tr><td colspan="9" style="color:var(--clr-danger)">' + e(r.msg) + '</td></tr>'; return; }
     YK.settings = r.settings;
     var L = ykSortList(r.list);
+    // 付与の登録が必要なときのお知らせ（理事長のみ）
+    var cNew = L.filter(function (x) { return x.grantCount === 0; }).length;
+    var cDue = L.filter(function (x) { return x.grantCount > 0 && x.unregisteredNext && x.unregisteredNext.date <= YK.asOf; }).length;
+    $('ykBanner').innerHTML = !ykIsAdmin() ? '' :
+      (cNew ? '<div class="yk-alert" style="background:#fff8e1;border-color:#f0d58a;color:#7a5b00">付与がまだ登録されていない職員が <strong>' + cNew + '名</strong> います。 <button class="btn btn-primary btn-sm" onclick="ykOpenInit()">🚀 初回登録を開く</button></div>'
+      : (cDue ? '<div class="yk-alert" style="background:#fff8e1;border-color:#f0d58a;color:#7a5b00">付与日が来ていて未登録の付与が <strong>' + cDue + '名分</strong> あります。 <button class="btn btn-primary btn-sm" onclick="ykOpenDue()">📥 付与予定の一括登録を開く</button></div>' : ''));
     var cTarget = L.filter(function (x) { return x.coord.targetDays > 0; }).length;
     var cOb = L.filter(function (x) { var o = x.obligation; return o && (o.status === 'warn' || o.status === 'missed'); }).length +
               L.filter(function (x) { return x.pastMissed > 0 && !(x.obligation && (x.obligation.status === 'warn' || x.obligation.status === 'missed')); }).length;
@@ -7959,6 +7977,108 @@ function openJikoCheckPrint() {
     }).join('');
     return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>年次有給休暇管理簿</title><style>' + css + '</style></head><body>' + pages + '</body></html>';
   }
+
+  // ---------- 初回登録：全職員の「入職日から有効な付与」をまとめて登録 → 使用済みを入力 ----------
+  function renderInit(r, startVal, advVal) {
+    var rows = r.rows.slice().sort(function (a, b) {
+      return String(a.garden).localeCompare(String(b.garden), 'ja') || String(a.name).localeCompare(String(b.name), 'ja') || (a.date < b.date ? -1 : 1);
+    });
+    var gard = YK.garden;
+    YK.init = { r: r, rows: rows };
+    var h = '<p class="yk-note" style="margin-bottom:8px">入職日と雇用区分から、<strong>有効期限が切れていない付与</strong>を全職員分まとめて登録します（正規：入職日の前借5日＋法定付与日の残り、非常勤：法定付与日）。' +
+      '登録後、続けて「使用済み」を入力すると、残日数が実際の数字になります。付与日数は表の中で直せます。</p>' +
+      '<div class="yk-grid" style="margin-bottom:10px;align-items:end">' +
+      f('運用開始日（これより前の付与年度は年5日の判定から除外）', '<input type="date" class="finput" id="yiStart" value="' + e(startVal) + '">') +
+      f('前借制度の適用開始（入職日がこの日以降。空欄＝全員）', '<input type="date" class="finput" id="yiAdv" value="' + e(advVal) + '">') +
+      '<div><button class="btn btn-outline btn-sm" onclick="ykInitReload()">この条件で再計算</button></div></div>' +
+      '<div class="yk-note" style="margin-bottom:8px">※ 前借制度ができる前に入職した職員には前借の5日がありません。その場合は「前借制度の適用開始」を入れて再計算してください。</div>';
+    if (!rows.length) h += '<div class="yk-box" style="text-align:center">登録が必要な付与はありません</div>';
+    else {
+      var prev = '';
+      h += '<div class="table-wrap"><table><thead><tr><th><input type="checkbox" checked onchange="Array.prototype.forEach.call(document.querySelectorAll(\'.yi-on\'),function(c){c.checked=this.checked}.bind(this))"></th>' +
+        '<th>氏名</th><th>所属園</th><th>付与日</th><th>種別</th><th>付与日数</th><th>有効期限</th></tr></thead><tbody>' +
+        rows.map(function (x, i) {
+          var first = x.staffId !== prev; prev = x.staffId;
+          return '<tr data-i="' + i + '"' + (first ? ' style="border-top:2px solid var(--clr-border)"' : '') + '><td><input type="checkbox" class="yi-on" checked></td>' +
+            '<td>' + (first ? '<strong>' + e(x.name) + '</strong><span class="yk-sub">' + e(x.employment) + '</span>' : '') + '</td><td>' + (first ? e(x.garden) : '') + '</td>' +
+            '<td>' + e(x.date) + '</td><td>' + (x.type === '前払' ? '前払（入職時の前借）' : '法定') + '</td>' +
+            '<td><input type="number" step="0.5" min="0.5" class="finput yi-days" style="width:80px" value="' + x.days + '" data-orig="' + x.days + '"></td>' +
+            '<td>' + e(x.expire) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    if (r.needCat && r.needCat.length) h += '<div class="yk-alert" style="margin-top:10px">付与区分（週の所定労働日数）が未設定のため含められない非常勤職員がいます：' +
+      r.needCat.map(function (x) { return e(x.name); }).join('、') + '。各職員の詳細画面で区分を設定してから、もう一度開いてください。</div>';
+    $('ykInitBody').innerHTML = h;
+  }
+  window.ykOpenInit = async function () {
+    var r = await api({ action: 'ykGetDue', initial: true, garden: $('ykGarden').value });
+    if (!r.ok) { toast(r.msg, 'error'); return; }
+    renderInit(r, r.startDate || today(), r.advanceFrom || '');
+    $('ykInitModal').classList.add('open');
+  };
+  window.ykInitReload = async function () {
+    var st = $('yiStart').value, adv = $('yiAdv').value;
+    var r = await api({ action: 'ykGetDue', initial: true, garden: $('ykGarden').value, advanceFrom: adv });
+    if (!r.ok) { toast(r.msg, 'error'); return; }
+    renderInit(r, st, adv);
+  };
+  window.ykCloseInit = function () { $('ykInitModal').classList.remove('open'); };
+  window.ykInitSave = async function () {
+    var list = [], st = $('yiStart').value, adv = $('yiAdv').value;
+    if (!st) { toast('運用開始日を入力してください', 'error'); return; }
+    Array.prototype.forEach.call(document.querySelectorAll('#ykInitBody tbody tr'), function (tr) {
+      if (!tr.querySelector('.yi-on').checked) return;
+      var x = YK.init.rows[Number(tr.getAttribute('data-i'))], inp = tr.querySelector('.yi-days');
+      list.push({ targetStaffId: x.staffId, type: x.type, date: x.date, legalDate: x.legalDate, legalDays: x.legalDays,
+                  days: Number(inp.value), manual: Number(inp.value) !== Number(inp.getAttribute('data-orig')) });
+    });
+    if (!list.length) { toast('登録する行にチェックを入れてください', 'error'); return; }
+    var r = await api({ action: 'ykSaveDueBulk', initial: true, rows: list, startDate: st, advanceFrom: adv });
+    toast(r.msg, r.ok ? 'success' : 'error');
+    if (r.errors && r.errors.length) alert(r.errors.join('\n'));
+    if (r.ok) { ykCloseInit(); await ykReload(); ykOpenUsed(); }
+  };
+
+  // ---------- 使用済みの入力（付与ごとの「運用開始前に取得済み」日数。残日数から逆算も可）----------
+  window.ykOpenUsed = async function () {
+    var r = await api({ action: 'ykGetUsedList', garden: $('ykGarden').value });
+    if (!r.ok) { toast(r.msg, 'error'); return; }
+    if (!r.list.length) { toast('付与が登録された職員がいません。先に「初回登録」を行ってください', 'error'); return; }
+    var h = '<p class="yk-note" style="margin-bottom:8px">運用開始前にすでに使った日数を、付与ごとに入れてください。<strong>残日数がわかる場合は「残」に入れても</strong>使用済みに自動で換算します。' +
+      '運用開始後の取得は取得記録で管理するため、ここには入れません。</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>氏名</th><th>付与日</th><th>種別</th><th class="r">付与日数</th><th>有効期限</th><th class="r">記録済み取得</th><th>使用済み（日）</th><th>残（日）</th></tr></thead><tbody>';
+    r.list.forEach(function (st) {
+      st.grants.forEach(function (g, i) {
+        h += '<tr data-id="' + e(g.id) + '" data-days="' + g.days + '" data-rec="' + g.recorded + '" data-orig="' + g.priorUsed + '"' + (i === 0 ? ' style="border-top:2px solid var(--clr-border)"' : '') + '>' +
+          '<td>' + (i === 0 ? '<strong>' + e(st.name) + '</strong><span class="yk-sub">' + e(st.garden) + '</span>' : '') + '</td>' +
+          '<td>' + e(g.grantDate) + '</td><td>' + e(g.type) + (g.state === '付与前' ? '<span class="yk-sub">付与前</span>' : '') + '</td><td class="r">' + num(g.days) + '</td><td>' + e(g.expireDate) + '</td>' +
+          '<td class="r">' + (g.recorded ? num(g.recorded) : '') + '</td>' +
+          '<td><input type="number" step="0.5" min="0" class="finput yu-used" style="width:80px" value="' + g.priorUsed + '" oninput="ykUsedSync(this,\'used\')"></td>' +
+          '<td><input type="number" step="0.5" min="0" class="finput yu-rem" style="width:80px" value="' + num(g.days - g.recorded - g.priorUsed) + '" oninput="ykUsedSync(this,\'rem\')"></td></tr>';
+      });
+    });
+    $('ykUsedBody').innerHTML = h + '</tbody></table></div>';
+    $('ykUsedModal').classList.add('open');
+  };
+  window.ykUsedSync = function (inp, from) {
+    var tr = inp.parentNode.parentNode, days = Number(tr.getAttribute('data-days')), rec = Number(tr.getAttribute('data-rec'));
+    var u = tr.querySelector('.yu-used'), m = tr.querySelector('.yu-rem');
+    if (from === 'used') m.value = Math.max(0, days - rec - Number(u.value || 0));
+    else u.value = Math.max(0, days - rec - Number(m.value || 0));
+    tr.style.background = Number(u.value) !== Number(tr.getAttribute('data-orig')) ? '#fffbea' : '';
+  };
+  window.ykCloseUsed = function () { $('ykUsedModal').classList.remove('open'); };
+  window.ykUsedSave = async function () {
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll('#ykUsedBody tbody tr'), function (tr) {
+      var v = Number(tr.querySelector('.yu-used').value || 0);
+      if (v !== Number(tr.getAttribute('data-orig'))) items.push({ grantId: tr.getAttribute('data-id'), priorUsed: v });
+    });
+    if (!items.length) { toast('変更がありません', 'error'); return; }
+    var r = await api({ action: 'ykSavePriorUsedBulk', items: items });
+    toast(r.msg, r.ok ? 'success' : 'error');
+    if (r.ok) { ykCloseUsed(); ykReload(); }
+  };
 
   // ---------- 付与フォーム ----------
   function grantForm(d) {
