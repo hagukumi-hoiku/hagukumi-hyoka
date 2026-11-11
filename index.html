@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>はぐくみ評価 Ver.2.20</title>
+<title>はぐくみ評価 Ver.2.21</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23ffffff' stroke='%232e5549' stroke-width='3'/%3E%3Ctext y='52' x='50' font-size='42' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='28' fill='%23b8ddd2'/%3E%3Ctext y='78' x='90' font-size='72' text-anchor='middle' dominant-baseline='middle'%3E📝%3C/text%3E%3Ctext y='130' x='90' font-size='24' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3Eはぐくみ評価%3C/text%3E%3Ctext y='155' x='90' font-size='15' text-anchor='middle' fill='%234a7c6f' font-family='sans-serif'%3E職員評価システム%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -583,7 +583,7 @@ tr.rank-gap-row > td { background: #fdecec; }
   var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='32' fill='%23b8ddd2'/%3E%3Ctext y='88' x='100' font-size='80' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%93%9D%3C/text%3E%3Ctext y='144' x='100' font-size='26' font-weight='bold' text-anchor='middle' fill='%232e5549' font-family='sans-serif'%3E%E3%81%AF%E3%81%90%E3%81%8F%E3%81%BF%E8%A9%95%E4%BE%A1%3C/text%3E%3C/svg%3E";
   var m = {
     name:'はぐくみ評価', short_name:'はぐくみ評価',
-    description:'育保の杜 職員評価システム Ver.2.20',
+    description:'育保の杜 職員評価システム Ver.2.21',
     start_url: location.href.split('?')[0],
     scope: location.pathname,
     display:'standalone', orientation:'portrait',
@@ -612,7 +612,7 @@ tr.rank-gap-row > td { background: #fdecec; }
       <div class="logo-icon">📝</div>
       <h1>はぐくみ<span>評価</span></h1>
       <p>職員評価システム</p>
-      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.20</p>
+      <p style="font-size:.7rem;color:#bbb;margin-top:8px;letter-spacing:.08em">Ver.2.21</p>
     </div>
     <div class="form-group">
       <label>ログインID</label>
@@ -7739,7 +7739,7 @@ function openJikoCheckPrint() {
       ? '1日の所定労働時間 <strong>' + num(hi.dailyHours) + '時間</strong>' + (hi.lotHours !== hi.dailyHours ? '（端数は切り上げ、崩すと ' + hi.lotHours + '時間）' : '')
       : '<span style="color:var(--clr-danger)">1日の所定労働時間が未登録です（職員マスタで登録してください）</span>';
     var t = '<div class="yk-box"><h4>時間単位年休（崩した有給の時間枠）</h4><div class="yk-note" style="margin-bottom:8px">' + info +
-      '　／　この「年」（' + e(hi.periodStart) + '〜' + e(hi.periodEnd) + '）に崩した日数 <strong>' + num(hi.convertedDays) + '/' + hi.capDays + '日</strong>（第43条：年' + hi.capDays + '日まで）</div>' +
+      '　／　承認者 <strong>' + e(d.approver ? d.approver.name : '未設定') + '</strong>　／　この「年」（' + e(hi.periodStart) + '〜' + e(hi.periodEnd) + '）に崩した日数 <strong>' + num(hi.convertedDays) + '/' + hi.capDays + '日</strong>（第43条：年' + hi.capDays + '日まで）</div>' +
       '<div class="table-wrap"><table><thead><tr><th>振替日</th><th>崩した時間</th><th>使用済</th><th>残</th><th>有効期限</th><th>状態</th></tr></thead><tbody>' +
       (lots.length ? lots.map(function (l) {
         var stCls = l.state === '有効' ? 'success' : (l.state === '失効' ? 'muted' : 'info');
@@ -8232,7 +8232,7 @@ function openJikoCheckPrint() {
       f('取得日', '<input type="date" class="finput" id="ykuDate" value="' + e(v.useDate) + '">') +
       f('日数', '<select class="fselect" id="ykuDays"><option value="1"' + (v.days === 1 ? ' selected' : '') + '>1日</option><option value="0.5"' + (v.days === 0.5 ? ' selected' : '') + '>半日（0.5日）</option></select>') +
       f('区分', '<select class="fselect" id="ykuKind">' + d.useKinds.map(function (k) { return '<option' + (k === v.kind ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>') +
-      f('承認者', '<input type="text" class="finput" id="ykuApprover" value="' + e(v.approver) + '">') +
+      f('承認者（自動）', '<input type="text" class="finput" id="ykuApprover" readonly style="background:#eee" value="' + e(d.approver ? d.approver.name : '未設定') + '" title="園長の取得は理事長、それ以外は所属園の園長が承認者です">') +
       f('備考', '<input type="text" class="finput" id="ykuMemo" value="' + e(v.memo) + '" placeholder="事後振替の理由など">') +
       '</div><div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="ykSaveUseUi(false)">' + (u ? '修正を保存' : '取得を登録') + '</button>' +
       (u ? ' <button class="btn btn-outline btn-sm" onclick="ykEditUse(\'\')">キャンセル</button>' : '') + '</div></div>';
