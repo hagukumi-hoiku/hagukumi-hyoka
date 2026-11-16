@@ -7559,11 +7559,11 @@ function openJikoCheckPrint() {
   document.body.appendChild(modals);
 
   // ---------- showSection に読み込みフックを追加 ----------
-  // 権限（表示制御。本当の判定はサーバー側）: 理事長・園長・主任・統括リーダーが利用可。付与・設定の変更は理事長のみ
+  // 権限（表示制御。本当の判定はサーバー側）: 管理画面は理事長・園長のみ（主任・統括リーダーを含む職員は自分の有給だけ）。付与・設定の変更は理事長のみ
   function ykIsAdmin() { return !!SESSION && SESSION.role === 'admin'; }
   function ykCanUse() {
     if (!SESSION) return false;
-    return ['admin', 'encho', 'syunin'].indexOf(SESSION.role) >= 0 || ['園長', '主任', '統括リーダー'].indexOf(SESSION.jobType) >= 0;
+    return ['admin', 'encho'].indexOf(SESSION.role) >= 0 || SESSION.jobType === '園長';
   }
   function ykApplyNav() {
     var li = $('nav-yukyu'); if (li) li.style.display = ykCanUse() ? '' : 'none';
