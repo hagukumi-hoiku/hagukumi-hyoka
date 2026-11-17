@@ -7671,6 +7671,16 @@ function openJikoCheckPrint() {
       if (x.needCat) notes.push(badge('warning', '付与区分 未設定', '週の所定労働日数を設定すると付与日数を提案します'));
       if (x.unregisteredNext) notes.push(badge('info', (x.unregisteredNext.type === '前払' ? '入職時の前借' : '次回付与') + ' ' + x.unregisteredNext.date.slice(5) + ' 未登録', x.unregisteredNext.suggestDays + '日'));
       if (x.shortage) notes.push(badge('danger', '残不足の取得あり'));
+      (x.blackoutNotes || []).forEach(function (n) {
+        if (n.confirm === '出勤あり') return;   // 出勤ありと確認済みなら、注意は出さない
+        var sure = n.confirm === '全休';
+        notes.push('<div style="margin-top:3px">' + badge(sure ? 'danger' : 'warning', (sure ? '全休（確認済）' : '繁忙期に取得（全休か要確認）') + ' ' + n.label + ' ' + num(n.days) + '日', n.dates.join('、') + '（' + n.article + '）') +
+          '<span class="yk-sub">' + (sure ? '' : '全休の場合') + '（' + e(n.applyYear) + '年度' + (n.applying ? '・適用中' : '・来年度に適用') + '）：' + e(n.short) + '</span></div>');
+      });
+      if (x.unregisteredNext && x.unregisteredNext.type === '法定' && x.unregisteredNext.att) notes.push(attBadge(x.unregisteredNext.att));
+      (x.absenceNotes || []).forEach(function (n) {
+        notes.push('<div style="margin-top:3px">' + badge('danger', n.title, n.period) + '<span class="yk-sub">' + e(n.short) + '</span></div>');
+      });
       var near = x.nearest ? e(x.nearest.date) + ' まで<span class="yk-sub">' + num(x.nearest.days) + '日 / あと' + x.nearest.daysTo + '日（' + nextDayStr(x.nearest.date) + 'に失効）</span>' : '―';
       var tgt = x.coord.totalTargetDays > 0 ? badge('warning', num(x.coord.totalTargetDays) + '日', '年度初め(' + x.coord.baseDate + ')時点の失効対象 ' + num(x.coord.expiringAtBase) + '日（月平均' + num(x.coord.monthly) + '日）／4/1判定 ' + num(x.coord.targetDays) + '日＋法定付与日基準 ' + num((x.coord.legalAdj && x.coord.legalAdj.targetDays) || 0) + '日') : '―';
       return '<tr class="' + rowCls + '"><td><input type="checkbox" class="yk-sel" value="' + e(x.staffId) + '"></td><td><strong>' + e(x.name) + '</strong><span class="yk-sub">' + e(x.jobType) + '・' + e(x.employment) + '</span></td>' +
@@ -7710,6 +7720,116 @@ function openJikoCheckPrint() {
     var box = $('ykDetailBody'), top0 = box ? box.scrollTop : 0;
     if (r.ok) { YK.detail = r; renderDetail(); if (box) box.scrollTop = top0; }
   }
+
+  // ---------- 出勤率・欠勤率の試算（所定労働日数と出勤日数だけを入力。管理者・園長の画面のみ） ----------
+  var ATT_LABEL = { '付与前': '付与前の出勤率（8割判定）', '年度': '年間（前年度）', '6か月': '直近6か月', '月': '月間', 'その他': 'その他' };
+  function attBadge(a) {
+    if (!a) return badge('muted', '出勤率 未入力', '「出勤率・欠勤率の試算」に入力すると、付与できるかを自動で判定します');
+    var t = a.start + '〜' + a.end + '　所定' + a.sched + '日・出勤' + a.attend + '日';
+    return a.below80 ? badge('danger', '出勤率 ' + num(a.attendRate) + '%（8割未満→付与しない）', t) : badge('success', '出勤率 ' + num(a.attendRate) + '%（8割以上→付与可）', t);
+  }
+  function attendBoxHtml(d) {
+    if (!d.attDefaults) return '';
+    var defs = d.attDefaults, list = d.attendance || [];
+    var an = (d.absenceNotes || []).map(function (n) {
+      return '<div style="margin:6px 0;padding:6px 10px;background:#fff5f5;border:1px solid #e8b4b4;border-radius:6px"><strong style="color:#b00020">' + e(n.title) + '</strong><span class="yk-sub">' + e(n.period) + '</span>' +
+        '<ul style="margin:4px 0 0 1.2em;padding:0">' + n.items.map(function (it) { return '<li>' + e(it.s) + '<span class="yk-sub">（' + e(it.a) + '）</span></li>'; }).join('') + '</ul></div>';
+    }).join('');
+    var rows = list.map(function (a) {
+      return '<tr><td>' + e(ATT_LABEL[a.type] || a.type) + '</td><td>' + e(a.start) + '〜' + e(a.end) + '</td>' +
+        '<td class="r">' + num(a.sched) + '</td><td class="r">' + num(a.attend) + '</td><td class="r">' + num(a.paid) + '</td><td class="r">' + num(a.other) + '</td><td class="r">' + (a.lateHours ? num(a.lateHours) + 'h（' + num(a.lateDays) + '日）' : '') + '</td>' +
+        '<td class="r"><strong>' + num(a.absenceRate) + '%</strong><span class="yk-sub">欠勤' + num(a.absentDays) + '日</span></td><td class="r"><strong>' + num(a.attendRate) + '%</strong></td>' +
+        '<td>' + (a.absent10 ? badge('danger', '欠勤率10%以上') : badge('success', '10%未満')) + ' ' +
+          (a.type === '付与前' ? (a.below80 ? badge('danger', '8割未満→付与しない') : badge('success', '8割以上→付与可')) : (a.below80 ? badge('warning', '出勤率8割未満') : '')) + '</td>' +
+        '<td class="sm">' + e(a.createdBy) + '<br>' + e(a.createdAt) + '</td>' +
+        '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="ykAttEdit(\'' + e(a.id) + '\')">修正</button> <button class="btn btn-sm btn-danger" onclick="ykAttCancel(\'' + e(a.id) + '\')">取消</button></td></tr>';
+    }).join('');
+    setTimeout(function () { if ($('ykaPreset') && defs.length) { $('ykaPreset').value = '0'; ykAttPreset(); } }, 0);
+    return '<div class="yk-box" id="ykAttBox"><h4>出勤率・欠勤率の試算</h4>' +
+      '<p class="yk-note" style="margin-top:0">所定労働日数と出勤日数を入力すると、<strong>欠勤率</strong>（10%以上で各種の制限）と<strong>出勤率</strong>（8割未満は年休を付与しない）を計算します。年休を取得した日は、有給管理の記録から自動で数えます（欠勤に含めません）。勤務表までは入力しません。</p>' + an +
+      '<div class="yk-grid" style="align-items:end">' +
+      f('期間の候補', '<select class="fselect" id="ykaPreset" onchange="ykAttPreset()"><option value="">自由入力</option>' + defs.map(function (x, i) { return '<option value="' + i + '">' + e(x.label) + '</option>'; }).join('') + '</select>') +
+      f('種別', '<select class="fselect" id="ykaType" onchange="ykAttPreview()">' + Object.keys(ATT_LABEL).map(function (k) { return '<option value="' + e(k) + '">' + e(ATT_LABEL[k]) + '</option>'; }).join('') + '</select>') +
+      f('開始日', '<input type="date" class="finput" id="ykaStart" oninput="ykAttPreview()">') + f('終了日', '<input type="date" class="finput" id="ykaEnd" oninput="ykAttPreview()">') +
+      f('所定労働日数', '<input type="number" step="0.5" min="0" class="finput" id="ykaSched" oninput="ykAttPreview()">') +
+      f('出勤日数', '<input type="number" step="0.5" min="0" class="finput" id="ykaAtt" oninput="ykAttPreview()">') +
+      f('その他、欠勤に算入しない日数（任意）', '<input type="number" step="0.5" min="0" class="finput" id="ykaOther" placeholder="産休・育休・労災・特別休暇など" oninput="ykAttPreview()">') +
+      f('遅刻・早退・私用外出の累計時間（任意）', '<input type="number" step="0.5" min="0" class="finput" id="ykaLate" placeholder="時間" oninput="ykAttPreview()">') +
+      f('備考', '<input type="text" class="finput" id="ykaMemo">') + '</div>' +
+      '<div id="ykaPrev" class="yk-note" style="margin:8px 0"></div>' +
+      '<button class="btn btn-primary btn-sm" onclick="ykAttSave()">試算を保存</button> <span class="yk-note">同じ種別・同じ期間で保存すると上書きします。</span>' +
+      (rows ? '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>種別</th><th>期間</th><th class="r">所定労働日数</th><th class="r">出勤日数</th><th class="r">年休(自動)</th><th class="r">その他</th><th class="r">遅刻・早退等</th><th class="r">欠勤率</th><th class="r">出勤率</th><th>判定</th><th>入力者／日時</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + '</div>';
+  }
+  function attFormVals() {
+    return { type: $('ykaType').value, start: $('ykaStart').value, end: $('ykaEnd').value, sched: Number($('ykaSched').value) || 0, attend: Number($('ykaAtt').value) || 0,
+             other: Number($('ykaOther').value) || 0, lateHours: Number($('ykaLate').value) || 0, memo: $('ykaMemo').value };
+  }
+  window.ykAttPreset = function () {
+    var i = $('ykaPreset').value; if (i === '') return;
+    var x = YK.detail.attDefaults[Number(i)]; if (!x) return;
+    $('ykaType').value = x.type; $('ykaStart').value = x.start; $('ykaEnd').value = x.end; ykAttPreview();
+  };
+  window.ykAttPreview = function () {
+    var d = YK.detail, v = attFormVals(), box = $('ykaPrev'); if (!box) return;
+    if (!(v.sched > 0)) { box.innerHTML = '所定労働日数を入力すると、ここに結果が表示されます。'; return; }
+    var kinds = d.useKinds || [], dh = d.isRegular ? 8 : (Number(d.staff.dailyHours) || 8);
+    var paid = Math.round((d.uses || []).filter(function (u) { return kinds.indexOf(u.kind) >= 0 && Number(u.days) > 0 && u.useDate >= v.start && u.useDate <= v.end; })
+                 .reduce(function (s, u) { return s + Number(u.days); }, 0) * 1000) / 1000;
+    var late = v.lateHours / dh, cred = v.attend + paid + v.other;
+    var absent = Math.max(0, v.sched - cred) + late, ar = absent / v.sched * 100, tr = Math.min(cred, v.sched) / v.sched * 100;
+    var a10 = absent * 10 >= v.sched - 1e-9, b80 = Math.min(cred, v.sched) * 10 < v.sched * 8 - 1e-9, r1 = function (x) { return Math.round(x * 10) / 10; };
+    box.innerHTML = '欠勤日数 <strong>' + num(Math.round(absent * 1000) / 1000) + '日</strong>（所定 ' + num(v.sched) + ' − 出勤 ' + num(v.attend) + ' − 年休 ' + num(paid) + '（自動）− その他 ' + num(v.other) + (late ? ' ＋ 遅刻等 ' + num(Math.round(late * 1000) / 1000) + '日' : '') + '）　→　' +
+      '欠勤率 <strong>' + r1(ar) + '%</strong> ' + (a10 ? badge('danger', '10%以上') : badge('success', '10%未満')) + '　／　出勤率 <strong>' + r1(tr) + '%</strong> ' + (b80 ? badge('danger', '8割未満') : badge('success', '8割以上')) +
+      (v.type === '付与前' ? '　' + (b80 ? '<strong style="color:#b00020">年休は付与しない</strong>' : '<strong style="color:#1b6b3a">年休を付与できます</strong>') : '');
+  };
+  window.ykAttSave = async function () {
+    var v = attFormVals();
+    var r = await api({ action: 'ykSaveAttendance', targetStaffId: YK.detailId, att: v });
+    toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) refreshDetail();
+  };
+  window.ykAttEdit = function (id) {
+    var a = (YK.detail.attendance || []).filter(function (x) { return x.id === id; })[0]; if (!a) return;
+    $('ykaPreset').value = ''; $('ykaType').value = a.type; $('ykaStart').value = a.start; $('ykaEnd').value = a.end;
+    $('ykaSched').value = a.sched; $('ykaAtt').value = a.attend; $('ykaOther').value = a.other || ''; $('ykaLate').value = a.lateHours || ''; $('ykaMemo').value = a.memo || '';
+    ykAttPreview(); var b = $('ykAttBox'); if (b && b.scrollIntoView) b.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  window.ykAttCancel = async function (id) {
+    if (!confirm('この試算の記録を取り消します。よろしいですか？')) return;
+    var r = await api({ action: 'ykCancelAttendance', targetStaffId: YK.detailId, attId: id });
+    toast(r.msg || (r.ok ? '取り消しました' : '取り消せませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) refreshDetail();
+  };
+
+  // 特別繁忙期に有給を使った場合の注意。全休かどうかを確認して記録する（管理者・園長の画面のみ）
+  function blackoutNoteHtml(d) {
+    var ns = d.blackoutNotes || [];
+    if (!ns.length) return '';
+    var anyFull = ns.some(function (n) { return n.confirm === '全休'; }), anyOpen = ns.some(function (n) { return !n.confirm; });
+    var bc = anyFull ? 'border-color:#e8b4b4;background:#fff5f5' : anyOpen ? 'border-color:#f0d58a;background:#fffbea' : '';
+    return '<div class="yk-box" style="' + bc + '"><h4>特別繁忙期の有給取得（注意）</h4>' +
+      '<p class="yk-note" style="margin-top:0">繁忙期の期間内に有給の取得があります。<strong>全休（その期間の所定労働日のすべてが休み）</strong>に該当した場合に、次の取扱いになります。勤務実績は有給管理では持っていないため、出勤状況を確認して「全休」か「出勤あり」を選んでください（「出勤あり」にすると注意を表示しません）。時間単位の取得は勤務しているため対象にしていません。欠勤率は別途試算してください。</p>' +
+      ns.map(function (n) {
+        var a1 = "'" + e(n.start) + "','" + e(n.end) + "',";
+        var st = n.confirm === '全休' ? '<span class="badge-inline" style="color:#b00020;font-weight:700">全休（確認済）</span>'
+               : n.confirm === '出勤あり' ? '<span style="color:var(--clr-text-s);font-weight:700">出勤あり（確認済・注意なし）</span>'
+               : '<span style="color:#7a5b00;font-weight:700">未確認</span>';
+        var btns = (n.confirm === '全休' ? '' : '<button class="btn btn-sm btn-danger" onclick="ykSetBlackoutCheckUi(' + a1 + '\'全休\')">全休と確認</button> ') +
+                   (n.confirm === '出勤あり' ? '' : '<button class="btn btn-outline btn-sm" onclick="ykSetBlackoutCheckUi(' + a1 + '\'出勤あり\')">出勤あり（注意を消す）</button> ') +
+                   (n.confirm ? '<button class="btn btn-outline btn-sm" onclick="ykSetBlackoutCheckUi(' + a1 + '\'未確認\')">確認を取り消す</button>' : '');
+        var head = '<div style="margin-top:10px"><strong>' + e(n.label) + '</strong>（' + e(n.start) + '〜' + e(n.end) + '）　取得 <strong>' + num(n.days) + '日</strong>：' + n.dates.map(function (x) { return e(x); }).join('、') +
+          '　' + st + (n.confirm ? '<span class="yk-sub">' + e(n.confirmBy) + '／' + e(n.confirmAt) + '</span>' : '') + '<div style="margin-top:4px">' + btns + '</div>';
+        if (n.confirm === '出勤あり') return head + '</div>';
+        return head + '<span class="yk-sub">' + e(n.applyYear) + '年度（' + e(n.applyFrom) + '〜' + e(n.applyTo) + '）に適用' + (n.applying ? '（適用中）' : '（来年度）') + '　根拠：' + e(n.article) + (n.confirm ? '' : '　※全休の場合') + '</span>' +
+          '<ul style="margin:4px 0 0 1.2em;padding:0">' + n.items.map(function (it) { return '<li>' + e(it.s) + '<span class="yk-sub">（' + e(it.a) + '）</span></li>'; }).join('') + '</ul>' +
+          '<span class="yk-sub">対象外：' + e(n.exceptions) + '</span></div>';
+      }).join('') + '</div>';
+  }
+  window.ykSetBlackoutCheckUi = async function (start, end, status) {
+    var r = await api({ action: 'ykSetBlackoutCheck', targetStaffId: YK.detailId, start: start, end: end, status: status });
+    toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) refreshDetail();
+  };
 
   // 法定付与日基準の事前調整（設定でオンのときだけ表示）
   function legalAdjHtml(c) {
@@ -7766,6 +7886,8 @@ function openJikoCheckPrint() {
         '<br><span class="yk-sub">※ 正式な判定は規程（第41条9項）どおり年度初め時点です。参考は、年度の途中や来年度に向けた目安です。</span></div>' : '') +
       legalAdjHtml(c) +
       '</div></div>';
+    h += blackoutNoteHtml(d);
+    h += attendBoxHtml(d);
 
     // 有給の設定（付与区分＝非常勤のみ／1日の所定労働時間＝全員）
     var hint = { '通常': '週5日以上（年217日以上）または週30時間以上', '週4日': '年169〜216日', '週3日': '年121〜168日', '週2日': '年73〜120日', '週1日': '年48〜72日' };
@@ -7913,7 +8035,7 @@ function openJikoCheckPrint() {
     else {
       h += '<div class="table-wrap"><table><thead><tr><th></th><th>氏名</th><th>所属園</th><th>付与日</th><th>種別</th><th>付与日数</th><th>有効期限<span class="yk-sub">この日まで</span></th></tr></thead><tbody>' +
         r.rows.map(function (x, i) {
-          return '<tr data-i="' + i + '"><td><input type="checkbox" class="yd-on" checked onchange="ykDueRecalc()"></td><td><strong>' + e(x.name) + '</strong></td><td>' + e(x.garden) + '</td>' +
+          return '<tr data-i="' + i + '"><td><input type="checkbox" class="yd-on"' + (x.att && x.att.below80 ? '' : ' checked') + ' onchange="ykDueRecalc()"></td><td><strong>' + e(x.name) + '</strong>' + (x.type === '法定' ? '<span class="yk-sub">' + attBadge(x.att) + '</span>' : '') + '</td><td>' + e(x.garden) + '</td>' +
             '<td>' + e(x.date) + '</td><td>' + (x.type === '前払' ? '前払（入職時の前借）' : '法定') + (x.future ? '<span class="yk-sub">6か月後に有効（先行登録）</span>' : '') + '</td>' +
             '<td class="yd-days"><strong>' + num(x.days) + '日</strong>' + (x.type === '法定' && x.legalDays ? '<span class="yk-sub">法定 ' + x.legalDays + '日' + (x.prepaid > 0 || x.assumedPre ? ' − 前借' + (x.prepaid > 0 ? x.prepaid : 5) + '日＝残り' : '') + '</span>' : '') + '</td>' +
             '<td>' + e(x.expire) + ' まで</td></tr>';
@@ -7979,16 +8101,17 @@ function openJikoCheckPrint() {
         items.map(function (o) {
           var x = o.x, past = x.date <= d.asOf;
           var paired = x.type === '法定' && items.some(function (q) { return q.x.type === '前払' && q.x.legalDate === x.date; });
-          return '<tr data-i="' + o.i + '"><td><input type="checkbox" class="yp-on"' + ((past || paired) ? ' checked' : '') + ' onchange="ykPanelRecalc()"></td>' +
-            '<td>' + e(x.date) + '</td><td>' + e(x.type === '前払' ? '前払（入職時の前借）' : '法定') +
+          var below = x.type === '法定' && x.att && x.att.below80;   // 出勤率が8割未満と試算済み → 「付与しない」を自動で選ぶ
+          return '<tr data-i="' + o.i + '"' + (below ? ' style="opacity:.6"' : '') + '><td><input type="checkbox" class="yp-on"' + ((past || paired) && !below ? ' checked' : '') + (below ? ' disabled' : '') + ' onchange="ykPanelRecalc()"></td>' +
+            '<td>' + e(x.date) + (x.type === '法定' ? '<span class="yk-sub">' + attBadge(x.att) + '</span>' : '') + '</td><td>' + e(x.type === '前払' ? '前払（入職時の前借）' : '法定') +
             (x.type === '前払' ? '<span class="yk-sub">対象 ' + e(x.legalDate) + '</span>' : '') +
             (x.type === '法定' && (x.prepaid > 0 || x.assumedPre) ? '<span class="yk-sub">法定' + x.legalDays + '日 − 前借' + (x.prepaid > 0 ? x.prepaid : 5) + '日＝残り</span>' : '') +
             (past ? '' : '<span class="yk-sub">' + (paired ? '6か月後に有効（先行登録）' : '今後の付与') + '</span>') + '</td>' +
-            '<td><input type="number" step="0.5" min="0.5" class="finput yp-days" style="width:80px" value="' + x.suggestDays + '" oninput="this.parentNode.parentNode.setAttribute(\'data-edited\',\'1\')"></td>' +
-            '<td><input type="number" step="0.5" min="0" class="finput yp-prior" style="width:80px" placeholder="0"></td>' +
+            '<td><input type="number" step="0.5" min="0.5" class="finput yp-days" style="width:80px" value="' + x.suggestDays + '"' + (below ? ' disabled' : '') + ' oninput="this.parentNode.parentNode.setAttribute(\'data-edited\',\'1\')"></td>' +
+            '<td><input type="number" step="0.5" min="0" class="finput yp-prior" style="width:80px" placeholder="0"' + (below ? ' disabled' : '') + '></td>' +
             '<td>' + e(x.expire) + ' まで</td><td>' +
-            (x.type === '法定' ? '<label style="white-space:nowrap"><input type="checkbox" class="yp-skip" onchange="ykPanelRecalc()"> 付与しない</label>' +
-              '<input type="text" class="finput yp-reason" value="出勤率8割未満" style="display:none;width:150px;margin-top:4px" placeholder="理由">' : '') + '</td></tr>';
+            (x.type === '法定' ? '<label style="white-space:nowrap"><input type="checkbox" class="yp-skip"' + (below ? ' checked' : '') + ' onchange="ykPanelRecalc()"> 付与しない</label>' +
+              '<input type="text" class="finput yp-reason" value="' + (below ? '出勤率' + x.att.attendRate + '%（8割未満）' : '出勤率8割未満') + '" style="' + (below ? '' : 'display:none;') + 'width:150px;margin-top:4px" placeholder="理由">' : '') + '</td></tr>';
         }).join('') + '</tbody></table></div>' +
         '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="ykPanelSave()">チェックした内容を登録</button> ' +
         '<span class="yk-note">8割以上出勤の確認ができた付与だけを登録してください。</span></div></div>';
