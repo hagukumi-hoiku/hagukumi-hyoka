@@ -7688,7 +7688,7 @@ function openJikoCheckPrint() {
 
   // ---------- 詳細 ----------
   window.ykOpenDetail = async function (sid) {
-    YK.detailId = sid; YK.mode = ''; YK.editGrantId = ''; YK.editUseId = ''; YK.cal = null; YK.useFY = null;
+    YK.detailId = sid; YK.mode = ''; YK.editGrantId = ''; YK.editUseId = ''; YK.editHourId = ''; YK.cal = null; YK.useFY = null;
     var r = await api({ action: 'ykGetDetail', targetStaffId: sid, asOf: YK.asOf || today() });
     if (!r.ok) { toast(r.msg || '読み込みに失敗しました', 'error'); return; }
     YK.detail = r;
@@ -7821,7 +7821,7 @@ function openJikoCheckPrint() {
         var future = u.useDate > d.asOf;
         return '<tr><td style="white-space:nowrap">' + e(u.useDate) + '（' + wdOf(u.useDate) + '）' + (future ? ' ' + badge('info', '予定') : '') + '</td><td>' + dtxt + '</td><td>' + e(u.kind) + '</td>' +
           '<td>' + e(u.approver) + '</td><td>' + e(al) + '</td><td>' + (u.blackout ? badge('warning', u.blackout) + ' ' : '') + e(u.memo) + '</td>' +
-          '<td style="white-space:nowrap">' + (ro ? '' : (isH ? '' : '<button class="btn btn-outline btn-sm" onclick="ykEditUse(\'' + e(u.id) + '\')">修正</button> ') +
+          '<td style="white-space:nowrap">' + (ro ? '' : '<button class="btn btn-outline btn-sm" onclick="' + (isH ? 'ykEditHour' : 'ykEditUse') + '(\'' + e(u.id) + '\')">修正</button> ' +
           '<button class="btn btn-sm btn-danger" onclick="ykCancelUseUi(\'' + e(u.id) + '\')">取消</button>') + '</td></tr>';
       }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--clr-text-s)">この期間の取得記録はありません</td></tr>') +
       '</tbody></table></div></div>';
@@ -7842,7 +7842,7 @@ function openJikoCheckPrint() {
       ? '1日の所定労働時間 <strong>' + num(hi.dailyHours) + '時間</strong>' + (hi.lotHours !== hi.dailyHours ? '（端数は切り上げ、崩すと ' + hi.lotHours + '時間）' : '')
       : (ro ? '' : '<span style="color:var(--clr-danger)">1日の所定労働時間が未登録です（下の「有給の設定」で登録してください）</span>');
     var hApr = f('承認者（自動）', '<input type="text" class="finput" readonly style="background:#eee" value="' + e(d.approver ? d.approver.name : '未設定') + '" title="園長の取得は理事長、それ以外は所属園の園長が承認者です">');
-    var t = '<div class="yk-box"><h4>時間単位年休（崩した有給の時間枠）</h4><div class="yk-note" style="margin-bottom:8px">' + info +
+    var t = '<div class="yk-box" id="ykHourBox"><h4>時間単位年休（崩した有給の時間枠）</h4><div class="yk-note" style="margin-bottom:8px">' + info +
       (ro ? '' : '　／　承認者 <strong>' + e(d.approver ? d.approver.name : '未設定') + '</strong>') + '　／　この「年」（' + e(hi.periodStart) + '〜' + e(hi.periodEnd) + '）に崩した日数 <strong>' + num(hi.convertedDays) + '/' + hi.capDays + '日</strong>（第43条：年' + hi.capDays + '日まで）</div>' +
       '<div class="table-wrap"><table><thead><tr><th>振替日</th><th>崩した時間</th><th>使用済</th><th>残</th><th>有効期限<span class="yk-sub">この日まで</span></th><th>状態</th></tr></thead><tbody>' +
       (lots.length ? lots.map(function (l) {
@@ -7852,7 +7852,7 @@ function openJikoCheckPrint() {
           '<td>' + e(l.expireDate) + ' まで<span class="yk-sub">' + (l.daysToExpire != null ? 'あと' + l.daysToExpire + '日・' : '') + nextDayStr(l.expireDate) + 'に失効</span>' + '</td><td>' + badge(stCls, l.state) + '</td></tr>';
       }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--clr-text-s)">時間単位に崩した有給はありません</td></tr>') +
       '</tbody></table></div>' +
-      (ro ? '' :
+      (ro ? '' : (YK.editHourId && hourEditForm(d, hApr)) ||
       '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--clr-border)"><div style="font-size:.82rem;font-weight:700;margin-bottom:6px">① 1日を時間単位に崩す（振替）</div>' +
         '<div class="yk-grid" style="align-items:end">' + f('崩す日（振替日）', '<input type="date" class="finput" id="ykhcDate">') + hApr +
         '<div><button class="btn btn-outline btn-sm" onclick="ykSaveHourUi(\'convert\')">1日を時間単位に崩す</button></div></div></div>' +
@@ -7865,6 +7865,34 @@ function openJikoCheckPrint() {
       ((YK.mode === 'self' && !(d.settings && d.settings.my_show_obligation)) ? '' : '時間単位の取得は、年5日の時季指定の取得日数には数えません。') + '</p></div>';
     return t;
   }
+  // 時間単位の記録（時間振替／時間取得）の修正フォーム
+  function hourEditForm(d, hApr) {
+    var u = d.uses.filter(function (x) { return x.id === YK.editHourId; })[0];
+    if (!u || (u.kind !== '時間振替' && u.kind !== '時間取得')) return '';
+    var isConv = u.kind === '時間振替';
+    return '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--clr-border)"><div style="font-size:.82rem;font-weight:700;margin-bottom:6px">' + (isConv ? '振替（1日を時間単位に崩した記録）を修正' : '時間取得を修正') + '</div>' +
+      '<div class="yk-grid" style="align-items:end">' +
+      f(isConv ? '崩す日（振替日）' : '取得日', '<input type="date" class="finput" id="ykheDate" value="' + e(u.useDate) + '">') +
+      (isConv ? f('崩した時間', '<input type="text" class="finput" readonly style="background:#eee" value="' + num(u.hours) + '時間">')
+              : f('取得時間（1時間単位）', '<input type="number" min="1" step="1" class="finput" id="ykheHours" value="' + num(u.hours) + '">')) +
+      hApr + (isConv ? '' : f('理由（備考）', reasonHtml('ykheR', u.memo))) +
+      '<div><button class="btn btn-primary btn-sm" onclick="ykSaveHourEditUi(false)">修正を保存</button> <button class="btn btn-outline btn-sm" onclick="ykEditHour(\'\')">キャンセル</button></div></div>' +
+      (isConv ? '<p class="yk-note" style="margin-top:6px">振替は日付だけ修正できます。崩す時間を変えたいときは、取消してから登録し直してください（この振替の時間がすでに使われている場合は、先に時間取得を取り消します）。</p>' : '') + '</div>';
+  }
+  window.ykEditHour = function (id) {
+    YK.editHourId = id; renderDetail();
+    if (id) { var b = $('ykHourBox'); if (b && b.scrollIntoView) b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  };
+  window.ykSaveHourEditUi = async function (confirmBlackout) {
+    var u = (YK.detail && YK.detail.uses || []).filter(function (x) { return x.id === YK.editHourId; })[0];
+    var isConv = u ? u.kind === '時間振替' : !$('ykheHours');
+    var hr = { useId: YK.editHourId, mode: isConv ? 'convert' : 'use', date: $('ykheDate').value, targetStaffId: YK.detailId, confirmBlackout: !!confirmBlackout };
+    if (!isConv) { hr.hours = Number($('ykheHours').value); hr.memo = reasonVal('ykheR'); }
+    var r = await api({ action: 'ykSaveHour', targetStaffId: YK.detailId, hour: hr });
+    if (r.needConfirm) { if (confirm(r.msg + '\n\n承認して記録しますか？')) return ykSaveHourEditUi(true); return; }
+    toast(r.msg, r.ok ? 'success' : 'error');
+    if (r.ok) { YK.editHourId = ''; refreshDetail(); }
+  };
   window.ykSaveHourUi = async function (mode, confirmBlackout) {
     var h = mode === 'convert'
       ? { mode: 'convert', date: $('ykhcDate').value, targetStaffId: YK.detailId }
