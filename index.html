@@ -7493,6 +7493,7 @@ function openJikoCheckPrint() {
           '<label style="font-size:.78rem;color:var(--clr-text-s)">基準日 <input type="date" class="finput" id="ykAsOf" style="width:150px;display:inline-block" onchange="ykReload()"></label>' +
           '<button class="btn btn-outline btn-sm yk-adm" onclick="ykOpenUsed()">📝 使用済み入力</button>' +
           '<button class="btn btn-primary btn-sm yk-adm" onclick="ykOpenDue()">📥 付与予定の一括登録</button>' +
+          '<button class="btn btn-primary btn-sm" onclick="ykOpenAttGrid()">🗓 月次の出勤入力</button>' +
           '<button class="btn btn-outline btn-sm" onclick="ykOpenLedgerSel()">📄 有給簿（選択した職員）</button>' +
           '<button class="btn btn-outline btn-sm yk-adm" id="ykPubChip" onclick="ykOpenSettings()" title="公開・非公開は設定で切り替えます"></button>' +
           '<button class="btn btn-outline btn-sm yk-adm" onclick="ykOpenSettings()">⚙ 設定</button>' +
@@ -7545,6 +7546,11 @@ function openJikoCheckPrint() {
       '<div class="modal-body" id="ykDueBody"></div>' +
       '<div class="modal-footer"><button class="btn btn-outline" onclick="ykCloseDue()">閉じる</button>' +
       '<button class="btn btn-primary" onclick="ykDueSave()">チェックした付与を登録</button></div></div></div>' +
+    '<div class="modal-overlay" id="ykAttGridModal"><div class="modal wide" style="max-width:1100px">' +
+      '<div class="modal-header"><div class="modal-title">🗓 月次の出勤入力（全職員）</div><button class="modal-close" onclick="ykCloseAttGrid()">✕</button></div>' +
+      '<div class="modal-body" id="ykAttGridBody"></div>' +
+      '<div class="modal-footer"><button class="btn btn-outline" onclick="ykCloseAttGrid()">閉じる</button>' +
+      '<button class="btn btn-primary" onclick="ykAttGridSave()">変更を保存</button></div></div></div>' +
     '<div class="modal-overlay" id="ykBulkModal"><div class="modal wide">' +
       '<div class="modal-header"><div class="modal-title">付与の一括登録</div><button class="modal-close" onclick="ykCloseBulk()">✕</button></div>' +
       '<div class="modal-body" id="ykBulkBody"></div>' +
@@ -7721,12 +7727,122 @@ function openJikoCheckPrint() {
     if (r.ok) { YK.detail = r; renderDetail(); if (box) box.scrollTop = top0; }
   }
 
-  // ---------- 出勤率・欠勤率の試算（所定労働日数と出勤日数だけを入力。管理者・園長の画面のみ） ----------
+  // ---------- 月次の出勤入力（全職員を1画面で） ----------
+  window.ykOpenAttGrid = async function (month) {
+    var r = await api({ action: 'ykGetAttGrid', garden: $('ykGarden').value, month: month || '' });
+    if (!r.ok) { toast(r.msg || '取得できませんでした', 'error'); return; }
+    YK.grid = r;
+    var inp = function (cls, v) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:76px" value="' + e(v) + '" oninput="ykAttGridRow(this)"></td>'; };
+    var rows = r.rows.map(function (x, i) {
+      return '<tr data-i="' + i + '" data-id="' + e(x.staffId) + '" data-paid="' + num(x.paid) + '" data-dh="' + x.dailyHours + '" data-o="' + e([x.sched, x.attend, x.other, x.lateHours].join('|')) + '">' +
+        '<td><strong>' + e(x.name) + '</strong><span class="yk-sub">' + e(x.jobType || '') + '／' + e(x.employment) + '</span></td><td>' + e(x.garden) + '</td>' +
+        inp('ag-s', x.sched) + inp('ag-a', x.attend) + inp('ag-o', x.other) + inp('ag-l', x.lateHours) +
+        '<td class="r">' + (x.paid ? num(x.paid) : '') + '</td><td class="ag-res r"></td></tr>';
+    }).join('');
+    $('ykAttGridBody').innerHTML =
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">' +
+      '<div><label class="flabel">入力する月</label><input type="month" class="finput" id="ykgMonth" style="width:160px" value="' + e(r.month) + '" onchange="ykAttGridMonth()"></div>' +
+      '<button class="btn btn-outline btn-sm" onclick="ykAttGridFill(\'hint\')">空欄の所定労働日数に前月と同じ日数を入れる</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="ykAttGridFill(\'attend\')">空欄の出勤日数に所定労働日数と同じ日数を入れる</button>' +
+      '<span class="yk-note" id="ykgCount"></span></div>' +
+      '<p class="yk-note" style="margin-top:0">職員ごとに<strong>所定労働日数</strong>と<strong>出勤日数</strong>を入力します（年休を取得した日は有給管理の記録から自動で数え、欠勤に含めません）。変更した行だけ保存されます。所定労働日数を空欄にして保存すると、その月の入力を取り消します。' +
+      (r.garden ? '対象の園：' + e(r.garden) + '。' : '') + '保存期間は' + num(r.keepYears || 5) + '年です。</p>' +
+      (r.rows.length ? '<div class="table-wrap" style="max-height:60vh;overflow:auto"><table><thead><tr><th>氏名</th><th>所属園</th><th>所定労働日数</th><th>出勤日数</th><th>その他<span class="yk-sub">算入しない日数</span></th><th>遅刻・早退等<span class="yk-sub">累計時間</span></th><th class="r">年休(自動)</th><th class="r">その月の結果</th></tr></thead><tbody id="ykAttGridRows">' + rows + '</tbody></table></div>'
+                     : '<div class="yk-box" style="text-align:center">この月に入力する職員がいません</div>');
+    Array.prototype.forEach.call(document.querySelectorAll('#ykAttGridRows tr'), function (tr) { ykAttGridRow(tr.querySelector('.ag-s')); });
+    $('ykAttGridModal').classList.add('open');
+  };
+  window.ykCloseAttGrid = function () {
+    if (ykAttGridDirty() && !confirm('保存していない変更があります。閉じてよろしいですか？')) return;
+    $('ykAttGridModal').classList.remove('open');
+  };
+  function ykAttGridDirty() {
+    return Array.prototype.some.call(document.querySelectorAll('#ykAttGridRows tr'), function (tr) {
+      return [tr.querySelector('.ag-s').value, tr.querySelector('.ag-a').value, tr.querySelector('.ag-o').value, tr.querySelector('.ag-l').value].join('|') !== tr.getAttribute('data-o');
+    });
+  }
+  window.ykAttGridMonth = function () {
+    var m = $('ykgMonth').value; if (!m) return;
+    if (ykAttGridDirty() && !confirm('保存していない変更があります。月を切り替えると失われます。よろしいですか？')) { $('ykgMonth').value = YK.grid.month; return; }
+    ykOpenAttGrid(m);
+  };
+  window.ykAttGridRow = function (el) {
+    if (!el) return;
+    var tr = el.parentNode.parentNode, dh = Number(tr.getAttribute('data-dh')) || 8, paid = Number(tr.getAttribute('data-paid')) || 0;
+    var s = tr.querySelector('.ag-s').value, a = Number(tr.querySelector('.ag-a').value) || 0, o = Number(tr.querySelector('.ag-o').value) || 0, l = Number(tr.querySelector('.ag-l').value) || 0;
+    var cur = [s, tr.querySelector('.ag-a').value, tr.querySelector('.ag-o').value, tr.querySelector('.ag-l').value].join('|'), res = tr.querySelector('.ag-res');
+    tr.style.background = cur !== tr.getAttribute('data-o') ? '#fffbea' : '';
+    if (s === '' || !(Number(s) > 0)) { res.innerHTML = ''; }
+    else {
+      var sc = Number(s), cred = a + paid + o, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
+      var bad = a > sc, a10 = ab * 10 >= sc - 1e-9, r1 = function (x) { return Math.round(x * 10) / 10; };
+      res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%</span>';
+    }
+    var rows = document.querySelectorAll('#ykAttGridRows tr'), n = 0;
+    Array.prototype.forEach.call(rows, function (t) { if (t.querySelector('.ag-s').value !== '') n++; });
+    var c = $('ykgCount'); if (c) c.textContent = '入力済み ' + n + ' / ' + rows.length + ' 人';
+  };
+  window.ykAttGridFill = function (kind) {
+    Array.prototype.forEach.call(document.querySelectorAll('#ykAttGridRows tr'), function (tr) {
+      var x = YK.grid.rows[Number(tr.getAttribute('data-i'))], s = tr.querySelector('.ag-s'), a = tr.querySelector('.ag-a');
+      if (kind === 'hint' && s.value === '' && x.hint !== '' && x.hint !== undefined) s.value = x.hint;
+      if (kind === 'attend' && a.value === '' && s.value !== '') a.value = s.value;
+      ykAttGridRow(s);
+    });
+  };
+  window.ykAttGridSave = async function () {
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll('#ykAttGridRows tr'), function (tr) {
+      var v = [tr.querySelector('.ag-s').value, tr.querySelector('.ag-a').value, tr.querySelector('.ag-o').value, tr.querySelector('.ag-l').value];
+      if (v.join('|') === tr.getAttribute('data-o')) return;
+      items.push({ staffId: tr.getAttribute('data-id'), sched: v[0], attend: v[1], other: v[2], lateHours: v[3] });
+    });
+    if (!items.length) { toast('変更がありません', 'error'); return; }
+    var r = await api({ action: 'ykSaveAttGrid', month: YK.grid.month, items: items });
+    toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) { await ykOpenAttGrid(YK.grid.month); ykReload(); }
+  };
+
+  // ---------- 出勤率・欠勤率（月ごとの所定労働日数・出勤日数を入力して累積で判定。管理者・園長の画面のみ） ----------
   var ATT_LABEL = { '付与前': '付与前の出勤率（8割判定）', '年度': '年間（前年度）', '6か月': '直近6か月', '月': '月間', 'その他': 'その他' };
   function attBadge(a) {
-    if (!a) return badge('muted', '出勤率 未入力', '「出勤率・欠勤率の試算」に入力すると、付与できるかを自動で判定します');
-    var t = a.start + '〜' + a.end + '　所定' + a.sched + '日・出勤' + a.attend + '日';
+    if (!a) return badge('info', '出勤率 未入力', '「出勤率・欠勤率」に月ごとの実績を入力すると、付与できるかを自動で判定します');
+    var t = a.start + '〜' + a.end + '　所定' + a.sched + '日・出勤' + a.attend + '日' + (a.provisional ? '　未入力の月：' + (a.missing || []).join('・') : '');
+    if (a.provisional) return badge('warning', '出勤率 ' + num(a.attendRate) + '%（暫定・' + (a.missing || []).length + 'か月未入力）', t);
     return a.below80 ? badge('danger', '出勤率 ' + num(a.attendRate) + '%（8割未満→付与しない）', t) : badge('success', '出勤率 ' + num(a.attendRate) + '%（8割以上→付与可）', t);
+  }
+  // 請求月を基準にした集計と、特別休暇・福利厚生などの請求可否
+  function claimHtml(c) {
+    var s = c.summary || {};
+    function card(title, a, note) {
+      if (!a) return '<div class="yk-card"><div class="l">' + e(title) + '</div><div style="font-size:.95rem;color:var(--clr-text-s)">入力なし</div><div class="l">' + e(note || '') + '</div></div>';
+      return '<div class="yk-card"><div class="l">' + e(title) + '</div>' +
+        '<div style="font-size:1.1rem;font-weight:700;color:' + (a.absent10 ? '#b00020' : 'var(--clr-primary-d)') + '">欠勤率 ' + num(a.absenceRate) + '%</div>' +
+        '<div class="l">出勤率 ' + num(a.attendRate) + '%　所定 ' + num(a.sched) + '日・出勤 ' + num(a.attend) + '日・年休 ' + num(a.paid) + '日' + (a.lateHours ? '・遅刻等 ' + num(a.lateHours) + 'h' : '') + '</div>' +
+        '<div class="l">' + e(a.start) + '〜' + e(a.end) + (a.source === 'direct' ? '（期間の直接入力）' : '') + '</div>' +
+        (a.complete ? '' : '<div class="l" style="color:#7a5b00;font-weight:700">暫定：' + e((a.missing || []).join('・')) + ' が未入力</div>') + '</div>';
+    }
+    function lab(it, st) {
+      var t = it.title;
+      if (t.indexOf('減算') >= 0) return st === 'ng' ? badge('danger', '1日減算') : st === 'unknown' ? badge('warning', '要確認') : badge('success', '減算なし');
+      if (t.indexOf('昇給') >= 0) return st === 'ng' ? badge('danger', '行わない／減額') : st === 'unknown' ? badge('warning', '要確認') : badge('success', '対象外');
+      return st === 'ng' ? badge('danger', '請求できません') : st === 'unknown' ? badge('warning', '要確認') : badge('success', '請求できます');
+    }
+    return '<div class="yk-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px">' +
+      card('直近6か月（請求月の前月まで）', s.six) + card('前年度（年間）', s.fyPrev, '前年度の在籍がありません') + card('今年度の累計（年度初め〜前月）', s.fyCur, '年度の最初の月です') + '</div>' +
+      '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>請求の種類</th><th>根拠</th><th>判定</th><th>内訳</th></tr></thead><tbody>' +
+      (c.items || []).map(function (it) {
+        return '<tr><td><strong>' + e(it.title) + '</strong></td><td class="sm">' + e(it.art) + '</td><td>' + lab(it, it.status) + '</td><td class="sm">' +
+          (it.lines || []).map(function (ln) { return '<div style="color:' + (ln.ng ? '#b00020;font-weight:700' : ln.unknown ? '#7a5b00' : 'inherit') + '">' + e(ln.text) + '</div>'; }).join('') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function attMonthRows(d) {
+    return (d.attMonthly || []).map(function (m) {
+      var inp = function (cls, v) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:72px" value="' + e(v) + '" oninput="ykAttMonRow(this)"></td>'; };
+      return '<tr data-m="' + e(m.month) + '" data-paid="' + num(m.paid) + '" data-o="' + e([m.sched, m.attend, m.other, m.lateHours].join('|')) + '">' +
+        '<td><strong>' + e(m.month) + '</strong></td>' + inp('am-s', m.sched) + inp('am-a', m.attend) + inp('am-o', m.other) + inp('am-l', m.lateHours) +
+        '<td class="r">' + (m.paid ? num(m.paid) : '') + '</td><td class="am-res r"></td></tr>';
+    }).join('');
   }
   function attendBoxHtml(d) {
     if (!d.attDefaults) return '';
@@ -7744,9 +7860,19 @@ function openJikoCheckPrint() {
         '<td class="sm">' + e(a.createdBy) + '<br>' + e(a.createdAt) + '</td>' +
         '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="ykAttEdit(\'' + e(a.id) + '\')">修正</button> <button class="btn btn-sm btn-danger" onclick="ykAttCancel(\'' + e(a.id) + '\')">取消</button></td></tr>';
     }).join('');
-    setTimeout(function () { if ($('ykaPreset') && defs.length) { $('ykaPreset').value = '0'; ykAttPreset(); } }, 0);
-    return '<div class="yk-box" id="ykAttBox"><h4>出勤率・欠勤率の試算</h4>' +
-      '<p class="yk-note" style="margin-top:0">所定労働日数と出勤日数を入力すると、<strong>欠勤率</strong>（10%以上で各種の制限）と<strong>出勤率</strong>（8割未満は年休を付与しない）を計算します。年休を取得した日は、有給管理の記録から自動で数えます（欠勤に含めません）。勤務表までは入力しません。</p>' + an +
+    var cl = d.attClaim || { month: d.asOf.slice(0, 7), summary: {}, items: [] };
+    setTimeout(function () { ykAttMonInit(); if ($('ykaPreset') && defs.length) { $('ykaPreset').value = '0'; ykAttPreset(); } }, 0);
+    return '<div class="yk-box" id="ykClaimBox"><h4>特別休暇・福利厚生などの請求可否（欠勤率の累積から判定）</h4>' +
+      '<p class="yk-note" style="margin-top:0">請求月を選ぶと、<strong>請求月の前月までの直近6か月</strong>と<strong>前年度の年間</strong>の欠勤率（10%以上で制限）、前年度の特別繁忙期の全休（確認済）から、請求できるかを判定します。月ごとの実績が足りない期間は「暫定」です。</p>' +
+      '<label class="flabel" style="display:inline-block;margin-right:6px">請求月</label><input type="month" class="finput" id="ykClaimMonth" style="width:160px;display:inline-block" value="' + e(cl.month) + '" onchange="ykAttClaimChg()">' +
+      '<div id="ykClaimBody" style="margin-top:10px">' + claimHtml(cl) + '</div></div>' +
+      '<div class="yk-box" id="ykAttMonBox"><h4>月ごとの出勤実績</h4>' +
+      '<p class="yk-note" style="margin-top:0">月ごとに<strong>所定労働日数</strong>と<strong>出勤日数</strong>を入力して保存します（年休を取得した日は有給管理の記録から自動で数え、欠勤に含めません）。入力した月は累積されて、上の請求可否と、年休付与の出勤率8割の判定に使われます。所定労働日数を空欄にして保存すると、その月の入力を取り消します。' +
+      '保存期間は<strong>' + num(d.attKeepYears || 5) + '年</strong>で、それより古い月は保存のときに自動で整理します（月ごとの記録なので軽く、1人1年12行です）。</p>' +
+      '<div class="table-wrap" style="max-height:380px;overflow:auto"><table><thead><tr><th>月</th><th>所定労働日数</th><th>出勤日数</th><th>その他<span class="yk-sub">算入しない日数</span></th><th>遅刻・早退等<span class="yk-sub">累計時間</span></th><th class="r">年休(自動)</th><th class="r">その月の結果</th></tr></thead><tbody id="ykAttMonBody">' + attMonthRows(d) + '</tbody></table></div>' +
+      '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="ykAttMonSave()">変更した月を保存</button> <span class="yk-note">変更した月だけ保存します。</span></div></div>' +
+      '<div class="yk-box" id="ykAttBox"><h4>期間を指定した直接入力（月ごとの入力がない期間・月の途中の期間用）</h4>' +
+      '<p class="yk-note" style="margin-top:0">月ごとの入力がそろわない期間（入職が月の途中の付与前の判定など）は、期間を指定して所定労働日数と出勤日数を直接入力できます。同じ期間の月ごとの入力が足りないときは、こちらの値を使います。</p>' + an +
       '<div class="yk-grid" style="align-items:end">' +
       f('期間の候補', '<select class="fselect" id="ykaPreset" onchange="ykAttPreset()"><option value="">自由入力</option>' + defs.map(function (x, i) { return '<option value="' + i + '">' + e(x.label) + '</option>'; }).join('') + '</select>') +
       f('種別', '<select class="fselect" id="ykaType" onchange="ykAttPreview()">' + Object.keys(ATT_LABEL).map(function (k) { return '<option value="' + e(k) + '">' + e(ATT_LABEL[k]) + '</option>'; }).join('') + '</select>') +
@@ -7757,9 +7883,40 @@ function openJikoCheckPrint() {
       f('遅刻・早退・私用外出の累計時間（任意）', '<input type="number" step="0.5" min="0" class="finput" id="ykaLate" placeholder="時間" oninput="ykAttPreview()">') +
       f('備考', '<input type="text" class="finput" id="ykaMemo">') + '</div>' +
       '<div id="ykaPrev" class="yk-note" style="margin:8px 0"></div>' +
-      '<button class="btn btn-primary btn-sm" onclick="ykAttSave()">試算を保存</button> <span class="yk-note">同じ種別・同じ期間で保存すると上書きします。</span>' +
+      '<button class="btn btn-primary btn-sm" onclick="ykAttSave()">直接入力を保存</button> <span class="yk-note">同じ種別・同じ期間で保存すると上書きします。</span>' +
       (rows ? '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>種別</th><th>期間</th><th class="r">所定労働日数</th><th class="r">出勤日数</th><th class="r">年休(自動)</th><th class="r">その他</th><th class="r">遅刻・早退等</th><th class="r">欠勤率</th><th class="r">出勤率</th><th>判定</th><th>入力者／日時</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + '</div>';
   }
+  // 月ごとの表：入力に合わせて、その月の欠勤率・出勤率を出す
+  window.ykAttMonRow = function (el) {
+    var tr = el.parentNode.parentNode, d = YK.detail, dh = d.isRegular ? 8 : (Number(d.staff.dailyHours) || 8);
+    var s = tr.querySelector('.am-s').value, a = Number(tr.querySelector('.am-a').value) || 0, o = Number(tr.querySelector('.am-o').value) || 0, l = Number(tr.querySelector('.am-l').value) || 0;
+    var paid = Number(tr.getAttribute('data-paid')) || 0, res = tr.querySelector('.am-res');
+    var cur = [s, tr.querySelector('.am-a').value, tr.querySelector('.am-o').value, tr.querySelector('.am-l').value].join('|');
+    tr.style.background = cur !== tr.getAttribute('data-o') ? '#fffbea' : '';
+    if (s === '' || !(Number(s) > 0)) { res.innerHTML = ''; return; }
+    var sc = Number(s), cred = a + paid + o, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
+    var bad = a > sc, a10 = ab * 10 >= sc - 1e-9, r1 = function (x) { return Math.round(x * 10) / 10; };
+    res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%</span>';
+  };
+  window.ykAttMonInit = function () { Array.prototype.forEach.call(document.querySelectorAll('#ykAttMonBody tr'), function (tr) { var el = tr.querySelector('.am-s'); if (el) ykAttMonRow(el); }); };
+  window.ykAttMonSave = async function () {
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll('#ykAttMonBody tr'), function (tr) {
+      var v = [tr.querySelector('.am-s').value, tr.querySelector('.am-a').value, tr.querySelector('.am-o').value, tr.querySelector('.am-l').value];
+      if (v.join('|') === tr.getAttribute('data-o')) return;
+      items.push({ month: tr.getAttribute('data-m'), sched: v[0], attend: v[1], other: v[2], lateHours: v[3] });
+    });
+    if (!items.length) { toast('変更がありません', 'error'); return; }
+    var r = await api({ action: 'ykSaveAttMonthly', targetStaffId: YK.detailId, items: items });
+    toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) refreshDetail();
+  };
+  window.ykAttClaimChg = async function () {
+    var m = $('ykClaimMonth').value; if (!m) return;
+    var r = await api({ action: 'ykGetAttClaim', targetStaffId: YK.detailId, month: m });
+    if (!r.ok) { toast(r.msg || '取得できませんでした', 'error'); return; }
+    YK.detail.attClaim = r.claim; $('ykClaimBody').innerHTML = claimHtml(r.claim);
+  };
   function attFormVals() {
     return { type: $('ykaType').value, start: $('ykaStart').value, end: $('ykaEnd').value, sched: Number($('ykaSched').value) || 0, attend: Number($('ykaAtt').value) || 0,
              other: Number($('ykaOther').value) || 0, lateHours: Number($('ykaLate').value) || 0, memo: $('ykaMemo').value };
@@ -7795,7 +7952,7 @@ function openJikoCheckPrint() {
     ykAttPreview(); var b = $('ykAttBox'); if (b && b.scrollIntoView) b.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   window.ykAttCancel = async function (id) {
-    if (!confirm('この試算の記録を取り消します。よろしいですか？')) return;
+    if (!confirm('この記録を取り消します。よろしいですか？')) return;
     var r = await api({ action: 'ykCancelAttendance', targetStaffId: YK.detailId, attId: id });
     toast(r.msg || (r.ok ? '取り消しました' : '取り消せませんでした'), r.ok ? 'success' : 'error');
     if (r.ok) refreshDetail();
@@ -8035,7 +8192,7 @@ function openJikoCheckPrint() {
     else {
       h += '<div class="table-wrap"><table><thead><tr><th></th><th>氏名</th><th>所属園</th><th>付与日</th><th>種別</th><th>付与日数</th><th>有効期限<span class="yk-sub">この日まで</span></th></tr></thead><tbody>' +
         r.rows.map(function (x, i) {
-          return '<tr data-i="' + i + '"><td><input type="checkbox" class="yd-on"' + (x.att && x.att.below80 ? '' : ' checked') + ' onchange="ykDueRecalc()"></td><td><strong>' + e(x.name) + '</strong>' + (x.type === '法定' ? '<span class="yk-sub">' + attBadge(x.att) + '</span>' : '') + '</td><td>' + e(x.garden) + '</td>' +
+          return '<tr data-i="' + i + '"><td><input type="checkbox" class="yd-on"' + (x.att && x.att.below80 && !x.att.provisional ? '' : ' checked') + ' onchange="ykDueRecalc()"></td><td><strong>' + e(x.name) + '</strong>' + (x.type === '法定' ? '<span class="yk-sub">' + attBadge(x.att) + '</span>' : '') + '</td><td>' + e(x.garden) + '</td>' +
             '<td>' + e(x.date) + '</td><td>' + (x.type === '前払' ? '前払（入職時の前借）' : '法定') + (x.future ? '<span class="yk-sub">6か月後に有効（先行登録）</span>' : '') + '</td>' +
             '<td class="yd-days"><strong>' + num(x.days) + '日</strong>' + (x.type === '法定' && x.legalDays ? '<span class="yk-sub">法定 ' + x.legalDays + '日' + (x.prepaid > 0 || x.assumedPre ? ' − 前借' + (x.prepaid > 0 ? x.prepaid : 5) + '日＝残り' : '') + '</span>' : '') + '</td>' +
             '<td>' + e(x.expire) + ' まで</td></tr>';
@@ -8101,7 +8258,7 @@ function openJikoCheckPrint() {
         items.map(function (o) {
           var x = o.x, past = x.date <= d.asOf;
           var paired = x.type === '法定' && items.some(function (q) { return q.x.type === '前払' && q.x.legalDate === x.date; });
-          var below = x.type === '法定' && x.att && x.att.below80;   // 出勤率が8割未満と試算済み → 「付与しない」を自動で選ぶ
+          var below = x.type === '法定' && x.att && x.att.below80 && !x.att.provisional;   // 出勤率が8割未満と試算済み → 「付与しない」を自動で選ぶ
           return '<tr data-i="' + o.i + '"' + (below ? ' style="opacity:.6"' : '') + '><td><input type="checkbox" class="yp-on"' + ((past || paired) && !below ? ' checked' : '') + (below ? ' disabled' : '') + ' onchange="ykPanelRecalc()"></td>' +
             '<td>' + e(x.date) + (x.type === '法定' ? '<span class="yk-sub">' + attBadge(x.att) + '</span>' : '') + '</td><td>' + e(x.type === '前払' ? '前払（入職時の前借）' : '法定') +
             (x.type === '前払' ? '<span class="yk-sub">対象 ' + e(x.legalDate) + '</span>' : '') +
