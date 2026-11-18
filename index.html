@@ -1457,6 +1457,17 @@ tr.rank-gap-row > td { background: #fdecec; }
           <p class="fhelp">正規職員のみ。所属園を選ぶと候補が表示されます</p>
         </div>
       </div>
+      <!-- 休業期間（admin/encho のみ表示。登録・修正・取消は admin のみ） -->
+      <div class="frow" id="leavePeriodRow" style="display:none">
+        <div class="fcol" style="flex:1">
+          <label class="flabel">🛌 休業期間（育児休業・介護休業・産前産後・労災・休職・私傷病など）</label>
+          <div id="leavePeriodBody"></div>
+          <p class="fhelp">
+            ここで登録すると、<strong>月次の出勤実績</strong>（欠勤に算入しない日数）、<strong>賞与の対象判定</strong>、<strong>昇給の判定</strong>、<strong>評価の除外</strong>に連動します（評価の除外への自動反映は、有給の設定でオンにしたときだけです）。<br>
+            欠勤に算入しない種別（産前産後・育児休業・介護休業・労災）は、月次の欠勤率・出勤率から自動で除かれます。休職・私傷病・その他は、既定では欠勤に算入します（休業ごとに変えられます）。
+          </p>
+        </div>
+      </div>
       <!-- 評価除外年度（admin/encho のみ表示） -->
       <div class="frow" id="leaveYearsRow" style="display:none">
         <div class="fcol" style="flex:1">
@@ -1470,6 +1481,7 @@ tr.rank-gap-row > td { background: #fdecec; }
             <strong>2026-自己評価</strong> → 2026年度の目標設定・自己評価（振り返り）のみ除外（賞与の可否には影響しません）<br>
             例）前年度は在籍していたため夏季賞与は対象、当年度は不在のため冬季賞与は対象外、かつ当年度は自己評価もまるごと対象外にしたい場合：<em>2026-冬季, 2026-自己評価</em><br>
             複数の場合はカンマで区切り: <em>2026-冬季, 2027</em><br>
+            <strong>+2026-夏季</strong>（先頭に + ）→ 休業期間からの自動判定で対象外になる場合でも、<strong>対象にする</strong>（例外の個別設定）。<strong>+2026</strong> は年度まるごと対象にします<br>
             退職者は自動除外されるため設定不要。
           </p>
         </div>
@@ -3538,6 +3550,9 @@ async function openStaffModal(staffId = null) {
   // 評価除外年度フィールドは admin/encho のみ表示
   var leaveRow = document.getElementById('leaveYearsRow');
   if (leaveRow) leaveRow.style.display = (SESSION.role === 'admin' || SESSION.role === 'encho') ? '' : 'none';
+  var lpRow = document.getElementById('leavePeriodRow');
+  if (lpRow) lpRow.style.display = (SESSION.role === 'admin' || SESSION.role === 'encho') ? '' : 'none';
+  if (SESSION.role === 'admin' || SESSION.role === 'encho') loadLeavePeriods(staffId);
 
   if (staffId) {
     // getStaffList+find ではなく getStaffDetail を使うことで確実に1名のデータを取得
@@ -3566,6 +3581,56 @@ async function openStaffModal(staffId = null) {
   }
   switchStaffTab('basic');
   document.getElementById('staffModal').classList.add('open');
+}
+
+// ---------- 職員マスタ：休業期間 ----------
+var LV_STATE = null;
+function lvEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+async function loadLeavePeriods(staffId) {
+  var body = document.getElementById('leavePeriodBody'); if (!body) return;
+  if (!staffId) { body.innerHTML = '<p class="fhelp">職員を登録したあとで、休業期間を設定できます。</p>'; return; }
+  body.innerHTML = '<p class="fhelp">読み込み中…</p>';
+  var r = await api({ action: 'ykGetLeaves', targetStaffId: staffId });
+  if (!r.ok) { body.innerHTML = '<p class="fhelp">' + lvEsc(r.msg || '読み込めませんでした') + '</p>'; return; }
+  LV_STATE = r; renderLeavePeriods(staffId);
+}
+function renderLeavePeriods(staffId) {
+  var r = LV_STATE, body = document.getElementById('leavePeriodBody'); if (!r || !body) return;
+  var rows = r.list.map(function (l) {
+    return '<tr><td><strong>' + lvEsc(l.type) + '</strong></td><td>' + lvEsc(l.start) + ' 〜 ' + (l.end ? lvEsc(l.end) : '<span style="color:#7a5b00;font-weight:700">継続中</span>') + '</td>' +
+      '<td>' + (l.excl ? '<span style="color:#1b6b3a">欠勤に算入しない</span>' : '<span style="color:#b00020">欠勤に算入する</span>') + (l.mode !== '既定' ? '<span class="fhelp">（個別設定）</span>' : '') + '</td>' +
+      '<td>' + lvEsc(l.memo) + '</td>' +
+      (r.canEdit ? '<td style="white-space:nowrap"><button type="button" class="btn btn-outline btn-sm" onclick="lvEdit(\'' + lvEsc(l.id) + '\')">修正</button> <button type="button" class="btn btn-sm btn-danger" onclick="lvCancel(\'' + lvEsc(l.id) + '\')">取消</button></td>' : '') + '</tr>';
+  }).join('');
+  var form = r.canEdit ? '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px">' +
+    '<div><label class="flabel">種別</label><select class="fselect" id="lvType">' + r.types.map(function (t) { return '<option value="' + lvEsc(t.type) + '">' + lvEsc(t.type) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label class="flabel">開始日</label><input type="date" class="finput" id="lvStart"></div>' +
+    '<div><label class="flabel">終了日（継続中は空欄）</label><input type="date" class="finput" id="lvEnd"></div>' +
+    '<div><label class="flabel">欠勤の扱い</label><select class="fselect" id="lvMode"><option value="既定">種別の既定</option><option value="算入しない">欠勤に算入しない</option><option value="算入する">欠勤に算入する</option></select></div>' +
+    '<div style="flex:1;min-width:140px"><label class="flabel">備考</label><input type="text" class="finput" id="lvMemo"></div>' +
+    '<input type="hidden" id="lvId"><button type="button" class="btn btn-primary btn-sm" onclick="lvSave(\'' + lvEsc(staffId) + '\')">登録</button> <button type="button" class="btn btn-outline btn-sm" onclick="lvClear()">クリア</button></div>' : '<p class="fhelp">休業期間の登録・修正は理事長のみです。</p>';
+  var derived = (r.derived || []).length ? '<p class="fhelp" style="margin-top:8px">休業期間から自動判定すると、<strong>' + lvEsc(r.derived.join('、')) + '</strong> が評価・賞与の対象外になります。' +
+    (r.auto ? '（自動反映は<strong>オン</strong>です）' : '（自動反映は<strong>オフ</strong>のため、いまは評価の除外に反映されていません。有給の設定でオンにできます）') + '</p>' : '';
+  body.innerHTML = (rows ? '<div class="table-wrap"><table><thead><tr><th>種別</th><th>期間</th><th>欠勤の扱い</th><th>備考</th>' + (r.canEdit ? '<th></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="fhelp">休業期間は登録されていません。</p>') + form + derived;
+}
+function lvClear() { ['lvId', 'lvStart', 'lvEnd', 'lvMemo'].forEach(function (i) { document.getElementById(i).value = ''; }); document.getElementById('lvMode').value = '既定'; }
+function lvEdit(id) {
+  var l = (LV_STATE.list || []).filter(function (x) { return x.id === id; })[0]; if (!l) return;
+  document.getElementById('lvId').value = l.id; document.getElementById('lvType').value = l.type; document.getElementById('lvStart').value = l.start;
+  document.getElementById('lvEnd').value = l.end || ''; document.getElementById('lvMode').value = l.mode || '既定'; document.getElementById('lvMemo').value = l.memo || '';
+}
+async function lvSave(staffId) {
+  var r = await api({ action: 'ykSaveLeave', targetStaffId: staffId, leave: { id: document.getElementById('lvId').value, type: document.getElementById('lvType').value, start: document.getElementById('lvStart').value,
+    end: document.getElementById('lvEnd').value, mode: document.getElementById('lvMode').value, memo: document.getElementById('lvMemo').value } });
+  toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+  if (r.ok) loadLeavePeriods(staffId);
+}
+async function lvCancel(id) {
+  if (!confirm('この休業期間を取り消します。よろしいですか？')) return;
+  var staffId = editingStaffId;
+  var r = await api({ action: 'ykCancelLeave', targetStaffId: staffId, leaveId: id });
+  toast(r.msg || (r.ok ? '取り消しました' : '取り消せませんでした'), r.ok ? 'success' : 'error');
+  if (r.ok) loadLeavePeriods(staffId);
 }
 
 function closeStaffModal() { document.getElementById('staffModal').classList.remove('open'); }
@@ -7732,11 +7797,11 @@ function openJikoCheckPrint() {
     var r = await api({ action: 'ykGetAttGrid', garden: $('ykGarden').value, month: month || '' });
     if (!r.ok) { toast(r.msg || '取得できませんでした', 'error'); return; }
     YK.grid = r;
-    var inp = function (cls, v) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:76px" value="' + e(v) + '" oninput="ykAttGridRow(this)"></td>'; };
+    var inp = function (cls, v, dis) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:76px" value="' + e(v) + '"' + (dis ? ' disabled' : '') + ' oninput="ykAttGridRow(this)"></td>'; };
     var rows = r.rows.map(function (x, i) {
-      return '<tr data-i="' + i + '" data-id="' + e(x.staffId) + '" data-paid="' + num(x.paid) + '" data-dh="' + x.dailyHours + '" data-o="' + e([x.sched, x.attend, x.other, x.lateHours].join('|')) + '">' +
+      return '<tr data-i="' + i + '" data-id="' + e(x.staffId) + '" data-paid="' + num(x.paid) + '" data-dh="' + x.dailyHours + '" data-lf="' + (x.leaveFrac || 0) + '"' + (x.leaveFrac >= 1 ? ' data-full="1"' : '') + ' data-o="' + e([x.sched, x.attend, x.other, x.lateHours].join('|')) + '">' +
         '<td><strong>' + e(x.name) + '</strong><span class="yk-sub">' + e(x.jobType || '') + '／' + e(x.employment) + '</span></td><td>' + e(x.garden) + '</td>' +
-        inp('ag-s', x.sched) + inp('ag-a', x.attend) + inp('ag-o', x.other) + inp('ag-l', x.lateHours) +
+        inp('ag-s', x.sched, x.leaveFrac >= 1) + inp('ag-a', x.attend, x.leaveFrac >= 1) + inp('ag-o', x.other, x.leaveFrac >= 1) + inp('ag-l', x.lateHours, x.leaveFrac >= 1) +
         '<td class="r">' + (x.paid ? num(x.paid) : '') + '</td><td class="ag-res r"></td></tr>';
     }).join('');
     $('ykAttGridBody').innerHTML =
@@ -7772,11 +7837,13 @@ function openJikoCheckPrint() {
     var s = tr.querySelector('.ag-s').value, a = Number(tr.querySelector('.ag-a').value) || 0, o = Number(tr.querySelector('.ag-o').value) || 0, l = Number(tr.querySelector('.ag-l').value) || 0;
     var cur = [s, tr.querySelector('.ag-a').value, tr.querySelector('.ag-o').value, tr.querySelector('.ag-l').value].join('|'), res = tr.querySelector('.ag-res');
     tr.style.background = cur !== tr.getAttribute('data-o') ? '#fffbea' : '';
-    if (s === '' || !(Number(s) > 0)) { res.innerHTML = ''; }
+    if (tr.getAttribute('data-full')) { res.innerHTML = '<span class="yk-sub">休業（全日）・入力不要</span>'; }
+    else if (s === '' || !(Number(s) > 0)) { res.innerHTML = ''; }
     else {
-      var sc = Number(s), cred = a + paid + o, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
+      var lf = Number(tr.getAttribute('data-lf')) || 0, sc = Number(s), auto = Math.min(Math.round(sc * lf * 1000) / 1000, Math.max(0, sc - a - paid - o));
+      var cred = a + paid + o + auto, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
       var bad = a > sc, a10 = ab * 10 >= sc - 1e-9, r1 = function (x) { return Math.round(x * 10) / 10; };
-      res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%</span>';
+      res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%' + (auto > 0 ? '　休業 ' + num(auto) + '日（自動）' : '') + '</span>';
     }
     var rows = document.querySelectorAll('#ykAttGridRows tr'), n = 0;
     Array.prototype.forEach.call(rows, function (t) { if (t.querySelector('.ag-s').value !== '') n++; });
@@ -7785,6 +7852,7 @@ function openJikoCheckPrint() {
   window.ykAttGridFill = function (kind) {
     Array.prototype.forEach.call(document.querySelectorAll('#ykAttGridRows tr'), function (tr) {
       var x = YK.grid.rows[Number(tr.getAttribute('data-i'))], s = tr.querySelector('.ag-s'), a = tr.querySelector('.ag-a');
+      if (s.disabled) return;
       if (kind === 'hint' && s.value === '' && x.hint !== '' && x.hint !== undefined) s.value = x.hint;
       if (kind === 'attend' && a.value === '' && s.value !== '') a.value = s.value;
       ykAttGridRow(s);
@@ -7801,6 +7869,58 @@ function openJikoCheckPrint() {
     var r = await api({ action: 'ykSaveAttGrid', month: YK.grid.month, items: items });
     toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
     if (r.ok) { await ykOpenAttGrid(YK.grid.month); ykReload(); }
+  };
+
+  // ---------- 賞与（第26条）・昇給（第5条・第7条）の判定（正規のみ。管理者・園長の画面のみ） ----------
+  function bonusRaiseHtml(d) {
+    if (!d.bonusEval && !d.raiseEval) return '';
+    var out = '';
+    if (d.leaves && d.leaves.length) {
+      out += '<div class="yk-box"><h4>休業期間（職員マスタで登録）</h4>' + d.leaves.map(function (l) {
+        return '<div>' + e(l.type) + '　' + e(l.start) + ' 〜 ' + (l.end ? e(l.end) : '<strong>継続中</strong>') + '　' + (l.excl ? '<span style="color:#1b6b3a">欠勤に算入しない</span>' : '<span style="color:#b00020">欠勤に算入する</span>') + '</div>';
+      }).join('') + '<p class="yk-note" style="margin-top:6px">登録・修正は、職員マスタの「休業期間」から行います。</p></div>';
+    }
+    if (d.bonusEval && d.bonusEval.length) {
+      var auto = d.settings && d.settings.leave_auto_eval;
+      out += '<div class="yk-box"><h4>賞与の対象判定（第26条）</h4>' +
+        '<p class="yk-note" style="margin-top:0">支給基準日（7月1日・12月1日）に在籍し、「賞与支給月の出勤率10%未満」「新規採用者の対象期間中の出勤率10%未満」に当たらない人を対象とします。休業は不就労として扱います。支給割合の調整（第11項・第13項）は個別の判断のため、判定していません。評価（自己評価・賞与評価）の除外への自動反映は <strong>' + (auto ? 'オン' : 'オフ') + '</strong> です。</p>' +
+        d.bonusEval.map(function (b) {
+          var reasons = (b.reasons || []).map(function (r) { return '<li style="color:#b00020">' + e(r.text) + '<span class="yk-sub">（' + e(r.art) + '）</span></li>'; }).join('');
+          var notes = (b.notes || []).map(function (n) { return '<li>' + e(n) + '</li>'; }).join('');
+          return '<div style="margin-top:10px;padding:8px 10px;border:1px solid var(--clr-border);border-radius:6px;background:' + (b.eligible ? '#f6fbf7' : '#fff5f5') + '">' +
+            '<strong>' + e(b.year) + '年 ' + e(b.term) + '賞与</strong>（支給基準日 ' + e(b.base) + '・' + (b.upcoming ? '次回' : '直近') + '）　' + (b.eligible ? badge('success', '対象') : badge('danger', '対象外')) + (b.override ? ' ' + badge('info', '個別設定：' + b.override) : '') +
+            '<div class="yk-sub" style="margin-top:4px">対象期間 ' + e(b.start) + '〜' + e(b.end) + '　支給割合 ' + num(b.rate) + '%（第7項）　休業 ' + num(b.leaveDays) + '日（対象期間の ' + num(b.leavePct) + '%）　支給月の出勤率 ' + (b.monthRate == null ? '―' : num(b.monthRate) + '%（' + (b.monthSource === 'actual' ? '月次の実績' : '休業期間からの予測') + '）') + '</div>' +
+            (reasons || notes ? '<ul style="margin:4px 0 0 1.2em;padding:0">' + reasons + notes + '</ul>' : '') + '</div>';
+        }).join('') + '</div>';
+    }
+    var r = d.raiseEval;
+    if (r) {
+      var st = r.status === 'none' ? badge('danger', '昇給しない（原則）') : r.status === 'cap' ? badge('warning', '昇給は ' + r.cap + ' を上限') : r.status === 'override' ? badge('info', '個別設定で実施') : badge('success', '1〜3号俸（勤務成績等を考慮）');
+      var ab = r.absence;
+      var has = function (k) { return (r.flags || []).indexOf(k) >= 0 ? ' checked' : ''; };
+      var admin = ykIsAdmin();
+      out += '<div class="yk-box"><h4>昇給の判定（' + e(r.date) + '・第5条・第7条）</h4>' +
+        '<div>' + st + '　<span class="yk-sub">判定期間 ' + e(r.start) + '〜' + e(r.end) + '</span></div>' +
+        '<div class="yk-sub" style="margin-top:4px">出勤月数 ' + num(r.workedMonths) + 'か月（在籍 ' + num(r.employedMonths) + 'か月）　年間の欠勤率 ' + (ab ? num(ab.absenceRate) + '%' + (ab.complete ? '' : '（暫定・月次の入力不足）') : '月次の入力なし') +
+          (r.age != null ? '　年齢 ' + num(r.age) + '歳（' + e(r.date) + ' 時点）' : '') + (r.provisional ? '　<span style="color:#7a5b00">※月次の入力が足りない月があるため暫定</span>' : '') + '</div>' +
+        ((r.stops || []).length ? '<ul style="margin:6px 0 0 1.2em;padding:0">' + r.stops.map(function (s) { return '<li style="color:#b00020">' + e(s.text) + '<span class="yk-sub">（' + e(s.art) + '）</span></li>'; }).join('') + '</ul>' : '') +
+        (r.status === 'cap' ? '<div class="yk-sub" style="margin-top:4px">出勤月数が1年に満たないため、' + e(r.cap) + 'を上限とします（第5条2項）。</div>' : '') +
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--clr-border)"><strong>個別設定</strong><span class="yk-sub">（アプリで判定できない項目と例外）</span><br>' +
+        '<label style="margin-right:12px"><input type="checkbox" id="rfSanction"' + has('制裁') + (admin ? '' : ' disabled') + '> 昇給月前1年間に制裁処分あり（第5条3項(3)）</label>' +
+        '<label style="margin-right:12px"><input type="checkbox" id="rfChair"' + has('理事長') + (admin ? '' : ' disabled') + '> 理事長が昇給しないと認めた（第5条3項(5)）</label>' +
+        '<label style="margin-right:12px"><input type="checkbox" id="rfCap"' + has('上限') + (admin ? '' : ' disabled') + '> 号俸の上限に到達（第7条1項）</label>' +
+        '<label><input type="checkbox" id="rfDo"' + has('実施') + (admin ? '' : ' disabled') + '> 例外として昇給を実施する</label>' +
+        (admin ? '<div style="margin-top:6px"><button class="btn btn-primary btn-sm" onclick="ykSaveRaiseFlagsUi(' + r.year + ')">個別設定を保存</button></div>' : '') + '</div>' +
+        '<p class="yk-note" style="margin-top:6px">非常勤の昇給・賞与は判定していません。「昇給しない」は原則であり、最終判断は理事長が行います。出勤月数は、月の初日から在籍していて勤務した月を数えます。</p></div>';
+    }
+    return out;
+  }
+  window.ykSaveRaiseFlagsUi = async function (year) {
+    var flags = [];
+    if ($('rfSanction').checked) flags.push('制裁'); if ($('rfChair').checked) flags.push('理事長'); if ($('rfCap').checked) flags.push('上限'); if ($('rfDo').checked) flags.push('実施');
+    var r = await api({ action: 'ykSaveRaiseFlags', targetStaffId: YK.detailId, year: String(year), flags: flags });
+    toast(r.msg || (r.ok ? '保存しました' : '保存できませんでした'), r.ok ? 'success' : 'error');
+    if (r.ok) refreshDetail();
   };
 
   // ---------- 出勤率・欠勤率（月ごとの所定労働日数・出勤日数を入力して累積で判定。管理者・園長の画面のみ） ----------
@@ -7838,8 +7958,9 @@ function openJikoCheckPrint() {
   }
   function attMonthRows(d) {
     return (d.attMonthly || []).map(function (m) {
-      var inp = function (cls, v) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:72px" value="' + e(v) + '" oninput="ykAttMonRow(this)"></td>'; };
-      return '<tr data-m="' + e(m.month) + '" data-paid="' + num(m.paid) + '" data-o="' + e([m.sched, m.attend, m.other, m.lateHours].join('|')) + '">' +
+      var dis = m.leaveFull ? ' disabled' : '';
+      var inp = function (cls, v) { return '<td><input type="number" step="0.5" min="0" class="finput ' + cls + '" style="width:72px" value="' + e(v) + '"' + dis + ' oninput="ykAttMonRow(this)"></td>'; };
+      return '<tr data-m="' + e(m.month) + '" data-paid="' + num(m.paid) + '" data-lf="' + (m.leaveFrac || 0) + '"' + (m.leaveFull ? ' data-full="1"' : '') + ' data-o="' + e([m.sched, m.attend, m.other, m.lateHours].join('|')) + '">' +
         '<td><strong>' + e(m.month) + '</strong></td>' + inp('am-s', m.sched) + inp('am-a', m.attend) + inp('am-o', m.other) + inp('am-l', m.lateHours) +
         '<td class="r">' + (m.paid ? num(m.paid) : '') + '</td><td class="am-res r"></td></tr>';
     }).join('');
@@ -7893,10 +8014,12 @@ function openJikoCheckPrint() {
     var paid = Number(tr.getAttribute('data-paid')) || 0, res = tr.querySelector('.am-res');
     var cur = [s, tr.querySelector('.am-a').value, tr.querySelector('.am-o').value, tr.querySelector('.am-l').value].join('|');
     tr.style.background = cur !== tr.getAttribute('data-o') ? '#fffbea' : '';
+    if (tr.getAttribute('data-full')) { res.innerHTML = '<span class="yk-sub">休業（全日）・入力不要</span>'; return; }
     if (s === '' || !(Number(s) > 0)) { res.innerHTML = ''; return; }
-    var sc = Number(s), cred = a + paid + o, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
+    var lf = Number(tr.getAttribute('data-lf')) || 0, sc = Number(s), auto = Math.min(Math.round(sc * lf * 1000) / 1000, Math.max(0, sc - a - paid - o));   // 休業（欠勤に算入しない）にあたる分
+    var cred = a + paid + o + auto, ab = Math.max(0, sc - cred) + l / dh, ar = ab / sc * 100, tr2 = Math.min(cred, sc) / sc * 100;
     var bad = a > sc, a10 = ab * 10 >= sc - 1e-9, r1 = function (x) { return Math.round(x * 10) / 10; };
-    res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%</span>';
+    res.innerHTML = bad ? '<span style="color:#b00020">出勤日数が多すぎます</span>' : '<span style="' + (a10 ? 'color:#b00020;font-weight:700' : '') + '">欠勤 ' + r1(ar) + '%</span><span class="yk-sub">出勤 ' + r1(tr2) + '%' + (auto > 0 ? '　休業 ' + num(auto) + '日（自動）' : '') + '</span>';
   };
   window.ykAttMonInit = function () { Array.prototype.forEach.call(document.querySelectorAll('#ykAttMonBody tr'), function (tr) { var el = tr.querySelector('.am-s'); if (el) ykAttMonRow(el); }); };
   window.ykAttMonSave = async function () {
@@ -8044,6 +8167,7 @@ function openJikoCheckPrint() {
       legalAdjHtml(c) +
       '</div></div>';
     h += blackoutNoteHtml(d);
+    h += bonusRaiseHtml(d);
     h += attendBoxHtml(d);
 
     // 有給の設定（付与区分＝非常勤のみ／1日の所定労働時間＝全員）
@@ -8686,6 +8810,8 @@ function openJikoCheckPrint() {
       '<p class="yk-note">運用開始日より前に終わった付与年度は、年5日の判定から除外します。前借制度の適用日を空欄にすると、正規職員全員に「入職日5日の前借」を提案します。</p>' +
       '<div class="yk-box" style="margin-top:10px"><label style="display:block;font-size:.88rem"><input type="checkbox" id="yksLegalAdj"' + (s.legal_adjust ? ' checked' : '') + '> 事前調整に<strong>法定付与日基準</strong>の判定を加える（第41条9項の追加）</label>' +
       '<p class="yk-note" style="margin-top:4px">オン：当該年度中の法定付与日（入職日により異なる）の時点で、1年以内に失効する日数÷12 が上限（月1日）を超える場合に、超えた日数の半数を、当該年度中の事前調整の対象となる場合がある日数として表示します（4月1日時点の判定とは別枠）。<br>オフ：4月1日時点の判定のみ（従来どおり）。</p></div>' +
+      '<div class="yk-box" style="margin-top:10px"><label style="display:block;font-size:.88rem"><input type="checkbox" id="yksLeaveAuto"' + (s.leave_auto_eval ? ' checked' : '') + '> 休業期間から、<strong>賞与・自己評価の対象を自動で判定</strong>して評価の除外に反映する</label>' +
+      '<p class="yk-note" style="margin-top:4px">オン：職員マスタに休業期間を登録した正規職員について、賞与（第26条）の「支給月の出勤率10%未満」「新規採用者の出勤率10%未満」に当たる賞与期を、評価（自己評価・賞与評価）の対象外にします。夏季・冬季の両方が対象外なら、その年度は自己評価も対象外です。例外は職員マスタの評価除外に <em>+2026-夏季</em> のように入力します。<br>オフ：従来どおり、職員マスタの評価除外（手入力）だけで判定します。</p></div>' +
       '<div class="yk-box" style="margin-top:10px"><label class="flabel">職員用の画面（自分の有給）の公開</label>' +
       '<div id="yksPubState" style="margin:6px 0">' + pubBadge(s.my_view === 'all') + '</div>' +
       '<button class="btn btn-primary btn-sm" onclick="ykSetPublish(\'all\')">公開する（全職員）</button> ' +
@@ -8731,7 +8857,7 @@ function openJikoCheckPrint() {
     var s = { monthly_cap: Number($('yksCap').value), base_md: $('yksBase').value.trim(), warn_days: Number($('yksWarn').value),
               start_date: $('yksStart').value, advance_from: $('yksAdv').value, prepaid_expire: $('yksPrepaid').checked ? 'legal' : 'grant', target_employment: $('yksEmp').value.split(',').map(function (x) { return x.trim(); }).filter(Boolean), blackouts: bl,
               my_view_ids: $('yksMyIds').value.split(',').map(function (x) { return x.trim(); }).filter(Boolean),
-              my_show_obligation: $('yksMyObl').checked, legal_adjust: $('yksLegalAdj').checked };
+              my_show_obligation: $('yksMyObl').checked, legal_adjust: $('yksLegalAdj').checked, leave_auto_eval: $('yksLeaveAuto').checked };
     var r = await api({ action: 'ykSaveSettings', settings: s });
     toast(r.msg, r.ok ? 'success' : 'error');
     if (r.ok) { ykCloseSettings(); ykReload(); }
