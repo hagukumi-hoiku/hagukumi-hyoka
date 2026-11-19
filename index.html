@@ -1193,7 +1193,7 @@ tr.rank-gap-row > td { background: #fdecec; }
                 <th style="text-align:center;background:#f2fcf7;color:#3a8060;font-size:.78rem">二次評価<br><span style="font-size:.7rem;font-weight:400">合計</span></th>
                 <th style="text-align:center;background:#f0f8fd;color:#4a8ab0;font-size:.8rem;font-weight:600">A合計<br><span style="font-size:.7rem;font-weight:400">70点満点換算</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">B加算<br><span style="font-size:.7rem;font-weight:400">自動転記</span></th>
-                <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減<br><span style="font-size:.7rem;font-weight:400">理事長調整</span></th>
+                <th style="text-align:center;background:#fdfaf2;color:#8a7840;font-size:.8rem">C加減<br><span style="font-size:.7rem;font-weight:400">理事長調整<br>▲▼＝ランクが変わる目安</span></th>
                 <th style="text-align:center;background:#fdfaf2;color:#6a5820;font-size:.8rem;font-weight:700">確定合計</th>
                 <th style="text-align:center;font-size:.8rem">総合ランク</th>
                 <th>状況</th><th>操作</th>
@@ -4513,6 +4513,29 @@ function bonusDistRank(complete, gRank, prov) {
   return { rank: '', isProv: false };
 }
 
+// C加減（理事長調整・±5）の目安。A合計＋B加算（C加減を除いた点）に対し、C加減を-5〜+5にしたときのランクの境目を返す。
+//  up   ＝ 今より上のランクになる最小のC加減（例：+1でC→B）
+//  down ＝ 今より下のランクになる最初のC加減（例：-3でB→C）
+//  範囲内（±5）に境目がなければ null
+function bonusCHint(base, cVal) {
+  var order = ['E', 'D', 'C', 'B', 'A', 'S', 'SS'];
+  var cur0 = Number(cVal) || 0;
+  function idx(c) { return order.indexOf(calcRankJS(Math.round(base + c), 100)); }
+  var cur = idx(cur0), up = null, down = null, c;
+  for (c = cur0 + 1; c <= 5; c++) { if (idx(c) > cur) { up = { c: c, from: order[cur], to: order[idx(c)] }; break; } }
+  for (c = cur0 - 1; c >= -5; c--) { if (idx(c) < cur) { down = { c: c, from: order[cur], to: order[idx(c)] }; break; } }
+  return { up: up, down: down };
+}
+function bonusCHintHtml(base, cVal, isProv) {
+  if (base === null || base === undefined) return '';
+  var h = bonusCHint(base, cVal), f = function(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n); };
+  var parts = [];
+  if (h.up)   parts.push('<span title="C加減を' + f(h.up.c) + 'にすると、' + h.up.from + 'から' + h.up.to + 'に上がります" style="color:#2e7d32;white-space:nowrap">▲' + f(h.up.c) + 'で' + h.up.from + '→' + h.up.to + '</span>');
+  if (h.down) parts.push('<span title="C加減が' + f(h.down.c) + 'になると、' + h.down.from + 'から' + h.down.to + 'に下がります" style="color:#b00020;white-space:nowrap">▼' + f(h.down.c) + 'で' + h.down.from + '→' + h.down.to + '</span>');
+  if (!parts.length) return '';
+  return '<div style="font-size:.68rem;font-weight:400;line-height:1.5' + (isProv ? ';font-style:italic;opacity:.8' : '') + '">' + parts.join('<br>') + (isProv ? '<br><span style="color:#c77d00">（暫定）</span>' : '') + '</div>';
+}
+
 // 一時保存中の点数から「暫定」のA合計・総合点・ランクを計算する（全体のバランス確認用）。
 // 一次・二次（園長タイプは二次のみ）の全項目が揃っている（提出済み or 一時保存）場合だけ計算し、
 // 入力途中・未入力の側がある場合は null を返す。確定値ではない（提出後に確定する）。
@@ -4769,7 +4792,8 @@ async function loadBonusList() {
         + (bVal !== null ? bVal + '点' : '<span style="color:#ccc">-</span>') + '</td>'
       // C加減
       + '<td style="text-align:center;font-weight:600;background:#fffef5">'
-        + (cVal ? (cVal > 0 ? '+' : '') + cVal : '<span style="color:#ccc">-</span>') + '</td>'
+        + (cVal ? (cVal > 0 ? '+' : '') + cVal : '<span style="color:#ccc">-</span>')
+        + (complete && grand !== null ? bonusCHintHtml(aTotal70 + (bVal || 0), cVal, false) : (prov ? bonusCHintHtml(prov.a + (bVal || 0), cVal, true) : '')) + '</td>'
       // 確定合計
       + '<td style="text-align:center;font-weight:700;background:#fffef5;color:var(--clr-primary-d)">'
         + (grand !== null ? grand + '点' : (prov ? provMark(prov.grand + '点') : '<span style="color:#ccc">-</span>')) + '</td>'
