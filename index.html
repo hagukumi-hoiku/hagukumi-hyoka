@@ -7914,7 +7914,7 @@ function openJikoCheckPrint() {
     if (d.bonusEval && d.bonusEval.length) {
       var auto = d.settings && d.settings.leave_auto_eval;
       out += '<div class="yk-box"><h4>賞与の対象判定（第26条）</h4>' +
-        '<p class="yk-note" style="margin-top:0">支給基準日（7月1日・12月1日）に在籍し、「賞与支給月の出勤率10%未満」「新規採用者の対象期間中の出勤率10%未満」に当たらない人を対象とします。休業は不就労として扱います。支給割合の調整（第11項・第13項）は個別の判断のため、判定していません。評価（自己評価・賞与評価）の除外への自動反映は <strong>' + (auto ? 'オン' : 'オフ') + '</strong> です。</p>' +
+        '<p class="yk-note" style="margin-top:0">支給基準日（7月1日・12月1日）に在籍し、「算定期間のすべてが休業で出勤が0日」「新規採用者の対象期間中の出勤率10%未満」に当たらない人を対象とします。算定期間に出勤があれば、賞与支給月が休業中でも対象です（支給額は出勤率に反映）。休業は不就労として扱います。支給割合の調整（第11項・第13項）は個別の判断のため、判定していません。評価（自己評価・賞与評価）の除外への自動反映は <strong>' + (auto ? 'オン' : 'オフ') + '</strong> です。</p>' +
         d.bonusEval.map(function (b) {
           var reasons = (b.reasons || []).map(function (r) { return '<li style="color:#b00020">' + e(r.text) + '<span class="yk-sub">（' + e(r.art) + '）</span></li>'; }).join('');
           var notes = (b.notes || []).map(function (n) { return '<li>' + e(n) + '</li>'; }).join('');
@@ -7942,7 +7942,7 @@ function openJikoCheckPrint() {
         '<label style="margin-right:12px"><input type="checkbox" id="rfCap"' + has('上限') + (admin ? '' : ' disabled') + '> 号俸の上限に到達（第7条1項）</label>' +
         '<label><input type="checkbox" id="rfDo"' + has('実施') + (admin ? '' : ' disabled') + '> 例外として昇給を実施する</label>' +
         (admin ? '<div style="margin-top:6px"><button class="btn btn-primary btn-sm" onclick="ykSaveRaiseFlagsUi(' + r.year + ')">個別設定を保存</button></div>' : '') + '</div>' +
-        '<p class="yk-note" style="margin-top:6px">非常勤の昇給・賞与は判定していません。「昇給しない」は原則であり、最終判断は理事長が行います。出勤月数は、月の初日から在籍していて勤務した月を数えます。</p></div>';
+        '<p class="yk-note" style="margin-top:6px">非常勤の昇給・賞与は判定していません。「昇給しない」は原則であり、最終判断は理事長が行います。出勤月数は、月の初日から在籍していて勤務した月を数えます。育児・介護休業中でも、判定期間に出勤があれば対象です（判定期間のすべてが休業で出勤0日の場合は対象外）。</p></div>';
     }
     return out;
   }
@@ -8848,7 +8848,7 @@ function openJikoCheckPrint() {
       '<div class="yk-box" style="margin-top:10px"><label style="display:block;font-size:.88rem"><input type="checkbox" id="yksLegalAdj"' + (s.legal_adjust ? ' checked' : '') + '> 事前調整に<strong>法定付与日基準</strong>の判定を加える（第41条9項の追加）</label>' +
       '<p class="yk-note" style="margin-top:4px">オン：当該年度中の法定付与日（入職日により異なる）の時点で、1年以内に失効する日数÷12 が上限（月1日）を超える場合に、超えた日数の半数を、当該年度中の事前調整の対象となる場合がある日数として表示します（4月1日時点の判定とは別枠）。<br>オフ：4月1日時点の判定のみ（従来どおり）。</p></div>' +
       '<div class="yk-box" style="margin-top:10px"><label style="display:block;font-size:.88rem"><input type="checkbox" id="yksLeaveAuto"' + (s.leave_auto_eval ? ' checked' : '') + '> 休業期間から、<strong>賞与・自己評価の対象を自動で判定</strong>して評価の除外に反映する</label>' +
-      '<p class="yk-note" style="margin-top:4px">オン：職員マスタに休業期間を登録した正規職員について、賞与（第26条）の「支給月の出勤率10%未満」「新規採用者の出勤率10%未満」に当たる賞与期を、評価（自己評価・賞与評価）の対象外にします。夏季・冬季の両方が対象外なら、その年度は自己評価も対象外です。例外は職員マスタの評価除外に <em>+2026-夏季</em> のように入力します。<br>オフ：従来どおり、職員マスタの評価除外（手入力）だけで判定します。</p></div>' +
+      '<p class="yk-note" style="margin-top:4px">オン：職員マスタに休業期間を登録した正規職員について、賞与（第26条）の「算定期間の出勤が0日（全期間が休業）」「新規採用者の出勤率10%未満」に当たる賞与期を、評価（自己評価・賞与評価）の対象外にします。夏季・冬季の両方が対象外なら、その年度は自己評価も対象外です。例外は職員マスタの評価除外に <em>+2026-夏季</em> のように入力します。<br>オフ：従来どおり、職員マスタの評価除外（手入力）だけで判定します。</p></div>' +
       '<div class="yk-box" style="margin-top:10px"><label class="flabel">職員用の画面（自分の有給）の公開</label>' +
       '<div id="yksPubState" style="margin:6px 0">' + pubBadge(s.my_view === 'all') + '</div>' +
       '<button class="btn btn-primary btn-sm" onclick="ykSetPublish(\'all\')">公開する（全職員）</button> ' +
