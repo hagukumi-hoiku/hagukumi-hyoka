@@ -7956,12 +7956,50 @@ function openJikoCheckPrint() {
 
   // ---------- 賞与（第26条）・昇給（第5条・第7条）の判定（正規のみ。管理者・園長の画面のみ） ----------
   function bonusRaiseHtml(d) {
-    if (!d.bonusEval && !d.raiseEval) return '';
+    if (!d.bonusEval && !d.raiseEval && !d.partBonus && !d.partAllowance) return '';
     var out = '';
     if (d.leaves && d.leaves.length) {
       out += '<div class="yk-box"><h4>休業期間（職員マスタで登録）</h4>' + d.leaves.map(function (l) {
         return '<div>' + e(l.type) + '　' + e(l.start) + ' 〜 ' + (l.end ? e(l.end) : '<strong>継続中</strong>') + '　' + (l.excl ? '<span style="color:#1b6b3a">欠勤に算入しない</span>' : '<span style="color:#b00020">欠勤に算入する</span>') + '</div>';
       }).join('') + '<p class="yk-note" style="margin-top:6px">登録・修正は、職員マスタの「休業期間」から行います。</p></div>';
+    }
+    if (d.partBonus && d.partBonus.length) {
+      out += '<div class=\"yk-box\"><h4>非常勤の賞与（7月賞与・12月賞与）</h4>' +
+        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>週5日勤務（有給設定の付与区分が「通常」）で、1日の所定労働時間が7時間以上</strong>の非常勤職員です。算定期間の月ごとの欠勤率が10％未満なら通常どおり支給し、<strong>10％以上の月がある場合は、その月の欠勤率の合計</strong>（例：11％と14％の月があれば25％）を、通常の支給額から減額します。月次の実績が入力されていない月は、欠勤率に含めません。</p>' +
+        d.partBonus.map(function (b) {
+          var head = '<strong>' + e(b.year) + '年 ' + e(b.term) + '賞与</strong>（算定期間 ' + e(b.start) + '〜' + e(b.end) + '・' + (b.upcoming ? '次回' : '直近') + '）　';
+          if (!b.eligible) {
+            return '<div style=\"margin-top:10px;padding:8px 10px;border:1px solid var(--clr-border);border-radius:6px;background:#f7f7f7\">' + head + badge('info', '対象外') +
+              '<ul style=\"margin:4px 0 0 1.2em;padding:0\">' + (b.reasons || []).map(function (t) { return '<li>' + e(t) + '</li>'; }).join('') + '</ul></div>';
+          }
+          var res = b.cut > 0 ? badge('danger', '減額あり ' + num(b.cut) + '%') : badge('success', '減額なし');
+          var cm = (b.cutMonths || []).map(function (m) { return e(m.month) + '：' + num(m.rate) + '%'; }).join(' ＋ ');
+          var cells = (b.months || []).map(function (m) {
+            var t = m.has ? num(m.rate) + '%' : (m.leaveFull ? '休業' : (m.missing ? '未入力' : '―'));
+            var col = m.has && m.over10 ? '#b00020' : (m.has ? 'inherit' : '#888');
+            return '<span style=\"display:inline-block;min-width:92px;margin:2px 8px 0 0;color:' + col + (m.has && m.over10 ? ';font-weight:700' : '') + '\">' + e(m.month.slice(2)) + ' ' + t + '</span>';
+          }).join('');
+          return '<div style=\"margin-top:10px;padding:8px 10px;border:1px solid var(--clr-border);border-radius:6px;background:' + (b.cut > 0 ? '#fff9f2' : '#f6fbf7') + '\">' + head + badge('success', '対象') + ' ' + res +
+            (b.provisional ? ' ' + badge('warning', '暫定') : '') +
+            (b.cut > 0 ? '<div class=\"yk-sub\" style=\"margin-top:4px\">欠勤率10％以上の月：' + cm + ' ＝ <strong>' + num(b.cut) + '%</strong>を減額</div>' : '') +
+            '<div class=\"yk-sub\" style=\"margin-top:4px\">月ごとの欠勤率　' + (cells || '算定期間の実績なし') + '</div>' +
+            (b.provisional ? '<div class=\"yk-sub\" style=\"margin-top:4px;color:#7a5b00\">' + (b.missing && b.missing.length ? '未入力の月（' + b.missing.map(function (m) { return e(m); }).join('・') + '）は含めていません。' : '') + (b.upcoming ? '算定期間が終わっていない（または支給前の）ため、今後の実績で変わります。' : '') + '</div>' : '') + '</div>';
+        }).join('') + '</div>';
+    }
+    var pa = d.partAllowance;
+    if (pa) {
+      out += '<div class=\"yk-box\"><h4>処遇改善手当①（12月の一時金・非常勤）</h4>' +
+        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>1日の所定労働時間が6時間以下</strong>の非常勤職員です。金額は有給設定で職種別に変えられます。年度（4月〜12月）の実績が9か月ある人が満額で、それ以外は月割（金額×実績月数÷9。10円の位以下は切り捨てて100円単位）です。</p>';
+      if (!pa.eligible) {
+        out += '<div>' + badge('info', '対象外') + '<ul style=\"margin:4px 0 0 1.2em;padding:0\">' + (pa.reasons || []).map(function (t) { return '<li>' + e(t) + '</li>'; }).join('') + '</ul></div>';
+      } else {
+        out += '<div><strong>' + e(pa.year) + '年度（' + e(pa.payMonth.replace('-', '年').replace(/^(\d+年)0?/, '$1')) + '月支給）</strong>　' + badge('success', '対象') + '　' +
+          '<span style=\"font-size:1.1rem;font-weight:700\">' + Number(pa.amount).toLocaleString() + '円</span> ' + (pa.full ? badge('success', '満額') : badge('warning', '月割 ' + pa.count + '/9か月')) + (pa.provisional ? ' ' + badge('warning', '暫定') : '') + '</div>' +
+          '<div class=\"yk-sub\" style=\"margin-top:4px\">' + e(pa.jobType) + '（満額 ' + Number(pa.base).toLocaleString() + '円）　1日の所定労働時間 ' + num(pa.dailyHours) + '時間　実績 ' + num(pa.count) + 'か月　' +
+          (pa.months || []).map(function (m) { return '<span style=\"margin-right:6px;color:' + (m.has ? 'inherit' : '#888') + '\">' + Number(m.month.slice(5)) + '月' + (m.has ? '○' : (m.leaveFull ? '休' : '－')) + '</span>'; }).join('') + '</div>' +
+          (pa.provisional ? '<div class=\"yk-sub\" style=\"margin-top:4px;color:#7a5b00\">12月までの実績が入力されていないため、今の実績月数で出した暫定の金額です。月次の実績の入力に応じて変わります（月の全日が休業の月と、実績が未入力の月は、実績月数に数えません）。</div>' : '') + '';
+      }
+      out += '</div>';
     }
     if (d.bonusEval && d.bonusEval.length) {
       var auto = d.settings && d.settings.leave_auto_eval;
@@ -8909,10 +8947,14 @@ function openJikoCheckPrint() {
       '<div style="margin-top:6px"><label class="flabel">非公開のときも見られるログインID（テスト用・カンマ区切り）</label><input type="text" class="finput" id="yksMyIds" style="width:300px" value="' + e((s.my_view_ids || []).join(',')) + '"></div>' +
       '<label style="display:block;margin-top:8px;font-size:.88rem"><input type="checkbox" id="yksMyObl"' + (s.my_show_obligation ? ' checked' : '') + '> 職員用の画面に「年5日の時季指定」を表示する（初期設定は非表示）</label>' +
       '<p class="yk-note" style="margin-top:4px">テスト用のログインIDは、<strong>在籍にしている間だけ</strong>非公開中も表示されます（退職にすると見られなくなります）。表示のみの画面で、操作はできません。</p></div>' +
+      '<div style="font-size:.85rem;font-weight:700;margin:14px 0 6px">処遇改善手当①（非常勤・12月の一時金）の金額　職種別</div>' +
+      '<div id="yksAllow"></div><button class="btn btn-outline btn-sm" onclick="ykAddAllow()">＋ 職種を追加</button>' +
+      '<p class="yk-note" style="margin-top:6px">満額（年度の実績が9か月）の金額です。9か月に満たない人は、金額×実績月数÷9の10円の位以下を切り捨てた金額（100円単位）になります。職種名は職員マスタの職種と同じ名前で入力してください。</p>' +
       '<div style="font-size:.85rem;font-weight:700;margin:14px 0 6px">繁忙期（原則取得を認めない期間）</div>' +
       '<div id="yksBlackouts"></div><button class="btn btn-outline btn-sm" onclick="ykAddBlackout()">＋ 期間を追加</button>' +
       '<p class="yk-note" style="margin-top:6px">この期間に取得日を入力すると警告を出し、確認のうえ「繁忙期」と記録します（強制的には拒否しません）。</p>';
     (s.blackouts || []).forEach(function (b) { ykAddBlackout(b); });
+    Object.keys(s.part_allowance || {}).forEach(function (k) { ykAddAllow(k, s.part_allowance[k]); });
     $('ykSettingsModal').classList.add('open');
   };
   function pubBadge(pub) { return pub ? '<span class="badge badge-success">公開中（全職員）</span>' : '<span class="badge badge-warning">非公開（テスト用のログインIDのみ）</span>'; }
@@ -8939,11 +8981,24 @@ function openJikoCheckPrint() {
       '<button class="btn btn-sm btn-danger" onclick="this.parentNode.remove()">✕</button>';
     $('yksBlackouts').appendChild(row);
   };
+  window.ykAddAllow = function (name, amount) {
+    var row = document.createElement('div');
+    row.className = 'yk-alw'; row.style.cssText = 'display:grid;grid-template-columns:1.4fr 1fr auto auto;gap:6px;margin-bottom:6px;align-items:center;max-width:420px';
+    row.innerHTML = '<input type="text" class="finput a-n" placeholder="職種名（例: 保育士）" value="' + e(typeof name === 'string' ? name : '') + '">' +
+      '<input type="number" class="finput a-v" min="0" step="100" placeholder="金額" value="' + (amount === undefined ? '' : e(String(amount))) + '"><span>円</span>' +
+      '<button class="btn btn-sm btn-danger" onclick="this.parentNode.remove()">✕</button>';
+    $('yksAllow').appendChild(row);
+  };
   window.ykSaveSettingsUi = async function () {
     var bl = Array.prototype.map.call(document.querySelectorAll('#yksBlackouts .yk-blk'), function (r) {
       return { start: r.querySelector('.b-s').value, end: r.querySelector('.b-e').value, label: r.querySelector('.b-l').value, garden: r.querySelector('.b-g').value };
     });
-    var s = { monthly_cap: Number($('yksCap').value), base_md: $('yksBase').value.trim(), warn_days: Number($('yksWarn').value),
+    var pa = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#yksAllow .yk-alw'), function (r) {
+      var n = r.querySelector('.a-n').value.trim(), v = r.querySelector('.a-v').value;
+      if (n && v !== '') pa[n] = Number(v);
+    });
+    var s = { part_allowance: pa, monthly_cap: Number($('yksCap').value), base_md: $('yksBase').value.trim(), warn_days: Number($('yksWarn').value),
               start_date: $('yksStart').value, advance_from: $('yksAdv').value, prepaid_expire: $('yksPrepaid').checked ? 'legal' : 'grant', target_employment: $('yksEmp').value.split(',').map(function (x) { return x.trim(); }).filter(Boolean), blackouts: bl,
               my_view_ids: $('yksMyIds').value.split(',').map(function (x) { return x.trim(); }).filter(Boolean),
               my_show_obligation: $('yksMyObl').checked, legal_adjust: $('yksLegalAdj').checked, leave_auto_eval: $('yksLeaveAuto').checked };
