@@ -5491,7 +5491,17 @@ function applyBonusLock(evalType, term) {
   if (mySubmitted) {
     lockAll();
     if (submitBtn) submitBtn.textContent = '✅ 提出済み（変更不可）';
-    banner('🔒 提出済みのため変更できません。修正が必要な場合は理事長に提出の解除を依頼してください。');
+    if (isAdmin) {
+      // 理事長は、提出済みでも「C加減」だけは提出の解除なしで変更できる
+      var cEl = document.getElementById('bonusCVal');
+      if (cEl) {
+        cEl.disabled = false;
+        cEl.insertAdjacentHTML('afterend', '<button type="button" class="btn btn-primary" style="margin-top:6px" onclick="saveBonusCAdjOnly()">C加減だけ更新</button>');
+      }
+      banner('🔒 提出済みのため点数・コメントは変更できません（変更する場合は「提出を解除」）。<br>C加減（理事長調整）だけは、下の「C加減だけ更新」でいつでも変更できます。');
+    } else {
+      banner('🔒 提出済みのため変更できません。修正が必要な場合は理事長に提出の解除を依頼してください。');
+    }
   } else if (overDl) {
     lockAll();
     if (submitBtn) submitBtn.textContent = '⚠️ 期限超過（提出不可）';
@@ -5503,6 +5513,24 @@ function applyBonusLock(evalType, term) {
     if (c1) c1.disabled = true;
     banner('🔒 一次評価は提出済みのため変更できません（変更する場合は「🔓 一次の提出を解除」）。');
   }
+}
+
+// 理事長のみ: 提出済みの賞与評価で、C加減だけを更新する（点数・コメント・提出状態は変えない）
+async function saveBonusCAdjOnly() {
+  if (!SESSION || SESSION.role !== 'admin' || !currentBonusStaff) return;
+  var el = document.getElementById('bonusCVal');
+  var cAdj = parseInt(el ? el.value : '0', 10);
+  if (isNaN(cAdj) || cAdj < -5 || cAdj > 5) { toast('C加減は±5の範囲で入力してください', 'error'); return; }
+  var year = document.getElementById('bonusYearSel').value || currentYear();
+  var term = (document.getElementById('bonusTermSel') || {value:'夏季'}).value;
+  var staffId = currentBonusStaff.staffId;
+  var r = await api({ action: 'saveBonusCAdj', targetStaffId: staffId, year: year, term: term, cAdj: cAdj });
+  if (r.ok) {
+    toast(r.msg, 'success');
+    loadBonusList();
+    loadAdminBonusSummary();
+    await openBonusModal(staffId);
+  } else toast(r.msg, 'error');
 }
 
 // 理事長のみ: 賞与評価の提出済み（一次／二次）を一時保存の状態に戻す（点数・コメントは残る）
