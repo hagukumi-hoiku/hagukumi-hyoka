@@ -7965,7 +7965,7 @@ function openJikoCheckPrint() {
     }
     if (d.partBonus && d.partBonus.length) {
       out += '<div class=\"yk-box\"><h4>非常勤の賞与（7月賞与・12月賞与）</h4>' +
-        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>週5日勤務（有給設定の付与区分が「通常」）で、1日の所定労働時間が7時間以上</strong>の非常勤職員です。算定期間の月ごとの欠勤率が10％未満なら通常どおり支給し、<strong>10％以上の月がある場合は、その月の欠勤率の合計</strong>（例：11％と14％の月があれば25％）を、通常の支給額から減額します。月次の実績が入力されていない月は、欠勤率に含めません。</p>' +
+        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>週5日勤務（有給設定の付与区分が「通常」）で、1日の所定労働時間が7時間以上</strong>の非常勤職員です。算定期間の月ごとの欠勤率が10％未満なら通常どおり支給し、<strong>10％以上の月がある場合は、その月の欠勤率の合計</strong>（例：11％と14％の月があれば25％）を、通常の支給額から減額します。月次の実績が入力されていない月は、欠勤率に含めません。月ごとの欠勤率は<strong>小数点以下を切り捨てて</strong>評価します（例：9.9％は9％で減額なし、14.8％は14％）。</p>' +
         d.partBonus.map(function (b) {
           var head = '<strong>' + e(b.year) + '年 ' + e(b.term) + '賞与</strong>（算定期間 ' + e(b.start) + '〜' + e(b.end) + '・' + (b.upcoming ? '次回' : '直近') + '）　';
           if (!b.eligible) {
@@ -7989,14 +7989,16 @@ function openJikoCheckPrint() {
     var pa = d.partAllowance;
     if (pa) {
       out += '<div class=\"yk-box\"><h4>処遇改善手当①（12月の一時金・非常勤）</h4>' +
-        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>1日の所定労働時間が6時間以下</strong>の非常勤職員です。金額は有給設定で職種別に変えられます。12月の支給日に在籍している（職員マスタが「在籍」）人が対象です。4月〜11月は月次の実績がある月、12月は在籍していれば1か月と数え、9か月そろえば満額、それ以外は月割（金額×月数÷9。10円の位以下は切り捨てて100円単位）です。</p>';
+        '<p class=\"yk-note\" style=\"margin-top:0\">対象は、<strong>1日の所定労働時間が6時間以下</strong>の非常勤職員です。金額は有給設定で職種別に変えられます。12月の支給日に在籍している（職員マスタが「在籍」）人が対象です。4月〜11月は月次の実績がある月、12月は在籍していれば1か月と数え、9か月そろえば満額、それ以外は月割（金額×月数÷9）です。さらに、<strong>4月〜11月の欠勤率を賞与と同じ仕組みで減額</strong>します（月ごとの欠勤率が10％以上の月の欠勤率を合計した割合を減額。実績のない月は含めません）。月ごとの欠勤率は<strong>小数点以下を切り捨てて</strong>評価します。金額の端数は10円の位以下を切り捨てて100円単位です。</p>';
       if (!pa.eligible) {
         out += '<div>' + badge('info', '対象外') + '<ul style=\"margin:4px 0 0 1.2em;padding:0\">' + (pa.reasons || []).map(function (t) { return '<li>' + e(t) + '</li>'; }).join('') + '</ul></div>';
       } else {
         out += '<div><strong>' + e(pa.year) + '年度（' + e(pa.payMonth.replace('-', '年').replace(/^(\d+年)0?/, '$1')) + '月支給）</strong>　' + badge('success', '対象') + '　' +
-          '<span style=\"font-size:1.1rem;font-weight:700\">' + Number(pa.amount).toLocaleString() + '円</span> ' + (pa.full ? badge('success', '満額') : badge('warning', '月割 ' + pa.count + '/9か月')) + (pa.provisional ? ' ' + badge('warning', '暫定') : '') + '</div>' +
+          '<span style=\"font-size:1.1rem;font-weight:700\">' + Number(pa.amount).toLocaleString() + '円</span> ' + (pa.full ? badge('success', '満額') : badge('warning', '月割 ' + pa.count + '/9か月')) + (pa.cut > 0 ? ' ' + badge('danger', '減額あり ' + num(pa.cut) + '%') : ' ' + badge('success', '減額なし')) + (pa.provisional ? ' ' + badge('warning', '暫定') : '') + '</div>' +
           '<div class=\"yk-sub\" style=\"margin-top:4px\">' + e(pa.jobType) + '（満額 ' + Number(pa.base).toLocaleString() + '円）　1日の所定労働時間 ' + num(pa.dailyHours) + '時間　実績 ' + num(pa.count) + 'か月　' +
-          (pa.months || []).map(function (m) { return '<span style=\"margin-right:6px;color:' + (m.has ? 'inherit' : '#888') + '\">' + Number(m.month.slice(5)) + '月' + (m.enrolled ? '在籍' : (m.has ? '○' : (m.leaveFull ? '休' : '－'))) + '</span>'; }).join('') + '</div>' +
+          (pa.months || []).map(function (m) { return '<span style=\"margin-right:8px;color:' + (m.has && m.over10 ? '#b00020;font-weight:700' : (m.has ? 'inherit' : '#888')) + '\">' + Number(m.month.slice(5)) + '月' + (m.enrolled ? '在籍' : (m.has ? num(m.rate) + '%' : (m.leaveFull ? '休' : '－'))) + '</span>'; }).join('') + '</div>' +
+          (pa.cut > 0 ? '<div class="yk-sub" style="margin-top:4px">欠勤率10％以上の月：' + (pa.cutMonths || []).map(function (m) { return Number(m.month.slice(5)) + '月 ' + num(m.rate) + '%'; }).join(' ＋ ') + ' ＝ <strong>' + num(pa.cut) + '%</strong>を減額（' + Number(pa.amountBeforeCut).toLocaleString() + '円 → ' + Number(pa.amount).toLocaleString() + '円）</div>' : '') +
+          '<div class="yk-sub" style="margin-top:2px">月ごとの数字は欠勤率（4月〜11月）。「－」は実績が未入力、「休」は月の全日が休業の月で、欠勤率に含めません。</div>' +
           (pa.provisional ? '<div class=\"yk-sub\" style=\"margin-top:4px;color:#7a5b00\">12月に入るまでの暫定です。12月分は「在籍の見込み」で数えています。月次の実績の入力に応じて変わります（月の全日が休業の月と、実績が未入力の月は、月数に数えません）。</div>' : '') + '';
       }
       out += '</div>';
