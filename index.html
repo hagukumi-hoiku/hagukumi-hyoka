@@ -4680,6 +4680,9 @@ async function loadBonusList() {
   if (br.ok) br.list.forEach(function(b){ bonusMap[String(b.staffId).trim()] = b; });
   // 自己評価の園評価ランク由来のB加算（冬季=当年度上半期 / 夏季=前年度下半期）。賞与DBにレコードが無くても表示できる
   var autoBMap = (br.ok && br.autoB) ? br.autoB : {};
+  // 有給管理で判定した賞与の対象・対象外（理事長・園長のみ。サーバーも主任・職員には返さない）
+  var ykJudgeMap = (br.ok && br.ykJudge && (SESSION.role === 'admin' || SESSION.role === 'encho')) ? br.ykJudge : {};
+  bonusYkJudge = { year: String(year), term: String(term), map: ykJudgeMap };
   updateBonusBulkBar(br.ok ? br.list : [], term);   // 一括提出ボタン（一時保存の評価がある場合）
 
   var max1 = BONUS_WEIGHTS.reduce(function(a,w){ return a+w.max1; }, 0); // 85
@@ -4775,7 +4778,7 @@ async function loadBonusList() {
     }
 
     return '<tr>'
-      + '<td style="font-weight:500">' + escHtml(s.name) + '</td>'
+      + '<td style="font-weight:500">' + escHtml(s.name) + ykJudgeHtml(ykJudgeMap[String(s.staffId).trim()], true) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.jobType) + '</td>'
       + '<td style="font-size:.8rem">' + escHtml(s.garden) + '</td>'
       // 一次評価（合計）
@@ -4923,6 +4926,21 @@ function renderBonusRankDist(counts, total, hide, bands, provCount) {
   document.getElementById('bonusRankDistContent').innerHTML = html;
 }
 
+// 有給管理で判定した賞与の対象・対象外の表示（理事長・園長のみ）。compact=true は一覧用、false は入力画面用
+var bonusYkJudge = { year: '', term: '', map: {} };
+function ykJudgeHtml(j, compact) {
+  if (!j) return '';
+  var col = j.eligible ? '#2e7d32' : '#b00020';
+  var head = '<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:.7rem;font-weight:600;color:#fff;background:' + col + '" title="有給管理の「賞与の対象判定（第26条）」の結果です">有給管理の判定：' + (j.eligible ? '賞与対象' : '賞与対象外') + '</span>';
+  var lines = (j.eligible ? (j.notes || []) : (j.reasons || []));
+  if (compact) {
+    return '<div style="margin-top:3px">' + head + '</div>' + (lines.length ? '<div style="font-size:.7rem;font-weight:400;color:' + col + ';line-height:1.4;margin-top:2px">' + lines.map(function (t) { return escHtml(t); }).join('<br>') + '</div>' : '');
+  }
+  return '<div style="border:1px solid ' + (j.eligible ? '#bfe0c4' : '#f0c0c6') + ';background:' + (j.eligible ? '#f4fbf5' : '#fff5f6') + ';border-radius:var(--radius-s);padding:10px 12px;margin-bottom:14px;font-size:.83rem">'
+    + head + '<span style="margin-left:8px;color:var(--clr-text-s);font-size:.75rem">算定期間 ' + escHtml(j.start || '') + '〜' + escHtml(j.end || '') + '</span>'
+    + (lines.length ? '<ul style="margin:6px 0 0 1.2em;padding:0;color:' + col + '">' + lines.map(function (t) { return '<li>' + escHtml(t) + '</li>'; }).join('') + '</ul>' : '')
+    + '<div style="margin-top:6px;font-size:.72rem;color:var(--clr-text-s)">有給管理の休業期間・月次実績をもとにした判定です（理事長・園長のみ表示）。</div></div>';
+}
 async function openBonusModal(staffId) {
   try {
   // evalMgrセクションからの呼び出しか、bonusセクションからかを判定
@@ -4969,7 +4987,9 @@ async function openBonusModal(staffId) {
   var isFirst  = isBonusFirstEvaluator(currentBonusStaff.jobType);
   var isSecond = isBonusSecondEvaluator(currentBonusStaff.jobType);
 
-  var html = '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.83rem">'
+  var judgeBox = (SESSION.role === 'admin' || SESSION.role === 'encho') && bonusYkJudge.year === String(year) && bonusYkJudge.term === String(term)
+    ? ykJudgeHtml(bonusYkJudge.map[String(staffId).trim()], false) : '';
+  var html = judgeBox + '<div style="background:var(--clr-bg);border-radius:var(--radius-s);padding:12px;margin-bottom:16px;font-size:.83rem">'
     + '<div style="display:flex;gap:20px;flex-wrap:wrap">'
     + '<span><span style="color:var(--clr-text-s)">評価タイプ：</span><strong>' + escHtml(evalType==='encho'?'園長用':evalType==='syunin'?'主任用':evalType==='leader'?'リーダー用':'一般職用') + '</strong></span>'
     + '<span><span style="color:var(--clr-text-s)">A合計: 生点÷満点×70：</span><strong>' + maxRaw + '点生点 → 70点満点換算</strong></span>'
