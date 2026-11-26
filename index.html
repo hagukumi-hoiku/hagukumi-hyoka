@@ -7636,6 +7636,7 @@ function openJikoCheckPrint() {
           '<button class="btn btn-outline btn-sm" onclick="ykOpenLedgerSel()">📄 有給簿（選択した職員）</button>' +
           '<button class="btn btn-outline btn-sm yk-adm" id="ykPubChip" onclick="ykOpenSettings()" title="公開・非公開は設定で切り替えます"></button>' +
           '<button class="btn btn-outline btn-sm yk-adm" onclick="ykOpenSettings()">⚙ 設定</button>' +
+          '<button class="btn btn-outline btn-sm" id="ykBlkBtn" style="display:none" onclick="ykOpenBlackouts()" title="自園の繁忙期を設定します">📅 繁忙期の設定</button>' +
         '</div>' +
       '</div>' +
       '<div id="ykAsOfWarn"></div><div id="ykBanner"></div><div class="yk-cards" id="ykCards"></div>' +
@@ -7727,6 +7728,7 @@ function openJikoCheckPrint() {
     }
     var lm = $('nav-myyukyu'); if (lm) lm.style.display = YK.myEnabled ? '' : 'none';
     Array.prototype.forEach.call(document.querySelectorAll('.yk-adm'), function (el) { el.style.display = ykIsAdmin() ? '' : 'none'; });
+    var blkBtn = document.getElementById('ykBlkBtn'); if (blkBtn) blkBtn.style.display = ykIsAdmin() ? 'none' : '';   // 園長は繁忙期の設定だけ（他の設定は理事長のみ）
   }
   var _orig = window.showSection;
   window.showSection = async function (name) {
@@ -8941,7 +8943,25 @@ function openJikoCheckPrint() {
   };
 
   // ---------- 設定 ----------
+  // 園長用：繁忙期の設定だけ（自園の分のみ編集。全園共通・他園の設定は表示のみで、変更できない）
+  window.ykOpenBlackouts = async function () {
+    var r = await api({ action: 'ykGetSettings' });
+    if (!r.ok) { toast(r.msg, 'error'); return; }
+    var s = r.settings; YK.settings = s; YK.blkOnly = true;
+    var mine = (SESSION && SESSION.garden) || '';
+    var mineList = (s.blackouts || []).filter(function (b) { return String(b.garden || '') === mine; });
+    var others = (s.blackouts || []).filter(function (b) { return String(b.garden || '') !== mine; });
+    $('ykSettingsBody').innerHTML =
+      '<div style="font-size:.9rem;font-weight:700;margin:4px 0 6px">繁忙期（原則取得を認めない期間）　<span style="color:var(--clr-text-s);font-weight:400">' + e(mine) + '</span></div>' +
+      '<div id="yksBlackouts"></div><button class="btn btn-outline btn-sm" onclick="ykAddBlackout()">＋ 期間を追加</button>' +
+      '<p class="yk-note" style="margin-top:6px">この園の職員にだけ効きます。この期間に取得日を入力すると警告を出し、確認のうえ「繁忙期」と記録します（強制的には拒否しません）。その他の設定は理事長のみ変更できます。</p>' +
+      (others.length ? '<div class="yk-box" style="margin-top:10px"><div class="yk-sub" style="margin-bottom:4px">ほかの設定（全園共通・他園。表示のみ）</div>' +
+        others.map(function (b) { return '<div style="font-size:.82rem">' + e(b.start) + ' 〜 ' + e(b.end) + '　' + e(b.label || '') + '　<span class="yk-sub">（' + e(b.garden || '全園') + '）</span></div>'; }).join('') + '</div>' : '');
+    mineList.forEach(function (b) { ykAddBlackout(b); });
+    $('ykSettingsModal').classList.add('open');
+  };
   window.ykOpenSettings = async function () {
+    YK.blkOnly = false;
     var r = await api({ action: 'ykGetSettings' });
     if (!r.ok) { toast(r.msg, 'error'); return; }
     var s = r.settings; YK.settings = s;
@@ -8997,9 +9017,12 @@ function openJikoCheckPrint() {
     b = (b && b.start !== undefined) ? b : { start: '', end: '', label: '', garden: '' };
     var row = document.createElement('div');
     row.className = 'yk-blk'; row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
+    var gSel = YK.blkOnly
+      ? '<select class="fselect b-g" disabled><option selected>' + e((SESSION && SESSION.garden) || '') + '</option></select>'
+      : null;
     row.innerHTML = '<input type="date" class="finput b-s" value="' + e(b.start) + '"><input type="date" class="finput b-e" value="' + e(b.end) + '">' +
       '<input type="text" class="finput b-l" placeholder="名称（例: 運動会）" value="' + e(b.label) + '">' +
-      '<select class="fselect b-g"><option value="">全園</option><option' + (b.garden === 'はぐくみ保育園' ? ' selected' : '') + '>はぐくみ保育園</option><option' + (b.garden === '第2はぐくみ保育園' ? ' selected' : '') + '>第2はぐくみ保育園</option></select>' +
+      (gSel || '<select class="fselect b-g"><option value="">全園</option><option' + (b.garden === 'はぐくみ保育園' ? ' selected' : '') + '>はぐくみ保育園</option><option' + (b.garden === '第2はぐくみ保育園' ? ' selected' : '') + '>第2はぐくみ保育園</option></select>') +
       '<button class="btn btn-sm btn-danger" onclick="this.parentNode.remove()">✕</button>';
     $('yksBlackouts').appendChild(row);
   };
@@ -9015,6 +9038,12 @@ function openJikoCheckPrint() {
     var bl = Array.prototype.map.call(document.querySelectorAll('#yksBlackouts .yk-blk'), function (r) {
       return { start: r.querySelector('.b-s').value, end: r.querySelector('.b-e').value, label: r.querySelector('.b-l').value, garden: r.querySelector('.b-g').value };
     });
+    if (YK.blkOnly) {   // 園長：繁忙期だけを保存する（その他の設定には触れない）
+      var rb = await api({ action: 'ykSaveBlackouts', blackouts: bl });
+      toast(rb.msg, rb.ok ? 'success' : 'error');
+      if (rb.ok) { YK.blkOnly = false; ykCloseSettings(); ykReload(); }
+      return;
+    }
     var pa = {};
     Array.prototype.forEach.call(document.querySelectorAll('#yksAllow .yk-alw'), function (r) {
       var n = r.querySelector('.a-n').value.trim(), v = r.querySelector('.a-v').value;
