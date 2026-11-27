@@ -9024,6 +9024,14 @@ function openJikoCheckPrint() {
       '<input type="text" class="finput b-l" placeholder="名称（例: 運動会）" value="' + e(b.label) + '">' +
       (gSel || '<select class="fselect b-g"><option value="">全園</option><option' + (b.garden === 'はぐくみ保育園' ? ' selected' : '') + '>はぐくみ保育園</option><option' + (b.garden === '第2はぐくみ保育園' ? ' selected' : '') + '>第2はぐくみ保育園</option></select>') +
       '<button class="btn btn-sm btn-danger" onclick="this.parentNode.remove()">✕</button>';
+    // 始まりの日付を選んだら、終わりの日付は同じ日から始まる（終わりが空、または始まりより前のとき）。期間の終わりは始まりより前を選べない
+    var bs = row.querySelector('.b-s'), be = row.querySelector('.b-e');
+    if (bs.value) be.min = bs.value;
+    bs.addEventListener('change', function () {
+      if (!bs.value) { be.removeAttribute('min'); return; }
+      be.min = bs.value;
+      if (!be.value || be.value < bs.value) be.value = bs.value;
+    });
     $('yksBlackouts').appendChild(row);
   };
   window.ykAddAllow = function (name, amount) {
